@@ -1,0 +1,5 @@
+Title: Quarto Book Template
+Version: 0.1
+Suggests:
+    usethis,
+    attachment

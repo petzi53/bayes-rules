@@ -1,0 +1,15 @@
+---
+title: "Empty File"
+bibliography: references.bib
+---
+
+![Have You Ever Had a
+Mammogram](img/chap02/mammogram-codebook-min.png){#fig-mammogram-codebook
+fig-alt="Table from the Breast and Cervical Cancer Screening"
+fig-align="center"}
+
+And this here is a footnote[^empty-file-template-1]
+
+[^empty-file-template-1]: This is the text of the footnote
+
+@glossary

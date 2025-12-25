@@ -1,0 +1,38 @@
+---
+format: 
+  html:
+    page-layout: article
+    grid: 
+      margin-width: 450px
+      body-width: 2000px
+---
+
+# Fitting linear models {#sec-chap04}
+
+
+```{r}
+#| label: setup
+#| results: hold
+#| include: false
+
+# base::source(file = "R/helper.R")
+ggplot2::theme_set(ggplot2::theme_bw())
+options(show.signif.stars = FALSE)
+
+```
+
+## Table of content for chapter 04 {.unnumbered}
+
+::::: {#obj-chap04}
+:::: {.my-objectives}
+::: {.my-objectives-header}
+Chapter section list
+:::
+
+::: {.my-objectives-container}
+
+
+
+:::
+::::
+:::::

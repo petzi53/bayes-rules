@@ -1,0 +1,272 @@
+# Preface {.unnumbered}
+
+::: {.callout-note style="color: blue;"}
+#### This is work in progress
+
+XXX: I have finished XXX%. Currently I am working on Chapter XXX.
+:::
+
+
+::::: my-watch-out
+::: my-watch-out-header
+WATCH OUT: This is my personal learning material and is therefore
+neither an accurate replication nor an authoritative textbook.
+:::
+
+::: my-watch-out-container
+I am writing this book as a text for others to read because that forces
+me to become explicit and explain all my learning outcomes more
+carefully. Please keep in mind that this text is not written by an
+expert but by a learner.
+
+Text passages with content I am already familiar I have skipped. Section
+of the original text where I needed more in-depth knowledge I have
+elaborated and added my own comments resulted from my personal research.
+
+Be warned! In spite of replicating most of the content this Quarto book
+may contain many mistakes. All the misapprehensions and errors are of
+course my own responsibility.
+:::
+:::::
+
+## Content and Goals of this Book {.unnumbered}
+
+This Quarto book collects my personal notes, trials and exercises of
+XXX[BOOK NAME](URL) by XXX: NAME OF AUTHOR \[CITATION\].
+
+XXX: DESCRIPTION OF THE BOOK AND WHY IT IS WORTH FOR A QUARTO BOOK
+
+## Text passages
+
+### Quotes and personal comments
+
+My text consists mostly of quotes from the XXX\[BOOK NAME\]. Sometimes I
+have them changed slightly to adpat it to the flow onf my notes. But I
+have not referenced the poistion of the (semi)quotes in the book. As I
+am generally follow the book's outline using the same text for headers,
+it should be clear where to find the quotes.
+
+This means that most of the text in this Quarto book is not mine but
+comes from different resources.
+
+My personal comments should be clear because most of the times it is a
+reflection about the book and my experiences with it.
+
+### Glossary
+
+I am using the {**glossary**} package to create links to glossary
+entries.\]
+
+:::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-load-glossary}
+: Load glossary
+:::
+::::
+
+::: my-r-code-container
+```{r}
+#| label: load-glossary
+#| lst-label: lst-preface-load-glossary
+#| lst-cap: "Install and load the glossary package with the appropriate glossary.yml file"
+
+
+## 1. Install the glossary package:
+## https://debruine.github.io/glossary/
+
+library(glossary)
+
+## If you want to use my glossary.yml file:
+
+## 1. fork my repo
+##    https://github.com/petzi53/glossary-pb
+
+## 2. Download the `glossary.yml` file from
+##    https://github.com/petzi53/glossary-pb/blob/master/glossary.yml)
+
+## 3. Store the file on your hard disk
+##    and change the following path accordingly
+
+glossary::glossary_path("../glossary-pb/glossary.yml")
+
+```
+:::
+::::::
+
+If you hover with your mouse over the double underlined links it opens
+an window with the appropriate glossary text. Try this example:
+`r glossary("Z-Score")`.
+
+:::::: my-watch-out
+::: my-watch-out-header
+WATCH OUT! Glossary is my private learning vehicle
+:::
+
+:::: my-watch-out-container
+::: {layout="[10, 30]" layout-valign="center"}
+![](https://debruine.github.io/glossary/logo.png)
+
+I have added many of the glossary entries when I was working through
+other books either taking the text passage of these books I was reading
+or via an internet recherche from other resources. Sometimes I have
+added the source of the glossary entry as an abbreviation or as an URL.
+Many definitions were provided by the KI provided within the search of
+my [Brave browser](https://brave.com/).
+:::
+::::
+::::::
+
+If you fork the XXX: \[REPO OF THIS BOOK(URL OF THIS BOOK\] then the
+glossary will not work out of the box. Load down the `glossary.yml` file
+from [my glossary-pb GitHub
+repo](https://github.com/petzi53/glossary-pb/blob/master/glossary.yml),
+store it on your hard disk and change the path in the code chunk
+@lst-preface-load-glossary accordingly.
+
+In any case I am the only responsible person for the glossary text,
+especially if I have used text from other resources wrongly. Again: The
+main purpose of the glossary is to support my persponal learning
+venture.
+
+## R Code and Datasets
+
+During coding I am following the [Tidyverse Style
+Guide](https://style.tidyverse.org/). But for learning purposes I am
+trying to prefix all functions with the package name in the format
+<package>::<function> (e.g., `dplyr::filter()`) This is an overhead but
+supports me to understand which packages is responsible for which
+action.
+
+Sometimes adding just the package name does not work. This is mostly the
+case when a generic function name like `plot` is used by another package
+in a more specialized manner. In this case I will try to use the
+function of the package. If this doesn't work too then I have to come
+back to the standard usage of `base::library(<package-name>)`.
+
+I am using the package name also for the default installation of base R.
+This wouldn't be necessary but it helps me to understand where the base
+R functions come from. What follows is a list of base R packages of the
+system library included into every installation and attached (opened) by
+default:
+
+-   {**base**}: The R Base Package
+-   {**datsets**}: The R Datasets Package
+-   {**graphics**}: The R Graphics Package
+-   {**grDevices**}: The R Graphics Devices and Support for Colours and
+    Fonts
+-   {**methods**}: Formal Methods and Classes
+-   {**stats**}: The R Stats Package
+-   {**utils**}: The R Utils Package
+
+I am not using always the exact code snippets for my replications
+because I am not only replicating the code to see how it works but also
+to change the values of parameters to observe their influences.
+
+When it is clear then I will follow the advice from Hadley Wickham:
+
+> When you call a function, you typically omit the names of data
+> arguments, because they are used so commonly. If you override the
+> default value of an argument, use the full name ([tidyverse style
+> guide](https://style.tidyverse.org/syntax.html)).
+
+## Annex
+
+In some of my book notes I provide files in the annex. They contain
+experiments not directly in line with the book but inspired by my
+reading of the book.
+
+Often you will also find an annex file with a standardized short
+description of all my used packages, sometimes added with notes about my
+personal experiences with this package. An example of the standardized
+format gives you the following @sec-glossary-package.
+
+### Glossary package {#sec-glossary-package}
+
+:::::: my-num-packagebox
+::: my-num-packagebox-header
+Package Profile: glossary
+:::
+
+:::: my-num-packagebox-container
+<center>{**glossary**}: [Glossaries for Markdown and Quarto
+Documents](https://debruine.github.io/glossary/) [@glossary]</center>
+
+------------------------------------------------------------------------
+
+::: {layout="[10, 30]" layout-valign="center"}
+![](img/logoi/logo-glossary-min.png){width="176"}
+
+Add glossaries to markdown and quarto documents by tagging individual
+words. Definitions can be provided inline or in a separate file.
+<br/></br>\
+There is a lot of necessary jargon to learn reading new books. The goal
+of {**glossary**} is to provide a lightweight solution for making
+glossaries in educational materials written in quarto or R Markdown.
+This package provides functions to link terms in text to their
+definitions in an external glossary file, as well as create a glossary
+table of all linked terms at the end of a section.
+:::
+
+------------------------------------------------------------------------
+
+In the meantime {**glossary**} is for me a very important learning
+vehicle. Whenever an expression appears with a doubled underlined link I
+know that I will get more information by hovering the mouse over the
+underlined text.
+
+There is a little inconvenience with abrreviation that could also be
+part of another glossary entry text string (e.g.,
+`r glossary("APIx", "API")` and `r glossary("Capital Income")`). My
+workaround is to end the short abbreviation with an additional 'x' and
+then to call the glossary with the x-version follwed by the text that
+should be appear in the document (e.g., *r glossary("APIx", "API")*).
+This double format is a standard feature of the {**glossary**} package
+so that you can adapt the appearing text to the glossary entry (e.g.,
+singular/plural or other grammar changes).
+::::
+::::::
+
+## Resources
+
+:::::: my-resource
+:::: my-resource-header
+::: {#lem-index-book-resources}
+: Resources used for this Quarto book
+:::
+::::
+
+::: my-resource-container
+XXX: \[ADD HERE USED ADDITIONAL SOURCES\]
+:::
+::::::
+
+## Private Functions
+
+XXX: \[DESCRIBE PRIVATE FUNCTION USED IN THIS BOOK\]
+
+## Glossary Entries of this Chapter
+
+```{r}
+#| label: glossary-table
+#| echo: false
+
+glossary_table()
+```
+
+------------------------------------------------------------------------
+
+## Session Info {.unnumbered}
+
+::::: my-r-code
+::: my-r-code-header
+Session Info
+:::
+
+::: my-r-code-container
+```{r}
+#| label: session-info
+
+sessioninfo::session_info()
+```
+:::
+:::::
