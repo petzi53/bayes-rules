@@ -1,0 +1,130 @@
+# The Big (Beyesian) Picture {#sec-chap-001}
+
+
+```{r}
+#| label: setup
+#| results: hold
+#| include: false
+
+base::source(file = "R/helper.R")
+
+```
+
+
+
+::::: {#obj-chap-001}
+:::: {.my-objectives}
+::: {.my-objectives-header}
+Objectives
+:::
+
+::: {.my-objectives-container}
+- Learn to think like a Bayesian. 
+- Explore the foundations of a Bayesian data analysis and how they contrast with the frequentist alternative. 
+- Learn a little bit about the history of the Bayesian philosophy.
+
+:::
+::::
+:::::
+
+## Think like an Bayesian
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-001-thinking-bayesian-1}
+: Bayesian thinking: Example Italian Restaurant
+::::::
+:::
+::::{.my-r-code-container}
+```{r}
+#| label: bayesian-thinking-1
+
+DiagrammeR::grViz("
+  digraph thinking_bayesian{
+  
+  # node statement
+  node [shape = oval]
+  a [label = 'Incoming (prior) Information\nFive start restaurant'];
+  b [label = 'Data:\nsoggy noodles'];
+  c [label = 'Updates (posterior) information\nThree star restaurant'];
+  d [label = 'Another visit (new data):\ntasty alfredo'];
+  e [label = 'Updated (posterior) information\nFour star reastaurant'];
+  f [label = 'Another visit: (new data):\nso-so salad']
+  g [style = invisible ]
+  
+  # edge statement
+  a -> c b -> c
+  c -> e d -> e
+  f-> g [style = dashed] e-> g [style = dashed]
+  }")
+```
+
+::::
+:::::
+
+Summarizing and generalizing the above graphic we get the following graph:
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-001-bayesian-thinking-2}
+: Bayesian thinking: The general process
+::::::
+:::
+::::{.my-r-code-container}
+```{r}
+#| label: bayesian-thinking-2
+
+DiagrammeR::grViz("
+  digraph thinking_bayesian{
+  
+  # node statement
+  node [shape = oval]
+  a [label = 'Prior'];
+  b [label = 'Data'];
+  c [label = 'Posterior'];
+  d [label = 'New data'];
+  e [label = 'Posterior'];
+  f [label = 'New data']
+  g [style = invisible ]
+  
+  # edge statement
+  a -> c b -> c
+  c -> e d -> e
+  f-> g [style = dashed] e-> g [style = dashed]
+  }")
+```
+
+::::
+:::::
+
+
+
+
+
+## Glossary Entries {.unnumbered}
+
+```{r}
+#| label: glossary-table
+#| echo: false
+
+glossary_table()
+```
+
+------------------------------------------------------------------------
+
+## Session Info {.unnumbered}
+
+::: my-r-code
+::: my-r-code-header
+Session Info
+:::
+
+::: my-r-code-container
+```{r}
+#| label: session-info
+
+sessioninfo::session_info()
+```
+:::
+:::
+

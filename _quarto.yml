@@ -4,20 +4,22 @@ project:
 
 
 book:
-  title: "XXX Write your Title here"
+  title: "Notes on Bayes Rules!"
   author: "Peter Baumgartner"
   date: last-modified
   date-format: YYYY-MM-DD HH:mm
   favicon: "img/favicon_io/apple-touch-icon.png"
-  site-url: https://pbaumgartner-XXX.share.connect.posit.cloud/
-  repo-url: https://github.com/petzi53/XXX
+  site-url: https://pbaumgartner-bayes-rules.share.connect.posit.cloud/
+  repo-url: https://github.com/petzi53/bayes-rules
   repo-branch: main
   repo-actions: [edit, issue, source]
   page-navigation: true
 
   chapters:
     - index.qmd
-    - 001-chapter-templateXXX.qmd
+    - part: "I Bayesian Foundations"
+      chapters:
+        - 001-big-picture.qmd
 
 
 bibliography:

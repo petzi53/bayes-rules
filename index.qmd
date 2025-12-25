@@ -1,11 +1,14 @@
 # Preface {.unnumbered}
 
+This Quarto book collects my personal notes, trials and exercises of
+Bayes Rules! An Introduction to Applied Bayesian Modeling by Alicia A.
+Johnson, Miles Q. Ott and Mine Dogucu [@johnson2022].
+
 ::: {.callout-note style="color: blue;"}
 #### This is work in progress
 
-XXX: I have finished XXX%. Currently I am working on Chapter XXX.
+I have just started. I am currently revising this preface, and I have also started the first chapter to see if everything works.
 :::
-
 
 ::::: my-watch-out
 ::: my-watch-out-header
@@ -31,18 +34,41 @@ course my own responsibility.
 
 ## Content and Goals of this Book {.unnumbered}
 
-This Quarto book collects my personal notes, trials and exercises of
-XXX[BOOK NAME](URL) by XXX: NAME OF AUTHOR \[CITATION\].
+### Motivation
 
-XXX: DESCRIPTION OF THE BOOK AND WHY IT IS WORTH FOR A QUARTO BOOK
+In the 1970s, during my sociology studies, I was trained in what I now know as frequentist statistics. Although I always felt somewhat uneasy about it, I only learned about Bayesian statistics—a different approach in probability theory—a few years ago. Despite having read several books on the subject, I must confess that I still don't have a firm grasp of it. I hope that by working intensively through "Bayes' Rules!" I will gain a better understanding of this approach.
+
+A remark in the preface supports my hope in this regard:
+
+> Bayes Rules! shows that the Bayesian approach is, in fact, accessible to students and self-learners with basic statistics knowledge, even if they are not adept at calculus derivations or coding up fancy algorithms from scratch. (XV)
+
+I ​have already read "Bayes' Rules!" once. It was a somewhat superficial read-through, but I realized that my difficulties began as early as the second chapter. Hence, this more elaborate, renewed attempt. I plan not only to follow all the steps in detail but also to complete and document the exercises.
+
+### Installation
+
+I took the following steps to get set up:
+
+XXX TO BE CONTINUED
+
+
+### Resources
+
+XXX LINKS TO THE RESOURCES MENTIONED IN THE PREFACE
+
+- Add DSLC resources
+- Add https://ajohns24.github.io/454_Fall_21/index.html (and compare the solutions)
+
+Maybe also of interest:
+
+- https://mathcenter.oxford.emory.edu/site/math117/probSetBayesTheorem/
 
 ## Text passages
 
 ### Quotes and personal comments
 
 My text consists mostly of quotes from the XXX\[BOOK NAME\]. Sometimes I
-have them changed slightly to adpat it to the flow onf my notes. But I
-have not referenced the poistion of the (semi)quotes in the book. As I
+have them changed slightly to adapt it to the flow of my notes. But I
+have not referenced the position of the (semi)quotes in the book. As I
 am generally follow the book's outline using the same text for headers,
 it should be clear where to find the quotes.
 
