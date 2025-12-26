@@ -57,6 +57,10 @@ rsconnect/
 ### Quarto renderings
 /.quarto/
 
+### .Posit has project-specific settings and configurations
+### that are typically user-specific or environment-dependent
+/.posit/
+
 ### template files (for chapter and for file for citations)
 __my-templates
 
