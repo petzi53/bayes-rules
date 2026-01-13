@@ -7,7 +7,7 @@ Johnson, Miles Q. Ott and Mine Dogucu [@johnson2022].
 ::: {.callout-note style="color: blue;"}
 #### This is work in progress
 
-I have just started. I am currently revising this preface, and I have also started the first chapter to see if everything works.
+Finished about 6%. I am currently in p.31, the second section of the second chapter.
 :::
 
 ::::: my-watch-out
@@ -46,7 +46,146 @@ I ​have already read "Bayes' Rules!" once. It was a somewhat superficial read-
 
 ### Installation
 
-I took the following steps to get set up:
+There are several steps to get set up. Normally I wouldn't need all of them, because I have already worked on bayesian models. Even if I have on my system (macOS) most of the necessary packages installed, I need to install them again as I am using {**renv**}, a package to create **r**eproducible **env**ironments. I will write the complete list for readers of my notes down and select check boxes with entries I didn't need to install. 
+
+#### Download Programs
+
+:::::{.my-resource}
+:::{.my-resource-header}
+:::::: {#lem-000-install-programs}
+: Download R and RStudio / Positron
+::::::
+:::
+::::{.my-resource-container}
+
+The first step is to download the most recent versions of the following software:
+
+- [ ] R (<https://www.r-project.org/>)
+- [ ] RStudio (<https://rstudio.com/products/rstudio/download/>) or Positron (<https://positron.posit.co/download.html>)
+    
+::::
+:::::
+
+
+
+Every chapter of this books has a [session information](https://sessioninfo.r-lib.org/) where you can find details of my installation for the current chapter. There you will find the used packages with their version number but also information about my system configuration (such as the operating system, R version etc.).
+
+There is one exception with this preface chapter: It shows all installed packages used for this book and not only the package needed for the preface. 
+
+#### Install {**rstan**}
+
+
+On of the most important packages for Bayesian Data Analysis is {**rstan**}. It is the R interface to [Stan](https://mc-stan.org/), a program that "enables sophisticated statistical modeling using Bayesian inference, allowing for more accurate and interpretable results in complex data scenarios."
+
+The installation process is pretty complex and I wonder that "Bayes rules!" didn't comment in detail the general procedure and all the things that can go wrong. In chapter 6, where {**rstan**} is used the first time is just says:
+
+> But first, load some packages that we’ll be utilizing throughout the remainder of this chapter (and book). Among these, rstan is quite unique, thus be sure to revisit the Preface for directions on installing this package. (p.128)
+
+But in the preface there is just one sentence to direct the user to the original [https://github.com/stan-dev/rstan/wiki/RStan-Getting-Started](https://github.com/stan-dev/rstan/wiki/RStan-Getting-Started). 
+
+::: {.callout-warning #wrn-000-rstan-version}
+
+I noticed today (2025-12-27) that the latest update of the web page was on June 3, 2024 referencing the Latest Development Version: 2.35.x (unreleased). This was later than the publication date of "Bayes Rules!" (2021-12-01) but still the text is already outdated as the several newer used version, the latest 2.36.0.9000 from Dec. 24, 2024. Furthermore believed that the recommendation of [RStan Getting Started Website](https://github.com/stan-dev/rstan/wiki/RStan-Getting-Started) could be problematic for two reasons:
+
+- It references [R-universe.dev](https://r-universe.dev/), a platform developed by [rOpenSci](https://ropensci.org/) to improve the publication and discovery of research software in R. On <https://stan-dev.r-universe.dev/builds> you will find not only the latest version of {**rstan**}, but also the current builds of other packages related with {**rstan**}. If you follow the suggestion of the book to get {**rstan**} via `r-universe.dev` but downloaded the other packages via CRAN, I am not sure if all the CRAN versions are compatible.
+- I believe that the latest build of {**rstan**} three days ago from 2025-12-24 (today, as I am writing this is December, 27 2025) is a source file that needs to compiled. Building from source requires more effort and technical expertise. It necessitates installing development tools such as compilers and build utilities. You can check if you are prepared to compile source file, by writing in the console `pkgbuild::check_build_tools()`. The answer should be "Your system is ready to build packages!". But even if all the tools are already installed, you would need to manage dependencies manually, and you are still not immune against potential compilation errors.
+
+:::
+
+My suggestion is to try the latest compiled CRAN version 2.32.7 because I assume that the differences are either minor or cutting edge and therefore not necessary important for beginners of the Bayesian approach. Additionally is the book older as the [latest CRAN version](https://cran.r-project.org/web/packages/rstan/index.html) of {**rstan**} from 2025-03-10. (Unfortunately there is no information which R and package versions the book uses. The GitHub link from the online book is broken and session information is also missing.)
+
+
+:::::{.my-resource}
+:::{.my-resource-header}
+:::::: {#lem-000-download-rstan}
+: Install {**rstan**}
+::::::
+:::
+::::{.my-resource-container}
+
+- [ ] Install the compiled {**rstan**} package from CRAN (2.32.7):
+
+<center>**Run this code chunk manually if the file(s) still needs to be downloaded.**</center>
+
+```{r}
+#| label: download-rstan
+#| eval: false
+
+# run the next line if you already have rstan installed
+remove.packages(c("StanHeaders", "rstan"))
+
+install.packages("rstan")
+```
+
+
+
+::::
+:::::
+
+
+If you get into troubles with installing reach out for help in an appropriate community forum. In the case of {**rstan**} you could use:
+
+- the official Stan Forum at <https://discourse.mc-stan.org> or 
+- the RStan GitHub Issues page at <https://github.com/stan-dev/rstan/issues>
+
+or more general communities:
+
+- Posit community at <https://forum.posit.co/>,
+- StackOverflow at <https://stackoverflow.com/>,
+- r/rstats subreddit on Reddit at <https://www.reddit.com/r/rstats/>
+
+Anyway there is no time constraint as you can follow the book until the sixth chapter where {**rstan**} is used for the first time.
+
+#### Install several other packages
+
+You can install a set of data wrangling and Bayesian packages now or later when a `library()` directive wants to load the package.
+
+
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-000-install-packages}
+: Install R Packages
+::::::
+:::
+::::{.my-r-code-container}
+
+<center>**Run this code chunk manually if the file(s) still needs to be downloaded.**</center>
+
+```{r}
+#| label: install-packages
+#| eval: false
+
+# run the next line if you already have rstan installed
+
+remove.packages(c("StanHeaders", "rstan"))
+install.packages("rstan")
+
+install.packages("rstan", repos = c('https://stan-dev.r-universe.dev', getOption("repos")))
+
+install.packages("pak")
+library(pak)
+pak::pak("bbolker/glmmadmb")
+
+# error with downloading rjag:
+## > configure: error: "cannot find header file /usr/local/include/JAGS/Console.h.
+## > Please use pkg-config to locate the JAGS library. See the INSTALL file for details."
+# need installation first of JAGS on your system first (not an R package)
+
+install.packages(c("bayesrules", "tidyverse", "janitor", "rstanarm",
+                   "bayesplot", "tidybayes", "broom.mixed", "modelr",
+                   "e1071", "forcats"), 
+                 dependencies = TRUE)
+
+
+## check if the installation is ok
+example(stan_model, package = "rstan", run.dontrun = TRUE)   
+```
+
+::::
+:::::
+
+
 
 XXX TO BE CONTINUED
 
@@ -292,7 +431,7 @@ Session Info
 ```{r}
 #| label: session-info
 
-sessioninfo::session_info()
+sessioninfo::session_info(pkgs = "installed")
 ```
 :::
 :::::

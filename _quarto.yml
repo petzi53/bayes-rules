@@ -20,6 +20,7 @@ book:
     - part: "I Bayesian Foundations"
       chapters:
         - 001-big-picture.qmd
+        - 002-bayes-rule.qmd
 
 
 bibliography:
@@ -31,6 +32,7 @@ reference-section-title: References
 format:
   html:
     theme: cosmo
+    highlight-style: atom-one
     css:
      - quarto.css
      - glossary.css
@@ -39,10 +41,13 @@ format:
     toc-expand: 4
     toc_float: true
     code-fold: show
+    code-summary: "Show/hide the code"
     code-tools: true
     code-link: true
     code-overflow: scroll
     df-print: default
+    link-external-newwindow: true
+    link-external-icon: true
 
 filters:
    - include-code-files
@@ -60,6 +65,7 @@ editor: source
 
 execute:
     freeze: auto
+    echo: true
 ### for test purpose / cleaning up
 #    cache: false
 
@@ -110,6 +116,9 @@ crossref:
     - kind: float
       reference-prefix: Watch-out
       key: wat
+    - kind: float
+      reference-prefix: Paragraph
+      key: par
 
 
 
@@ -123,7 +132,7 @@ language:
    crossref-def-title: "Experiment"         # replaces "Definition"
    crossref-exm-title: "Code Collection"    # replaces  "Example"
    crossref-exr-title: "Exercise"           # remains  "Exercise"
-   crossref-fig-title: "Graph"              # replaces "Figure"
+   crossref-fig-title: "Figure"             # remains  "Figure"
    crossref-lem-title: "Resource"           # replaces "Lemma"
    crossref-lst-title: "Listing / Output"   # replaces  "Listing"
    crossref-prp-title: "Procedure"          # replaces "Proposition"
@@ -132,8 +141,8 @@ language:
 #   crossref-int-title: "Interpretation"
 
 # https://github.com/quarto-dev/quarto-cli/blob/main/src/resources/language/_language.yml
-   callout-tip-title: "Report"           # green
-   callout-note-title: "Note"            # blue
-   callout-warning-title: "Watch out!"   # orange
-   callout-important-title: "Important"  # red
-   callout-caution-title: "Typo"         # yellow
+   callout-tip-title: "Tip"                 # green
+   callout-note-title: "Note"               # blue
+   callout-warning-title: "Warning"         # orange
+   callout-important-title: "Important"     # red
+   callout-caution-title: "Caution"         # yellow

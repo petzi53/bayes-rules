@@ -1,6 +1,7 @@
 ---
 title: "Empty File"
 bibliography: references.bib
+editor: visual
 ---
 
 ![Have You Ever Had a
@@ -13,3 +14,9 @@ And this here is a footnote[^empty-file-template-1]
 [^empty-file-template-1]: This is the text of the footnote
 
 @glossary
+
+@shu-2017
+
+@johnson2022
+
+@janitor

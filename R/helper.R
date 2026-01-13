@@ -19,6 +19,7 @@
 library(glossary)
 
 glossary::glossary_path("../glossary-pb/glossary.yml")
+glossary_popup("hover")
 
 ##get_skimmers.sfc ##############################################
 # get_skimmers.sfc:

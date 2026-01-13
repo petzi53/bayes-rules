@@ -1,0 +1,1461 @@
+# Bayes’ Rule {#sec-chap-002}
+
+```{r}
+#| label: setup
+#| results: hold
+#| include: false
+
+base::source(file = "R/helper.R")
+ggplot2::theme_set(ggplot2::theme_bw())
+```
+
+## Introduction {.unnumbered}
+
+:::::: {#obj-chap-002}
+::::: my-objectives
+::: my-objectives-header
+Objectives
+:::
+
+::: my-objectives-container
+-   Explore foundational probability tools such as marginal, conditional, and joint probability models and the Binomial model.
+-   Conduct your first formal Bayesian analysis! You will construct your first prior and data models and, from these, construct your first posterior models via Bayes’ Rule.
+-   Practice your Bayesian grammar. You’ll practice the formal notation and terminology central to Bayesian grammar.
+-   Simulate Bayesian models. Simulation is integral to building intuition for and supporting Bayesian analyses. You’ll conduct your first simulation, using the R statistical software.
+:::
+:::::
+::::::
+
+We start this chapter with the examination of a sample of 150 articles which were posted on Facebook and fact checked by five [BuzzFeed](https://www.buzzfeed.com/) journalists [@shu-2017]. Information about each article is stored in the `fake_news` dataset in the {**bayesrules**} package. To learn more about this dataset, type `?fake_news` in your console.
+
+::: {#tip-002-skim-data .callout-tip}
+##### Explore and Summarize data
+
+To learn more about this dataset, type `?fake_news` in your console.
+
+In addition to typing `?fake_news` in your console, I recommend to use the `skim()` function from {**skimr**} package to get a summary of the dataset.
+:::
+
+::::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-002-load-fake-data}
+: Load relevant packages and the `fake_news` dataset
+:::
+::::
+
+:::: my-r-code-container
+::: {#lst-002-load-fake-data}
+```{r}
+#| label: load-fake-data
+
+# Load packages
+library(bayesrules)
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(janitor))
+
+# Import article data
+data(fake_news)
+
+# Skim data
+skimr::skim(fake_news)
+
+```
+
+Load relevant packages and the `fake_news` dataset
+:::
+::::
+:::::::
+
+The help file on `fake_news` describes the format: "A data frame with 150 rows and 6 variables". But as you can see from @cnj-002-load-fake-data it has 30 columns. I do not know where the dataset comes from, because the cited reference originated from an [article on BuzzFeed](https://www.buzzfeed.com/craigsilverman/partisan-fb-pages-analysis) uses a [different dataset](https://github.com/BuzzFeedNews/2016-10-facebook-fact-check/blob/master/data/facebook-fact-check.csv) with 12 columns.
+
+:::::: my-remark
+:::: my-remark-header
+::: {#rem-002-using-notes}
+: Added personal notes
+:::
+::::
+
+::: my-remark-container
+To understand better the different concepts and their relation to each other, I have added personal notes. These notes reflect my understanding at the time of this writing. It could therefore be the case that they contain some errors.
+:::
+::::::
+
+We can already see from the output of the `skimr::skim()` function that the `type` variable (`real` or `fake`) has the relation 90:60. Using the `tabyl()` function in the {**janitor**} package [@janitor], shows also the percentage (60%:40%).
+
+::::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-002-relation-real-to-fake}
+: Relation of `real` to `fake` articles
+:::
+::::
+
+:::: my-r-code-container
+::: {#lst-002-relation-real-to-fake}
+```{r}
+#| label: relation-real-to-fake
+
+fake_news |>
+  janitor::tabyl(type) |>
+  janitor::adorn_totals("row")
+```
+
+Relation of `real` to `fake` articles
+:::
+::::
+:::::::
+
+::: {#nte-002-marginal-probabilities .callout-note}
+###### Unconditional, total or marginal probabilities
+
+To understand better the following text it is important to note that @cnj-002-relation-real-to-fake produces `r glossary("unconditional_probabilities", "unconditional")` or `r glossary("total_probability", "total probabilities")` also called as `r glossary("marginal_probability", "marginal probabilities")`.
+
+\begin{align*}
+P(\text{fake}) &= 0.4 \\
+P(\text{real}) &= 0.6 \\
+P(\text{Total}) &= 1.0
+\end{align*}
+
+There is more information about these different concepts in the following sections. But it helped my understanding to note these different names for @lst-002-relation-real-to-fake.
+:::
+
+If we take the result of @cnj-002-relation-real-to-fake, we could say: "Since most articles are real, we should read and believe all articles". If we follow this rule we wouldn't miss no real article, but at the cost reading many fake articles. 4 out of 10 articles would be fake news.
+
+We need to create a better filter that is not only supported by the overall relation but also by some features of the articles it selves. One of these features would be an exclamation sign for the headlines. Exclamation points in headlines are often perceived as shouting or juvenile, which can make the content seem less credible.
+
+::::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-002-exclamation-usage}
+: Tabulate article type and exclamation usage = Conditional Probability
+:::
+::::
+
+:::: my-r-code-container
+::: {#lst-002-exclamation-usage}
+```{r}
+#| label: exclamation-usage
+
+fake_news |>
+  janitor::tabyl(type, title_has_excl) |>
+  janitor::adorn_totals(where = c("row", "col")) |>
+  janitor::adorn_percentages() |>
+  janitor::adorn_pct_formatting(digits = 3) |>
+  janitor::adorn_ns(position = "front") |> 
+  knitr::kable()
+
+```
+
+Exclamation usage
+:::
+::::
+:::::::
+
+::: {#nte-002-conditional-probabilities .callout-note}
+###### Conditional probabilities
+
+@lst-002-exclamation-usage shows `r glossary("Conditional_probability", "Conditional probabilities")` assessing how exclamation point usage depends on the article type.
+
+\begin{align*}
+P(\text{excl} \mid \text{fake}) &= 16/60 &= 26.67\%  \\
+P(\text{excl} \mid \text{real}) &=  2/90 &= 2.22\% \\
+P(\text{excl} \mid \text{total}) &=  18/150 &= 12.00\%  
+\end{align*}
+
+$P(\text{excl} \mid \text{total})$ is the normalizing constant! See @sec-002-normalizing-constant.
+
+------------------------------------------------------------------------
+
+How to pronounce the above equations? I take as an example the first line:
+
+-   The probability of an exclamation sign in the headline of a fake article is 26.67%, or more formal:
+-   The probability to see an exclamation sign in the headline given the article is of type `fake` is 26.67%.
+
+Important here is that we know the type of article. But normally we are interesting in the reverse operation. If we see an exclamations sign in the headline, e.g., we know there is an exclamation sign in the headline, what is the probability that the article type is `fake`? See for more detail and a general treatment @sec-002-conditional-probability-and-likelihood.
+:::
+
+The usage of an exclamation point might seem like an odd choice for a real news article. The data backs up this instinct – in our article collection, 26.67% (16 of 60) of fake news titles but only 2.22% (2 of 90) of real news titles use an exclamation point.
+
+Or formulated differently: Only 18 articles has an exclamation sign in the title. But almost all of them (with only two exceptions) are used in the titles of fake news articles.
+
+:::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-002-diagram-fake-news}
+: Bayesian knowledge-building diagram for whether or not the article is fake.
+:::
+::::
+
+::: my-r-code-container
+```{r}
+
+#| label: diagram-fake-news
+
+DiagrammeR::grViz("
+digraph real_or_fake{
+
+# node statement
+node [shape = oval]
+a [label = 'Prior\n40% of articles are fake'];
+b [label = 'Data\n! more common among fake news'];
+c [label = 'Posterior\nIs the article fake or not?'];
+
+# edge statement
+a -> c b -> c
+}")
+
+
+```
+:::
+::::::
+
+@cnj-002-diagram-fake-news shows the Bayesian thinking process.
+
+1.  We start with a **prior undertanding**: From all the articles only 40% are `fake`. From this vantage point it would be feasible to judge a random article as `real`. After all the probability that it is an article of type `real` is higher than that it would be `fake`.
+2.  But looking at exclamation signs in the title give us another more detailed perspective. The new **data changes our hypothesis**.
+3.  We have now another, a **posterior understanding**: Depending if the article has an exclamation point in the title or not, we can build a more probable hypotheses. Instead of 6:4 or 1.5 we have now a relation of 26.67:2.22 or 12. Based on the appearances of exclamations sign in the title our hypothesis is now 8 times more probable.
+
+## Building a Bayesian Model for Events
+
+### Prior Probability Model
+
+As a first step in our Bayesian analysis, we’ll formalize our prior understanding of whether the new article is fake.
+
+Before even reading the new article, there’s a 0.4 `r glossary("prior_probability", "prior probability")` that it’s fake and a 0.6 prior probability it’s *not*.
+
+:::::: my-theorem
+:::: my-theorem-header
+::: {#thm-002-prior-probability-model}
+: Prior probability model
+:::
+::::
+
+::: my-theorem-container
+(1) We can represent this information using mathematical notation. Letting $B$ denote the event that an article is `fake` and $B^c$ (read "B complement" or "B not" denote the event that it’s not `fake`, e.g., that it is `real.`
+(2) Additionally I have added the specific formula for the example at hand.
+
+$$
+\begin{align*}
+&P(B) &= 0.40 \text{ and } &P(B^c) &= 0.60 \text{ (1)} \\
+&P(\text{fake}) &= 0.40 \text{ and } &P(\text{real}) &= 0.60 \text{ (2)}
+\end{align*} 
+$$ {#eq-002-prior-probability-model}
+:::
+::::::
+
+As a collection, @eq-002-prior-probability-model $P(B)$ and $P(B^c)$ specify the simple `r glossary("prior_model", "prior model")` of fake news summarized in @tbl-002-prior-probability-model.
+
+There are three requirements of a valid probability model:
+
+(1) it accounts for all possible events (all articles must be fake or real);
+(2) it assigns (prior) probabilities to each event; and
+(3) these probabilities sum to one.
+
+| event       | $\mathbf{B}$ | $\mathbf{B^c}$ | Total |
+|:------------|--------------|----------------|-------|
+| probability | 0.4          | 0.6            | 1     |
+
+: Prior model of fake news {#tbl-002-prior-probability-model}
+
+::: {#nte-002-total-probabilities .callout-note}
+###### Prior Probability Model
+
+@tbl-002-prior-probability-model shows again the unconditional, marginal or total probabilities as I have already shown with @cnj-002-relation-real-to-fake with the result of @lst-002-relation-real-to-fake. See also my @nte-002-marginal-probabilities.
+
+\begin{align*}
+P(\text{fake}) &= 0.4 \\
+P(\text{real}) &= 0.6 \\
+P(\text{Total}) &= 1.0
+\end{align*}
+:::
+
+### Conditional Probability and Likelihood {#sec-002-conditional-probability-and-likelihood}
+
+In the second step of our Bayesian analysis, we’ll summarize the insights from the data we collected on the new article. Specifically, we’ll formalize our observation that the exclamation point data is more compatible with fake news than with real news.
+
+#### Conditional Probability
+
+Conditional probabilities are fundamental to Bayesian analyses, and thus a quick pause to absorb this concept is worth it. In general, comparing the conditional vs unconditional probabilities, $P (A \mid B) \text{ vs } P (A)$, reveals the extent to which information about $B$ informs our understanding of $A$.
+
+-   In some cases, the certainty of an event $A$ might increase in light of new data $B$.
+-   In other cases, the certainty of an event might decrease in light of new data.
+
+Recall that *if* an article is fake, *then* there’s a roughly 26.67% chance it uses exclamation points in the title. In contrast, *if* an article is real, *then* there’s only a roughly 2.22% chance it uses exclamation points. When stated this way, it’s clear that the occurrence of exclamation points depends upon, or is *conditioned* upon, whether the article is fake.
+
+:::::: my-theorem
+:::: my-theorem-header
+::: {#thm-002-conditional-probability}
+: Conditional Probability
+:::
+::::
+
+::: my-theorem-container
+This dependence is specified by the following conditional probabilities of exclamation point usage in the title ($A$) *given* an article’s fake status ($B$) or ($B^c$):
+
+$$
+\begin{align*}
+P(A \mid B) &= 0.2667 \text{ and } P(A \mid B^c) &= 0.0222 \text{ (1)} \\
+P(\text{excl} \mid \text{fake}) &= 0.2667 \text{ and } P(\text{excl} \mid \text{real}) &= 0.0222 \text{ (2)} \\
+\\
+P(A^c \mid B) &= 0.7333 \text{ and } P(A^c \mid B^c) &= 0.9778 \text{ (1)} \\
+P(\text{!excl} \mid \text{fake}) &= 0.7333 \text{ and } P(\text{!excl} \mid \text{real}) &= 0.9778 \text{ (2)}
+\end{align*}
+$$ {#eq-conditional-probability-1}
+:::
+::::::
+
+:::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-002-conditional-probability}
+: Conditional Probability
+:::
+::::
+
+::: my-r-code-container
+```{r}
+#| label: conditional-probability
+
+cond_prob <- fake_news |>
+  janitor::tabyl(type, title_has_excl) |>
+  janitor::adorn_totals(where = c("row", "col")) |>
+  janitor::adorn_percentages() |>
+  janitor::adorn_pct_formatting(digits = 3) 
+
+cond_prob |> 
+  knitr::kable()
+```
+:::
+::::::
+
+Let $A$ and $B$ be two events.
+
+-   The `r glossary("unconditional_probabilities", "unconditional probability")` of $A$, $P (A)$, measures the probability of observing $A$, without any knowledge of $B$.
+-   In contrast, the `r glossary("conditional_probability", "conditional probability")` of $A$ given $B$, $P (A \mid B)$, measures the probability of observing $A$ in light of the information that $B$ occurred.
+
+In general, comparing the conditional vs unconditional probabilities, $P (A \mid B)$ vs $P (A)$, reveals the extent to which information about $B$ informs our understanding of $A$.
+
+The *order* of conditioning is also important. Since they measure two different phenomena, it’s typically the case that $P (A \mid B) ≠ P (B \mid A)$. For instance, roughly 100% of puppies are adorable. Thus, if the next object you pass on the street is a puppy, $P (adorable \mid puppy) = 1$. However, the reverse is not true. Not every adorable object is a puppy, thus $P (puppy \mid adorable) < 1$.
+
+:::::: my-theorem
+:::: my-theorem-header
+::: {#thm-002-independent-events}
+: Independent Events
+:::
+::::
+
+::: my-theorem-container
+Information about $B$ doesn’t always change our understanding of $A$. For example, suppose your friend has a yellow pair of shoes and a blue pair of shoes, thus four shoes in total. They choose a shoe at random and don’t show it to you.
+
+-   Without actually seeing the shoe, there’s a 0.5 probability that it goes on the right foot: $P (\text{right foot}) = 2/4$.
+-   And even if they tell you that they happened to get one of the two yellow shoes, there’s still a 0.5 probability that it goes on the right foot: $P (\text{right foot} \mid \text{yellow}) = 1/2$.
+
+That is, information about the shoe’s color tells us nothing about which foot it fits – shoe color and foot are independent.
+
+$$
+\begin{align*}
+P (A \mid B) = P (A) \text{ (1)} \\
+P (\text{right foot} \mid \text{yellow}) &= 1/2 \\= P (\text{right foot}) = 2/4 &= 1/2 \text{ (2)}
+\end{align*}
+$$ {#eq-002-independent-events}
+:::
+::::::
+
+#### Likelihood
+
+Let’s reexamine our fake news example with these conditional concepts in place. The conditional probabilities we derived above, $P (A \mid B) = 0.2667$ and $P (A \mid B^c) = 0.0222$, indicate that a whopping 26.67% of fake articles versus a mere 2.22% of real articles use exclamation points. Since exclamation point usage is so much more **likely** among fake news than real news, this data provides some evidence that the article is fake.
+
+With the above observation we’ve evaluated the exclamation point data by flipping the conditional probabilities $P (A \mid B)$ and $P (A \mid B^c)$ on their heads. **Flipping the conditional probabilities results in the likelihood function!** See @thm-002-probability-vs-likelihood.
+
+For example, on its face, the conditional probability $P (A \mid B)$ measures the uncertainty in event $A$ given we know event $B$ occurs. However, we find ourselves in the opposite situation. We *know* that the incoming article used exclamation points, $A$. What we *don’t* know is whether or not the article is fake, $B$ or $B^c$. Thus, in this case, we compared $P (A \mid B)$ and $P (A \mid B^c)$ to ascertain the relative `r glossary("likelihood_x", "likelihoods")` of observing data $A$ under different scenarios of the *uncertain* article status.
+
+:::::: my-theorem
+:::: my-theorem-header
+::: {#thm-002-probability-vs-likelihood}
+: Probability function versus likelihood function
+:::
+::::
+
+::: my-theorem-container
+To help distinguish this application of conditional probability calculations from that when $A$ is uncertain and $B$ is known, we’ll utilize the following `r glossary("likelihood-function", "likelihood function")` notation $L(\cdot \mid A)$:
+
+$$
+\begin{align*}
+L(B \mid A) = P (A \mid B) \text{ and } L(B^c \mid A) = P (A \mid B^c) \text{ (1)} \\
+L(\text{fake} \mid \text{excl}) = P(\text{excl} \mid \text{fake}) \text{ and } L(\text{real} \mid \text{excl}) = P(\text{excl} \mid \text{real}) \text{ (2)}
+\end{align*}
+$$ {#eq-002-probability-vs-likelihood}
+
+------------------------------------------------------------------------
+
+**Conditional Probability Function: Compare probabilities of an unknown event**
+
+When $B$ is known, the `r glossary("conditional-probability-function", "conditional probability function")` $P (⋅∣B)$ allows us to compare the probabilities of an unknown event, $A$ or $A^c$, occurring with $B$:
+
+$$
+\begin{align*}
+P (A \mid B) &\text{ vs } P (A^c \mid B) \text{ (1)} \\
+P (\text{excl} \mid \text{fake}) &\text{ vs } P (\text{!excl} \mid \text{fake}) \text{ (2)}
+\end{align*}
+$$ {#eq-002-compare-probability-of-unknown-events}
+
+**Likelihood Function: Evaluate the relative compatibility of data with events**
+
+When A is known, the `r glossary("likelihood-function", "likelihood function")` $L(⋅∣A) = P (A∣⋅)$ allows us to evaluate the relative compatibility of data $A$ with events $B$ or $B^c$:
+
+$$
+\begin{align*}
+L(B \mid A) &\text{ vs } L(B^c \mid A) \text{ (1)} \\
+L(\text{fake} \mid \text{excl}) &\text{ vs } L(\text{real} \mid \text{excl})
+\end{align*}
+$$ {#eq-002-evaluate-relative-compatibility-of-data-with-events}
+:::
+::::::
+
+@tbl-002-prior-model-and-likelihood summarizes the information that we’ve amassed thus far, including the prior probabilities and likelihoods associated with the new article being fake or real, $B$ or $B^c$. Notice that the prior probabilities add up to 1 but the likelihoods do not. **The likelihood function is not a probability function**, but rather provides a framework to compare the relative compatibility of our exclamation point data with $B$ and $B^c$. Thus, whereas the prior evidence suggested the article is most likely real ($P (B) < P (B^c)$), the data is more consistent with the article being fake ($L(B∣A) > L(B^c∣A)$).
+
+| event       | $\mathbf{B}$ | $\mathbf{B^c}$ | Total  |
+|:------------|:-------------|:---------------|:-------|
+| probability | 0.4          | 0.6            | 1      |
+| likelihood  | 0.2667       | 0.0222         | 0.2889 |
+
+: Prior probabilities and likelihoods of fake news. {#tbl-002-prior-model-and-likelihood}
+
+::::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-002-prior-probabilities-and-likelihood}
+: Prior probabilities and likelihoods of fake news
+:::
+::::
+
+:::: my-r-code-container
+::: {#lst-002-prior-probabilities-and-likelihood}
+```{r}
+#| label: prior-probabilities-and-likelihood
+
+# Prior probability
+row_prior <- fake_news |>  
+  count(type) |>  
+  mutate(prop = n / sum(n)) |>  
+  select(-n) |>  
+  pivot_wider(names_from = type, values_from = prop)
+
+# Likelihood
+row_likelihood <- fake_news |>  
+  count(type, title_has_excl) |>  
+  pivot_wider(names_from = title_has_excl, values_from = n) |>  
+  mutate(likelihood = `TRUE` / (`TRUE` + `FALSE`)) |>  
+  select(-c(`FALSE`, `TRUE`)) |> 
+  pivot_wider(names_from = type, values_from = likelihood)
+
+# build table
+bind_cols(Statistic = c("Prior probability", "Likelihood"),
+          bind_rows(row_prior, row_likelihood)) |>  
+  mutate(Total = fake + real) |>  
+  rename(`Fake ($\\mathbf{B}$)` = fake, 
+         `Real ($\\mathbf{B^c}$)` = real) |> 
+  knitr::kable(digits = 4)
+
+
+```
+
+Prior probabilities and likelihoods of fake news (taken from [bayesf22 class](https://bayesf22-notebook.classes.andrewheiss.com/bayes-rules/02-chapter.html#likelihood))
+:::
+::::
+:::::::
+
+::: {#nte-002-likelihood .callout-note}
+###### Prior probabilities and likelihoods
+
+The prior probability was already calculated in @lst-002-relation-real-to-fake. Here I have repeated the calculation with column and row reversed.
+
+The interesting and new part here is the **`r glossary("Likelihood_x", "likelihood")`**.
+
+\begin{align*}
+P(A \mid B) &= 0.2667 \\
+P(A \mid B^c) &= 0.0222 \\
+\end{align*}
+
+26.67% (16 of 60) of fake news titles but only 2.22% (2 of 90) of real news titles use an exclamation point.
+
+**Likelihood compares how well data supports hypotheses**. Here, we calculate the likelihood of observing an exclamation point under each type:
+
+\begin{align*}
+L(\text{fake} \mid \text{excl}) &= P(\text{excl} \mid \text{fake}) &= 16 / 60 &= 0.2667 \\
+L(\text{real} \mid \text{excl}) &= P(\text{excl} \mid \text{real}) &= 2 / 90 &= 0.0222 \\
+P(\text{excl} \mid \text{fake}) &+ P(\text{excl} \mid \text{real}) &= 0.2667 + 0.0222 &= 0.2889
+\end{align*}
+
+Again, **the likelihood function is not a probability function, it does not sum up to 1.00**. It provides a framework to compare the relative compatibility of our exclamation point data with $B$ and $B^c$.
+
+Compare the manual created @tbl-002-prior-model-and-likelihood with my @lst-002-exclamation-usage, my personal @nte-002-conditional-probabilities and the above @lst-002-prior-probabilities-and-likelihood.
+:::
+
+### Joint Probabilites and Normalizing Constants
+
+#### Joint Probabilites
+
+The `r glossary("marginal_probability", "marginal probability")` of observing exclamation points across all news articles, $P (A)$, provides an important point of comparison.
+
+We’ll first use our prior model and likelihood function to fill in the table below. This table summarizes the possible **joint occurrences** of the fake news and exclamation point variables.
+
+|   | $\mathbf{B} \text{ (fake)}$ | $\mathbf{B^c} \text{ (real)}$ | Total |
+|:-----------------|:-----------------|:-----------------|:-----------------|
+| $A$ (excl) |  |  |  |
+| $A^C$ (!excl) |  |  |  |
+| Total | 0.4 | 0.6 | 1 |
+
+First, focus on the $B$ (articles of type `fake` column which splits fake articles into two groups:
+
+(1) those that are fake *and* use exclamation points, denoted $A \cap B$; and
+(2) those that are fake *and* don’t use exclamation points, denoted $A^c \cap B$.
+
+::: {#tip-002-defintion-pronounciation-cap-cup .callout-tip}
+###### How to define and pronounce $\cap$ and $\cup$ (Brave-AI)
+
+-   The formula $A \cap B$ is pronounced as "A intersect B". The symbol $\cap$ represents the intersection of two sets, indicating the elements common to both sets $A$ and $B$. It refers to the set of elements shared between two or more sets. The word "and" is often used as a synonym for intersection in this context, reflecting the logical condition that an element must belong to both sets simultaneously.
+-   The formula $A \cup B$ is pronounced as "A union B". The symbol $\cup$ represents the union operation in set theory, which combines all elements from sets $A$ and $B$ into a single set containing all unique elements from both. The term "union" is also referred to as the "logical sum" or simply "sum," although these terms are considered old-fashioned and are not commonly used today. The symbol $\cup$ is used to denote the union of two sets, and the operation is sometimes described as combining all elements from either set $A$ or set $B$ (or both).
+:::
+
+To determine the probabilities of these **joint events**, note that 40% of articles are fake and 26.67% of fake articles use exclamation points, $P (B) = 0.4 \text{ and } P (A \mid B) = 0.2667$. It follows that across all articles, 26.67% of 40%, or 10.67%, are fake with exclamation points.
+
+:::::: my-theorem
+:::: my-theorem-header
+::: {#thm-002-joint-probability}
+: Joint Probability
+:::
+::::
+
+::: my-theorem-container
+**Co-occurrence of (not) exclamation point and fake article**
+
+That is, the `r glossary("joint_probability", "joint probability")` of observing both $A$ and $B$ is
+
+$$
+\begin{align*}
+P (A \cap B) = P (A \mid B) \cdot P (B) &= 0.2667 \cdot 0.4 = 0.1067 \text{ (1)} \\
+P (\text{excl} \cap \text{fake}) = P (\text{excl} \mid\text{fake}) \cdot P (\text{fake}) &= 0.2667 \cdot 0.4 = 0.1067 \text{ (2)}
+\end{align*}
+$$ {#eq-joint-probability-fake}
+
+Further, since 26.67% of fake articles use exclamation points, 73.33% do not. That is, the `r glossary("Conditional_Probability", "conditional probability")` that an article does not use exclamation points ($A^c$) given it’s fake ($B$) is:
+
+$$
+\begin{align*}
+P (A^c \mid B) = 1 − P (A \mid B) &= 1 − 0.2667 = 0.7333 \text{ (1)} \\
+P (\text{!excl} \mid \text{fake}) = 1 - P (\text{excl} \mid \text{fake}) &= 1 − 0.2667 = 0.7333 \text{ (2)}
+\end{align*}
+$$ {#eq-conditional-probabilities-1}
+
+It follows that 73.33% of 40%, or 29.33%, of all articles are fake without exclamation points:
+
+$$
+\begin{align*}
+P (A^c \cap B) = P (A^c \mid B) \cdot P (B) &= 0.7333 \cdot 0.4 = 0.2933 \text{ (1)} \\
+P (\text{!excl} \cap \text{fake}) = P (\text{!excl} \mid \text{fake}) \cdot P (\text{fake}) &= 0.7333 \cdot 0.4 = 0.2933 \text{ (2)}
+\end{align*}
+$$ {#eq-conditional-probabilities-2}
+
+In summary, the `r glossary("Total_Probability", "total probability")` of observing a fake article is the sum of its parts:
+
+$$
+\begin{align*}
+P (B) &= P (A \cap B) + P (A^c \cap B) &= 0.1067 + 0.2933 = 0.4 \text{ (1)} \\
+P (\text{fake}) &= P (\text{excl} \cap \text{fake}) + P (\text{!excl} \cap \text{fake}) &= 0.1067 + 0.2933 = 0.4 \text{ (2)}
+\end{align*}
+$$ {#eq-total-probability-fake}
+
+**Co-occurrence of (not) exclamation point and real article**
+
+We can similarly break down real articles into those that do and those that don’t use exclamation points. Across all articles, only 1.33% (2.22% of 60%) are real and use exclamation points whereas 58.67% (97.78% of 60%) are real without exclamation points:
+
+$$
+\begin{align*}
+P (A \cap B^c) &= P (A \mid B^c) \cdot P (B^c) &= 0.0222 \cdot 0.6 &= 0.0133 \text{ (1a)} \\
+P (\text{excl} \cap \text{real}) &= P (\text{excl} \mid \text{real}) \cdot P (\text{real}) &= 0.0222 \cdot 0.6 &= 0.0133 \text{ (2a)} \\
+\\
+P (A^c \cap B^c) &= P (A^c \mid B^c) \cdot P (B^c) &= 0.9778 \cdot 0.6 &= 0.5867 \text{ (1b)} \\
+P (\text{!excl} \cap \text{real}) &= P (\text{!excl} \mid \text{real}) \cdot P (\text{real}) &= 0.9778 \cdot 0.6 &= 0.5867 \text{ (2b)}
+\end{align*}
+$$ {#eq-joint-probability-real}
+
+Thus, the `r glossary("total_probability", "total probability")` of observing a real article is again the sum of these two parts:
+
+$$
+\begin{align*}
+P (B^c) = P (A \cap B^c) + P (A^c \cap B^c) &= 0.0133 + 0.5867 = 0.6 \text{ (1)} \\
+P (\text{real}) = P (\text{excl} \cap \text{real}) + P (\text{!excl} \cap \text{real} &= 0.0133 + 0.5867 = 0.6) \text{ (2)}
+\end{align*}
+$$ {#eq-total-probability-real}
+:::
+::::::
+
+:::::::::::::::::: my-code-collection
+::::: my-code-collection-header
+::: my-code-collection-icon
+:::
+
+::: {#exm-002-joint-probabilities}
+: Joint Probabilities
+:::
+:::::
+
+:::::::::::::: my-code-collection-container
+::::::::::::: panel-tabset
+###### Version 1
+
+::::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-002-joint-probabilities-1}
+: Joint Probabilities (my table)
+:::
+::::
+
+:::: my-r-code-container
+::: {#lst-002-joint-probabilities-1}
+```{r}
+#| label: joint-probabilities-1
+
+fake_news |> 
+  janitor::tabyl(title_has_excl, type) |>
+  janitor::adorn_totals(where = c("row", "col")) |> 
+  janitor::adorn_percentages("all") |> 
+  janitor::adorn_pct_formatting(digits = 3) |>
+  janitor::adorn_ns(position = "front")  
+```
+
+Joint probabilities (my own table)
+:::
+::::
+:::::::
+
+###### Version 2
+
+::::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-002-joint-probabilities-2}
+: Joint Probability (Brave-AI & Positron Assistant)
+:::
+::::
+
+:::: my-r-code-container
+::: {#lst-002-joint-probabilities-2}
+```{r}
+#| label: joint-probabilities-2
+
+prior_prob <- fake_news  |>  
+  janitor::tabyl(type)  |>  
+  dplyr::mutate(prop = n / sum(n))  |>  
+  dplyr::select(type, prior = prop)
+
+conditional_prob <- fake_news |>  
+  janitor::tabyl(title_has_excl, type) |>  
+  janitor::adorn_percentages("col") |>  
+  dplyr::filter(title_has_excl == TRUE) |>  
+  dplyr::select(-title_has_excl) |>
+  tidyr::pivot_longer(cols = everything(), 
+                      names_to = "type", 
+                      values_to = "conditional") |>
+  dplyr::mutate(type = factor(type, levels = c("fake", "real")))
+
+joint_prob <- prior_prob |> 
+  dplyr::left_join(conditional_prob, by = "type") |> 
+  dplyr::mutate(joint = prior * conditional)
+
+joint_prob  |> 
+  knitr::kable(digits = 4)
+
+```
+
+Joint probabilities (Brave-AI, middle part corrected by Positron Assistant)
+:::
+::::
+:::::::
+:::::::::::::
+::::::::::::::
+::::::::::::::::::
+
+::: {#nte-002-joint-probabilities .callout-note}
+####### Joint probabilities
+
+`r glossary("Joint_probability", "Joint probabilities")` measure the co-occurrence of two events. In the case of @exm-002-joint-probabilities it measures the co-occurrence of fake article *and* using an exclamation sign in the title.
+
+This table is missing in the original book text. I have added it to improve my understanding.
+
+\begin{align*}
+P(\text{fake} \cap \text{excl}) = 0.40 \cdot 0.2667 = 0.1067 \\
+P(\text{real} \cap \text{excl}) = 0.60 \cdot 0.0222 = 0.0133
+\end{align*}
+:::
+
+:::::: my-theorem
+:::: my-theorem-header
+::: {#thm-002-joint-and-conditional-probability}
+: Calculating joint and conditional probabilities
+:::
+::::
+
+::: my-theorem-container
+For events $A$ and $B$, the joint probability of $A \cap B$ is calculated by weighting the conditional probability of $A$ given $B$ by the marginal probability of $B$:
+
+$$P (A \cap B) = P (A \mid B) \cdot P (B)$$ {#eq-002-joint-probability}
+
+Thus, when $A$ and $B$ are *independent*,
+
+$$P (A \cap B) = P (A) \cdot P (B)$$
+
+Dividing both sides of @eq-002-joint-probability by $P (B)$, and assuming $P (B) ≠ 0$, reveals the definition of the conditional probability of $A$ given $B$:
+
+$$P (A \mid B) =  \frac{P (A \cap B) }{ P (B)}$$ {#eq-002-conditional-probability}
+
+Thus, to evaluate the chance that $A$ occurs in light of information$B$, we can consider the chance that they occur together, $P (A \cap B)$, relative to the chance that $B$ occurs at all, $P (B)$.
+:::
+::::::
+
+@tbl-002-joint-probability-model summarizes our new understanding of the joint behavior of our two article variables. The fact that the grand total of this table is one confirms that our calculations are reasonable. @tbl-002-joint-probability-model also provides the point of comparison we sought: 12% of *all* news articles use exclamation points, $P (A) = 0.12$.
+
+So that we needn’t always build similar marginal probabilities from scratch, let’s consider the theory behind this calculation. As usual, we can start by recognizing the two ways that an article can use exclamation points: if it is fake ($A \cap B$) and if it is not fake ($A \cap B^c$).
+
+:::::: my-theorem
+:::: my-theorem-header
+::: {#thm-002-law-of-total-probability-ltp}
+: Law of Total Probability (LTP)
+:::
+::::
+
+::: my-theorem-container
+Thus, the **total probability** of observing $A$ is the combined probability of these distinct parts:
+
+$$
+\begin{align*}
+P (A) &= P (A \cap B) &+ P (A \cap B^c) \text{ (1)} \\
+P (\text{excl}) &= P (\text{excl} \cap \text{fake}) &+ P (\text{excl} \cap \text{real}) \text{ (2)}
+\end{align*}
+$$ {#eq-chapXY-formula}
+
+By @eq-002-joint-probability, we can compute the two pieces of this puzzle using the information we have about exclamation point usage among fake and real news, $P (A \mid B)$ and $P (A \mid B^c)$, weighted by the prior probabilities of fake and real news, $P (B)$ and $P (B^c)$:
+
+$$
+\begin{align*}
+P (A) &= P (A \cap B) + P (A \cap B^c) \\
+&= P (A \mid B) \cdot P (B) + P (A \mid B^c) \cdot P (B^c) &\text{ (1)} \\
+P (\text{excl}) &= P (\text{excl} \cap \text{fake}) + P(\text{excl} \cap \text{real}) \\
+&= P (\text{excl} \mid \text{fake}) \cdot P (\text{fake}) + P (\text{excl} \mid \text{real}) \cdot P (\text{real}) &\text{ (2)} 
+\end{align*}
+$$ {#eq-002-total-probability}
+:::
+::::::
+
+::: {#nte-002-ltp .callout-note}
+###### Law of Total Probability (LTP)
+
+Finally, plugging in, we can confirm that roughly 12% of all articles use exclamation points:
+
+$$
+\begin{align*}
+P(\text{excl}) &= (P(\text{excl} \mid \text{fake}) \cdot P(\text{fake})) &+ (P(\text{excl} \mid {real}) \cdot P(\text{real})) &\text{ (1)} \\
+P(\text{excl}) &= (0.2667 \cdot 0.4) &+ (0.0222 \cdot 0.6) = 0.12 &\text{ (2)}
+\end{align*} 
+$$ {#eq-002-ltp}
+:::
+
+The formula we’ve built to calculate $P (A)$ here is a special case of the aptly named `r glossary("LTP", "Law of Total Probability")` (LTP).
+
+:::::: my-resource
+:::: my-resource-header
+::: {#lem-002-ltp}
+: Law of Total Probability (LTP)
+:::
+::::
+
+::: my-resource-container
+-   [Law of total probability \| Wikipedia](https://www.wikiwand.com/en/articles/Law_of_total_probability)
+-   [Law of Total Probability \| BYJU'S](https://byjus.com/maths/total-probability-theorem/)
+:::
+::::::
+
+|       | $\mathbf{B}$ | $\mathbf{B^c}$ | Total |
+|:------|:-------------|:---------------|:------|
+| $A$   | 0.1067       | 0.0133         | 0.12  |
+| $A^C$ | 0.2933       | 0.5867         | 0.88  |
+| Total | 0.4000       | 0.6000         | 1.00  |
+
+: A joint probability model of the fake status and exclamation point usage across all articles. {#tbl-002-joint-probability-model}
+
+::::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-002-joint-probability-model}
+: Joint Probability Model
+:::
+::::
+
+:::: my-r-code-container
+::: {#lst-002-joint-probability-model}
+```{r}
+#| label: joint-probability-model
+
+joint_prob_model <- fake_news |> 
+  janitor::tabyl(title_has_excl, type) |>
+  janitor::adorn_totals(where = c("col", "row")) |> 
+  janitor::adorn_percentages("all") |> 
+  dplyr::arrange(fake)
+
+joint_prob_model  |> 
+  knitr::kable(digits = 4)
+```
+
+Joint probability model of the fake status and exclamation point usage across all articles.
+:::
+::::
+:::::::
+
+#### Normalizing Constant {#sec-002-normalizing-constant}
+
+::: {#nte-002-normalizing-constant .callout-note}
+###### Normalizing constant
+
+The last piece we need is the marginal probability of observing exclamation points across all articles, or $P(A)$, which is the normalizing constant. For the calculation see the calculated values in @tbl-002-prior-model-and-likelihood and @lst-002-prior-probabilities-and-likelihood.
+
+$$
+\begin{align*}
+P (B) \cdot L (B \mid A) &+ P (B^c) \cdot L (B^c \mid A) \text{ (1)} \\
+P (\text{fake}) \cdot L (\text{fake} \mid \text{excl}) &+ P (\text{real}) \cdot L (\text{real} \mid \text{excl}) \text{ (2)} \\
+0.4 \cdot 0.2667 &+ 0.6 \cdot 0.0222 = \\
+0.1067 &+ 0.0133 = 0.1199 \approx 0.12 \text{ (3)} \\
+\\
+P(\text{excl}) = P(\text{excl} \mid \text{fake}) \cdot P(\text{fake}) &+ P(\text{excl} \mid {real}) \cdot P(\text{real}) \text{ (4)} \\
+P(\text{excl}) = (0.2667 \cdot 0.4) &+ (0.0222 \cdot 0.6) = 0.1199 \approx 0.12 \text{ (5)}
+\end{align*} 
+$$ {#eq-002-normalizing-constant}
+
+We filled in (3) and (5) the figures applying the law of total probability (LTP) as outlined in @nte-002-ltp.
+:::
+
+:::::::::::::::: my-code-collection
+::::: my-code-collection-header
+::: my-code-collection-icon
+:::
+
+::: {#exm-002-normalizing-constant}
+: Normalizing constant
+:::
+:::::
+
+:::::::::::: my-code-collection-container
+::::::::::: panel-tabset
+###### bayesf22 Notebook
+
+:::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-002-normalizing-constant-1}
+: Normalizing constant ([bayesf22](https://bayesf22-notebook.classes.andrewheiss.com/bayes-rules/02-chapter.html#normalizing-constants))
+:::
+::::
+
+::: my-r-code-container
+```{r}
+#| label: normalizing-constant-1
+
+fake_news |> 
+  count(type, title_has_excl) |> 
+  mutate(prop = n / sum(n)) |> 
+  filter(title_has_excl == TRUE) |>  
+  summarize(normalizing_constant = sum(prop))
+##   normalizing_constant
+## 1                 0.12
+```
+:::
+::::::
+
+###### Brave-AI
+
+:::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-002-normalizing-constant-2}
+: Normalizing constant (Brave-AI)
+:::
+::::
+
+::: my-r-code-container
+```{r}
+#| label: normalizing-constant-2
+
+total_prob <- joint_prob %>% 
+  summarise(total = sum(joint)) %>% 
+  pull(total)
+
+total_prob
+# Result: 0.1067 + 0.0133 = 0.12   
+```
+:::
+::::::
+:::::::::::
+::::::::::::
+::::::::::::::::
+
+### Posterior probability model
+
+#### Bayes rule!
+
+We’re now in a position to answer the ultimate question: What’s the probability that the latest article is fake? Formally speaking, we aim to calculate the `r glossary("Posterior_Probability", "posterior probability")` that the article is fake given that it uses exclamation points, $P (B \mid A)$.
+
+To build some intuition, let’s revisit @tbl-002-joint-probability-model and @lst-002-joint-probability-model. Since our article uses exclamation points, we can zoom in on the 12% of articles that fall into the $A$ row resp. in the `TRUE` row. Among these articles, proportionally 88.9% (0.1067 / 0.12) are fake and 11.1% (0.0133 / 0.12) are real. **This is the answer we were seeking: there’s an 88.9% posterior chance that this latest article is fake.**
+
+::: {#nte-002-bayes-rule .callout-note}
+###### We built Bayes’ Rule from scratch!
+
+Stepping back from the details, we’ve accomplished something big: we built `r glossary("Bayes’ Theorem", "Bayes’ Rule")` from scratch! In short, Bayes’ Rule provides the mechanism we need to put our Bayesian thinking into practice. It defines a `r glossary("Posterior_Probability", "posterior probability model")` for an event $B$ from two pieces: the `r glossary("Prior_Probability", "prior probability")` of $B$ and the `r glossary("Likelihood_x", "likelihood")` of observing data $A$ if $B$ were to occur.
+:::
+
+:::::: my-theorem
+:::: my-theorem-header
+::: {#thm-002-bayes-rule}
+: Bayes’ Rule for Events
+:::
+::::
+
+::: my-theorem-container
+For events $A$ and $B$, the posterior probability of $B$ given $A$ follows by combining (@eq-002-conditional-probability) with (@eq-002-joint-probability) and recognizing that we can evaluate data $A$ through the likelihood function, $L(B \mid A) = P (A \mid B)$ and $L(B^c \mid A) = P (A \mid B^c)$:
+
+$$
+\begin{align*}
+P (B \mid A) = \frac{P (A \cap B)}{P (A)} = \frac{P (B) \cdot L (B \mid A)}{P (A)}
+\end{align*}
+$$ {#eq-bayes-rule-1}
+
+-   $P (B \mid A)$ is the posterior probability,
+-   $P (B)$ is the prior,
+-   $L (B \mid A)$ is the likelihood, and
+-   $P (A)$ is the marginal likelihood or evidence.
+
+where by the Law of Total Probability (@eq-002-ltp)
+
+$$P (A) = P (B) \cdot L (B \mid A) + P (B^c) \cdot L (B^c \mid A)$$ {#eq-bayes-rule-2}
+
+More generally,
+
+$$\text{posterior} = \frac{\text{prior} \cdot \text{likelihood}}{\text{normalizing constant}}$$ {#eq-bayes-rule-general}
+
+To convince ourselves that Bayes’ Rule works, let’s directly apply it to our news analysis. Into (@eq-bayes-rule-1), we can plug the prior information that 40% of articles are fake, the 26.67% likelihood that a fake article would use exclamation points, and the 12% marginal probability of observing exclamation points across all articles. The resulting posterior probability that the incoming article is fake is roughly 0.889, just as we calculated from @tbl-002-joint-probability-model resp. @lst-002-joint-probability-model:
+
+$$
+\begin{align*}
+P (B \mid A) = \frac{P (B) \cdot L (B \mid A)}{P (A)} = \frac{0.4 \cdot 0.2667}{0.12} = \frac{0.1067}{0.12} = 0.889
+\end{align*}
+$$ {#eq-bayes-rule-with-data}
+:::
+::::::
+
+#### From Prior to Posterior
+
+@tbl-prior-posterior-model summarizes our news analysis journey, from the prior to the posterior model. We started with a prior understanding that there’s only a 40% chance that the incoming article would be fake. Yet upon observing the use of an exclamation point in the title “The president has a funny secret!”, a feature that’s more common to fake news, our posterior understanding evolved quite a bit – the chance that the article is fake jumped to 88.9%.
+
+| Event                 | $\mathbf{B}$ | $\mathbf{B^c}$ | Total |
+|:----------------------|-------------:|---------------:|------:|
+| prior probability     |        0.400 |          0.600 |   1.0 |
+| posterior probability |        0.889 |          0.111 |   1.0 |
+
+: The prior and posterior models of fake news. {#tbl-prior-posterior-model}
+
+The following calculation of the posterior probability has used Positron Assistant: P(fake \| title has exclamation) using Bayes' rule.
+
+The posterior probability using Bayes’ rule is calculated with:
+
+$$P(\text{fake} \mid \text{excl}) = P(\text{excl} \mid \text{fake}) \cdot P(\text{fake}) / P(\text{excl})$$
+
+::::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-002-prior-and-posterior-probability}
+: Prior and Posterior Probability
+:::
+::::
+
+:::: my-r-code-container
+::: {#lst-002-prior-and-posterior-probability}
+```{r}
+#| label: prior-and-posterior-probabilities
+
+# Calculate prior probabilities P(type)
+prior_prob <- fake_news |>  
+  janitor::tabyl(type) |>  
+  dplyr::rename(prior = percent) |> 
+  dplyr::select(type, prior)
+
+# Calculate conditional probabilities P(excl | type)
+conditional_prob <- fake_news |>  
+  janitor::tabyl(title_has_excl, type) |>  
+  janitor::adorn_percentages("col") |>  
+  dplyr::filter(title_has_excl == TRUE) |>  
+  tidyr::pivot_longer(cols = c(fake, real), 
+                      names_to = "type", 
+                      values_to = "conditional")
+
+# Calculate joint probabilities P(excl AND type)
+# prior probability * conditional probability
+joint_prob <- prior_prob |> 
+  dplyr::left_join(conditional_prob, by = "type") |> 
+  dplyr::mutate(joint = prior * conditional)
+
+# Calculate marginal probability P(excl)
+marginal_prob <- sum(joint_prob$joint)
+
+# Calculate posterior probabilities P(type | excl)
+posterior_prob <- joint_prob |>
+  dplyr::mutate(posterior = joint / marginal_prob) |>
+  dplyr::select(type, posterior)
+
+# Create the final table
+result_table <- tibble(
+  Event = c("Prior Probability", "Posterior Probability"),
+  fake = c(
+    prior_prob |> filter(type == "fake") |> pull(prior),
+    posterior_prob |> filter(type == "fake") |> pull(posterior)
+  ),
+  real = c(
+    prior_prob |> filter(type == "real") |> pull(prior),
+    posterior_prob |> filter(type == "real") |> pull(posterior)
+  )
+) |>
+  dplyr::mutate(Total = fake + real)
+
+result_table |> 
+  knitr::kable(digits = 4)
+```
+
+Prior and Posterior Probability of news articles with an exclamation sign in the title
+:::
+::::
+:::::::
+
+#### Step-by-Step
+
+@lst-002-prior-and-posterior-probability gives a nice summary of all the things we learned in this section. It separates and names the different steps to calculate the posterior probability.
+
+-   **1. Prior Probability**: The `r glossary("Prior_Probability", "Prior Probability")`, also called the Prior, is the assumed probability distribution before we have seen the data. In the case of our example with the `fake_news` dataset it integrates already some data, namely the proportion of `fake` to `real` articles (04 : 06). The prior quantifies how likely our initial belief is: $P(B) = P(\text{fake}) = 0.4$.
+
+```{r}
+#| label: step-1-prior-prob
+prior_prob |> 
+  knitr::kable(digits = 4)
+```
+
+-   **2. Conditional probability**: The `r glossary("Conditional_Probability", "Conditional Probability")` is a measure of the likelihood of an event occurring given that another event has already occurred. The mathematical notation uses the pipe symbol for "conditional on" or "given that". It is denoted as $P(A \mid B)$, which represents the probability of event $A$ occurring given that event $B$ has already occurred. In our example it is the probability of an exclamation sign in the title given that we are inspecting a fake article: $P(A \mid B) = P(\text{excl} \mid \text{fake}) = 0.2667$.
+
+```{r}
+#| label: step-2-conditional-prob
+conditional_prob |> 
+  knitr::kable(digits = 4)
+```
+
+-   **3. Joint probability:** `r glossary("Joint_Probability", "Joint Probability")` is a statistical measure that calculates the `r glossary("Likelihood_x", "likelihood")` of two or more events occurring simultaneously at the same point in time. It represents the probability of the intersection of two events, denoted mathematically as $P(A \cap B)$, which is read as "the probability of A and B". The joint probability of two independent events $A$ and $B$ is computed as the product of their individual probabilities: $P(A \cap B) = P(A) \cdot P(B)$. In our example: $P(\text{excl} \cap \text{fake}) = P(\text{excl}) \cdot P(\text{fake}) = 0.2667 \cdot 0.4 = 0.1067$.
+
+```{r}
+#| label: step-3-joint-prob
+joint_prob |> 
+  knitr::kable(digits = 4)
+```
+
+-   **4. Marginal probability**: `r glossary("Marginal_Probability", "Marginal Probability")` refers to the probability of a single event occurring independently, without considering the outcomes of other related events. It is (the same concept) as an unconditional probability, denoted as $P(A)$ or $P(B)$, and is derived from a joint probability distribution by summing or integrating over the other variables involved. A marginal distribution gets it’s name because it appears in the margins of a probability distribution table. The summary of the joint probabilities $P(\text{excl} \cap \text{fake}) + P(\text{excl} \cap \text{real}) = 0.1067 + 0.0133 = 0.12$ is the `r glossary("normalizing constant")`. It ensures that the posterior distribution integrates to 1, making it a valid probability distribution.
+
+```{r}
+#| label: step-4-marginal-prob
+joint_prob |> 
+  tibble::as_tibble() |> 
+  janitor::adorn_totals("row") |> 
+  knitr::kable(digits = 4)
+```
+
+-   **5. Posterior Probability**: The `r glossary("Posterior_Probability", "Posterior Probability")`, also called the Posterior, is the updated probability of a hypothesis after incorporating new evidence, calculated using Bayes' theorem. It combines the prior probability—the initial belief about the hypothesis before observing data—with the likelihood, which is the probability of observing the evidence given the hypothesis. The posterior reflects a revised degree of belief in the hypothesis, integrating both background knowledge and observed data. It's essentially learning from experience - your understanding becomes more refined as you incorporate new information.
+
+The @eq-bayes-rule-1 can be expressed for our example as
+
+$$
+\begin{align*}
+P (\text{fake} \mid \text{excl}) &= \frac{P (\text{excl} \cap \text{fake})}{P (\text{excl})} &= \\ 
+P (\text{fake} \mid \text{excl}) &= \frac{P (\text{fake}) \cdot L (\text{fake} \mid \text{excl})}{P (\text{excl})} &= \\
+P (\text{fake} \mid \text{excl}) &= \frac{\text{prior} \cdot \text{likelihood}}{\text{normalizing constant}} &= \\
+P (\text{fake} \mid \text{excl}) &= \frac{0.4 \cdot 0.2667}{0.12} = \mathbf{0.889} 
+\end{align*}
+$$
+
+```{r}
+#| label: step-5-posterior-prob
+posterior_prob <- joint_prob |>
+  dplyr::mutate(posterior = joint / marginal_prob) |>
+  dplyr::select(type, posterior) |> 
+  tibble::as_tibble() |> 
+  janitor::adorn_totals("row") 
+  
+complete_prob <- joint_prob |>
+  dplyr::left_join(posterior_prob, by = join_by(type)) |> 
+  tibble::as_tibble() |> 
+  janitor::adorn_totals("row")
+
+complete_prob |> 
+  knitr::kable(digits = 4)
+```
+
+### Posterior Simulation
+
+It’s important to keep in mind that the `r glossary("probability_model", "probability models")` we built for our news analysis above are just that – `r glossary("model_x", "models")`. They provide theoretical representations of what we observe in practice. To build intuition for the connection between the articles that might actually be posted to social media and their underlying models, let’s run a `r glossary("simulation_x", "simulation")`.
+
+#### Define article `type` and prior probabilities
+
+Define the possible article `type`, `real` or `fake`, and their corresponding prior probabilities:
+
+```{r}
+#| label: define-article-types
+
+# Define possible articles
+article <- data.frame(type = c("real", "fake"))
+
+# Define the prior model
+prior <- c(0.6, 0.4)
+```
+
+#### Randomly sample rows from the article data frame
+
+The book recommends the function `dplyr::sample_n()` which is superseded by `dplyr::slice_sample()`. We need three more information to get the desired simulation:
+
+-   We must specify the sample size `n`.
+-   We need to sample with `replacement` ensuring that we start with a fresh set of possibilities for each article – any article can either be fake or real.
+-   Finally we have to specify that there’s a 60% chance an article is real and a 40% chance it’s fake. This is done by the argument `weight_by = prior`.
+
+```{r}
+#| label: sample-results-1a
+
+# Simulate 5 articles
+dplyr::slice_sample(article, n = 5, weight_by = prior, replace = TRUE)
+
+```
+
+If you would run the code above several times you would see that the result changes each time. I want to demonstrate this behavior with a more complex code using a loop.
+
+```{r}
+#| label: sample-results-1b
+#| lst-label: lst-sample-results-1b
+#| lst-cap: Generate 5 articles in 4 samples using map and slice_sample
+
+# Generate 5 articles in 4 samples using purrr::map and dplyr::slice_sample
+sample_results_1b <- purrr::map(1:4, ~ fake_news |> 
+                        dplyr::slice_sample(n = 5) |> 
+                        dplyr::pull(type)) |>
+  rlang::set_names(paste0("sample_", 1:4)) |>
+  tibble::as_tibble()
+
+sample_results_1b |> 
+  knitr::kable()
+```
+
+Generate 5 articles in 4 samples using map and slice_sample
+
+We ran the above code four times to see that the result changes will every run.
+
+#### Set the seed
+
+Every time we run the above code the random number generator (RNG) “starts” at a new place: the random seed. Starting at different seeds can thus produce different samples. To secure reproducibility we have to set the seed. The simulation produces still a random sample but with our seed other people will get the same random values. The book authors apply the number 84735 for the `base::set.seed()` function. The number 84735 is a funny [reference to the name BAYES](https://bayes-rules.github.io/posts/fun/#why-84735).
+
+```{r}
+#| label: sample-results-2a
+
+# Set the seed. Simulate 5 articles.
+
+base::set.seed(84735)
+dplyr::slice_sample(article, n = 5, weight_by = prior, replace = TRUE)
+
+```
+
+Run the above code several times to see that the values will *not* change. To demonstrate this behavior I will use the same code as in @lst-sample-results-1b but this time with the `set.seed()` function inside the loop.
+
+```{r}
+#| label: sample-results-2b
+#| lst-label: sample-results-2b
+
+# Each iteration uses the same seed, so all 5 samples are identical
+sample_results_2b <- purrr::map(1:4, ~ {
+  base::set.seed(84735)
+  fake_news |> 
+    dplyr::slice_sample(n = 5) |> 
+    dplyr::pull(type)
+}) |>
+  rlang::set_names(paste0("sample_", 1:4)) |>
+  tibble::as_tibble()
+
+sample_results_2b |> 
+  knitr::kable()
+```
+
+::: {#cau-002-set-seed-still-radnom .callout-caution}
+###### Using `seed()` still produces numbers randomly
+
+It is important to understand that these results are still random. Reflecting the potential error and variability in simulation, different seeds would typically give different numerical results though similar conclusions.
+:::
+
+#### Simulate 10.000 article
+
+No let’s dream bigger: Let us simulate 10,000 articles and store the results in `article_sim` and display the result as a bar chart.
+
+:::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-002-simulation-and-plot}
+: A bar plot of the fake vs real status of 10,000 simulated articles
+:::
+::::
+
+::: my-r-code-container
+```{r}
+#| label: fig-simulate-and-plot
+#| fig-cap: A bar plot of the fake vs real status of 10,000 simulated articles.
+#| fig-height: 4
+
+# Simulate 10000 articles.
+base::set.seed(84735)
+article_sim <-  dplyr::slice_sample(article,
+                                    n = 10000,
+                                    weight_by = prior,
+                                    replace = TRUE)
+
+ggplot2::ggplot(article_sim, ggplot2::aes(x = type)) + 
+  ggplot2::geom_bar(width = 0.6) +
+  ggplot2::theme(aspect.ratio = 3/1)
+```
+:::
+::::::
+
+Reflecting the model @fig-simulate-and-plot from which these 10,000 articles were generated, *roughly* (but not exactly) 40% are fake:
+
+:::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-002-simulation-table}
+: Numbers for the `fake` vs `real` status of 10,000 simulated articles
+:::
+::::
+
+::: my-r-code-container
+```{r}
+#| label: tbl-simulation-table
+#| tbl-cap: "Numbers for the `fake` vs `real` status of 10,000 simulated articles."
+
+article_sim  |>  
+  tabyl(type)  |>  
+  adorn_totals("row") |> 
+  knitr::kable()
+```
+:::
+::::::
+
+#### Calculate the exclamation point usage
+
+Next, let’s caluclate the exclamation point usage among these 10,000 articles. The `data_model` variable specifies that there’s a 26.67% chance that any fake article and a 2.22% chance that any real article uses exclamation points:
+
+:::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-002-calculate-exclamation-point-usage}
+: Calculate exclamation point usage
+:::
+::::
+
+::: my-r-code-container
+```{r}
+#| label: calculate-exclamation-point-usage
+
+article_sim <- article_sim |>
+  dplyr::mutate(data_model = dplyr::case_when
+                (type == "fake" ~ 0.2667,
+                 type == "real" ~ 0.0222)
+                )
+
+dplyr::glimpse(article_sim)
+```
+:::
+::::::
+
+From this data_model, we can simulate whether each article includes an exclamation point. This syntax is a bit more complicated. First, the `dplyr::group_by()` statement specifies that the exclamation point simulation is to be performed separately for each of the 10,000 articles. Second, we use `base::sample()` to simulate the exclamation point data, `no` or `yes`, based on the `data_model` and store the results as `usage`. Note that `base::sample()` is similar to `slice_sample()` but samples values from vectors instead of rows from data frames.
+
+:::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-002-simulate-exclamation-points}
+: Simulate whether each article includes an exclamation point
+:::
+::::
+
+::: my-r-code-container
+
+::: {#lst-simulate-exclamation-points}
+```{r}
+#| label: simulate-exclamation-points
+
+# Define whether there are exclamation points
+data <- c("no", "yes")
+
+# Simulate exclamation point usage with seed 3
+base::set.seed(3)
+article_sim2 <- article_sim |> 
+  dplyr::group_by(1:n()) |>  
+  dplyr::mutate(usage = base::sample(data, size = 1, 
+                        prob = c(1 - data_model, data_model))) 
+article_sim2 |> 
+  tabyl(usage, type) |> 
+  adorn_totals(c("col","row"))
+
+
+```
+
+Simulate whether each article includes an exclamation point
+
+:::
+:::
+::::::
+
+The `article_sim` data frame now contains 10,000 simulated articles with different features, summarized in the table below. The patterns here reflect the underlying likelihoods that *roughly* 28% (1070 / 4031) of fake articles and 2% (136 / 5969) of real articles use exclamation points.
+
+
+::: {.callout-warning #wrn-002-different-seeds.differ-in-magnitude}
+###### Different seeds don't guarantee similar magnitudes
+
+Note that the simulation in @lst-simulate-exclamation-points uses as seed the number 3 and not the previous seed number 84735. The reason is that with `base::set.seed(84735)` we will get extreme different values:
+
+```{r}
+# Simulate exclamation point usage with seed 84735
+base::set.seed(84735)
+article_sim |> 
+  dplyr::group_by(1:n()) |>  
+  dplyr::mutate(usage2 = base::sample(data, size = 1, 
+                        prob = c(1 - data_model, data_model))) |> 
+  tabyl(usage2, type) |> 
+  adorn_totals(c("col","row"))
+```
+
+With seed `84735`, we got 0 real articles with exclamation points, which is extremely unlikely given that `data_model = 0.0222` for real articles. We know that different seeds create (small) different random number sequences that propagate through all 10,000 decisions. This random variations can accumulate - with 10,000 samples, small differences in the random sequence can therefore compound.
+
+The key insight: **Different seeds don't guarantee similar magnitudes - they just ensure reproducibility.** Some seeds will produce results closer to the expected probabilities, while others (like 84735) may produce more extreme outcomes by chance.
+
+If we want more stable results that better reflect the true probabilities, we could:
+
+- Use a larger sample (we already have a sample of 10,000, which is good).
+- Run multiple simulations and average to see the long-run behavior.
+- Check if specific seeds are creating outliers.
+
+:::
+
+@fig-exclamation-point-usage-1 provides a visual summary of these article characteristics. Whereas the left plot reflects the relative breakdown of exclamation point usage among real and fake news, the right plot frames this information within the normalizing context that only *roughly* 12% (1206 / 10000) of all articles use exclamation points.
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-002-exclamation-point-usage}
+: Bar plots of exclamation point usage, both within fake vs real news and overall (Version 1)
+::::::
+:::
+::::{.my-r-code-container}
+```{r}
+#| label: fig-exclamation-point-usage-1
+#| fig-cap: Bar plots of exclamation point usage, both within fake vs real news and overall (Version 1).
+
+p1 <- ggplot2::ggplot(article_sim2, ggplot2::aes(x = type, fill = usage)) + 
+  ggplot2::geom_bar(position = "fill", width = 0.6) + 
+  ggplot2::theme(aspect.ratio = 3/1) +
+  ggplot2::scale_fill_viridis_d(option = "E")
+p2 <- ggplot2::ggplot(article_sim2, aes(x = usage)) + 
+  ggplot2::geom_bar(width = 0.6) + 
+  ggplot2::theme(aspect.ratio = 3/1)
+
+patchwork:::"-.ggplot"(p1, p2)
+```
+
+::::
+:::::
+
+In the book is the code for the right plot in @fig-exclamation-point-usage-1 wrong. It says `ggplot2::ggplot(article_sim, aes(x = type))` instead of `ggplot2::ggplot(article_sim, aes(x = usage))` (see: <https://www.bayesrulesbook.com/chapter-2#fig:ch2-bars-articles>).
+
+I believe that even this correction is enough as the right plot should not only show the total numbers of exclamation points but also their relation to the article types as shown in @fig-exclamation-point-usage-2.
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-002-exclamation-point-usage}
+: Bar plots of exclamation point usage, both within fake vs real news and overall (Version2)
+::::::
+:::
+::::{.my-r-code-container}
+```{r}
+#| label: fig-exclamation-point-usage-2
+#| fig-cap: Bar plots of exclamation point usage, both within fake vs real news and overall (Version 2).
+
+# Plot 1: Percentage of exclamation usage within each article type
+p1 <- ggplot2::ggplot(article_sim2, ggplot2::aes(x = type, fill = usage)) + 
+  ggplot2::geom_bar(position = "fill", width = 0.6) +
+  ggplot2::theme(aspect.ratio = 3/1) +
+  ggplot2::scale_y_continuous(labels = scales::percent) +
+  ggplot2::labs(
+    title = "Exclamation Usage by Article Type",
+    x = "Article Type",
+    y = "Percentage",
+    fill = "Usage"
+  ) +
+  ggplot2::scale_fill_viridis_d(option = "E")
+
+# Plot 2: Overall percentage distribution of article types
+p2 <- ggplot2::ggplot(article_sim2, aes(x = usage, fill = type)) + 
+  ggplot2::geom_bar(width = 0.6) +
+  ggplot2::theme(aspect.ratio = 3/1) +
+  ggplot2::labs(
+    title = "Article Type by Exclamation Usage",
+    x = "Exclamation Usage",
+    y = "Count",
+    fill = "Type"
+  ) +
+  ggplot2::scale_fill_viridis_d(option = "E")
+
+# Combine plots side by side
+patchwork:::"-.ggplot"(p1, p2)
+```
+
+::::
+:::::
+
+Among the 1206 simulated articles that use exclamation points, roughly 88.7% are fake. This approximation is quite close to the actual posterior probability of 0.889. Of course, our posterior assessment of this article would change if we had seen different data, i.e., if the title didn’t have exclamation points. Figure 2.4 reveals a simple rule: If an article uses exclamation points, it’s most likely fake. Otherwise, it’s most likely real (and we should read it).
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-002-plot-exlamation-usage}
+: Bar plots of real vs fake news, broken down by exclamation point usage
+::::::
+:::
+::::{.my-r-code-container}
+```{r}
+#| label: fig-plot-exlamation-usage
+#| fig-cap: Bar plots of real vs fake news, broken down by exclamation point usage.
+
+ggplot2::ggplot(article_sim2, ggplot2::aes(x = type)) + 
+  ggplot2::geom_bar(width = 0.6) + 
+  ggplot2::theme(aspect.ratio = 3/1) +
+  ggplot2::facet_wrap(~ usage) 
+```
+
+::::
+:::::
+
+
+
+
+## Glossary Entries {.unnumbered}
+
+```{r}
+#| label: glossary-table
+#| echo: false
+
+glossary_table()
+```
+
+------------------------------------------------------------------------
+
+## Session Info {.unnumbered}
+
+::::: my-r-code
+::: my-r-code-header
+Session Info
+:::
+
+::: my-r-code-container
+```{r}
+#| label: session-info
+
+sessioninfo::session_info()
+```
+:::
+:::::

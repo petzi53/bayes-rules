@@ -1,4 +1,5 @@
 
+
 .listing {
     font-weight: bold;
 }
@@ -25,6 +26,33 @@ figcaption {
 iframe {
   border: 1px solid black;
   width: 100%; /* takes precedence over the width set with the HTML width attribute */
+}
+
+
+.table {
+    width: auto !important;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* ###################### larger font for callouts ######################### */
+
+.callout.callout-style-default .callout-body {
+  font-size: 1rem;
+  padding-top: .5em;
+}
+
+
+.callout.callout-style-default>div.callout-header {
+    border-bottom: none;
+    font-weight: 600;
+    opacity: 85%;
+    font-size: 1.1rem;
+    padding-top: .5em;
+    padding-bottom .5em;
+    padding-left: .5em;
+    padding-right: .5em;
+    border-top-right-radius: calc(0.25rem + -1px);
 }
 
 /* #######################################################################  */
