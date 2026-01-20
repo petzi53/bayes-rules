@@ -1,36 +1,47 @@
 # Preface {.unnumbered}
 
-This Quarto book collects my personal notes, trials and exercises of
-Bayes Rules! An Introduction to Applied Bayesian Modeling by Alicia A.
+
+```{r}
+#| label: setup
+#| results: hold
+#| include: false
+
+library(glossary)
+base::source(file = "R/helper.R")
+ggplot2::theme_set(ggplot2::theme_bw())
+```
+
+
+This Quarto book collects my personal notes, trials and exercises during reading of
+"Bayes Rules! An Introduction to Applied Bayesian Modeling" by Alicia A.
 Johnson, Miles Q. Ott and Mine Dogucu [@johnson2022].
 
 ::: {.callout-note style="color: blue;"}
 #### This is work in progress
 
-Finished about 6%. I am currently in p.31, the second section of the second chapter.
+Finished about 9%. I am currently starting the third chapter.
 :::
 
-::::: my-watch-out
-::: my-watch-out-header
-WATCH OUT: This is my personal learning material and is therefore
-neither an accurate replication nor an authoritative textbook.
-:::
 
-::: my-watch-out-container
+
+::: {.callout-warning #wrn-000-personal-learning-material}
+###### This is my personal learning material 
+
+This text is neither an accurate replication nor an authoritative textbook.
+
 I am writing this book as a text for others to read because that forces
 me to become explicit and explain all my learning outcomes more
-carefully. Please keep in mind that this text is not written by an
+carefully. But keep in mind that this text is not written by an
 expert but by a learner.
 
 Text passages with content I am already familiar I have skipped. Section
 of the original text where I needed more in-depth knowledge I have
 elaborated and added my own comments resulted from my personal research.
 
-Be warned! In spite of replicating most of the content this Quarto book
+Again: Be warned! In spite of replicating most of the content this Quarto book
 may contain many mistakes. All the misapprehensions and errors are of
 course my own responsibility.
 :::
-:::::
 
 ## Content and Goals of this Book {.unnumbered}
 
@@ -217,6 +228,18 @@ comes from different resources.
 My personal comments should be clear because most of the times it is a
 reflection about the book and my experiences with it.
 
+### Repetitions as an educational device {#sec-000-repetitions}
+
+My notes about the Bayes Rules! book are full of repetitions. For me as learner these repetitions are not redundancies per se, but serve as recapitulations to strengthen my understanding. In this sense these repetitions are educational vehicles.
+
+Sometimes the repetitions are not mine. For instance the introductory part of chapter @sec-chap-002 is an intuitive approximation developed by the authors to get an holistic intuitive understanding which is developed more in details in the following sections.
+
+Most of *my* capitulations are provided in "Note" callouts. To understand better the different concepts and their relation to each other, I have added these callouts. These notes reflect my understanding at the time of this writing. It could therefore be the case that they contain some errors.
+
+Additionally I have provided code listing where book figures or tables do not provide the underlying R code. (Unfortunately there is no (GitHub) access to the source code of the book.) My code does not always generate exactly the book output, but gives a general direction how to get the book results. For the generations of these code chunks I have used several times `r glossary("LLMs")`, especially [Anthropic’s](https://www.anthropic.com/) `r glossary("Claude Sonnet 4.5")` applied with the [Positron Assistant](https://positron.posit.co/assistant.html).
+
+Because I have added many "Note" callouts, code chunks with tables and figures, my numbering is not identical with the book. Besides figures, tables, formulae my chapter section numbers conforms with the books numbering until level 3. To get a more detailed structure I might have added sub-titles of a deeper level.
+
 ### Glossary
 
 I am using the {**glossary**} package to create links to glossary
@@ -359,7 +382,7 @@ Documents](https://debruine.github.io/glossary/) [@glossary]</center>
 ------------------------------------------------------------------------
 
 ::: {layout="[10, 30]" layout-valign="center"}
-![](img/logoi/logo-glossary-min.png){width="176"}
+![](include/logoi/logo-glossary-min.png){width="176"}
 
 Add glossaries to markdown and quarto documents by tagging individual
 words. Definitions can be provided inline or in a separate file.
@@ -408,6 +431,8 @@ XXX: \[ADD HERE USED ADDITIONAL SOURCES\]
 ## Private Functions
 
 XXX: \[DESCRIBE PRIVATE FUNCTION USED IN THIS BOOK\]
+
+
 
 ## Glossary Entries of this Chapter
 

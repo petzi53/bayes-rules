@@ -7,9 +7,10 @@
 
 base::source(file = "R/helper.R")
 ggplot2::theme_set(ggplot2::theme_bw())
+library(webexercises)
+# Uncomment to change widget colours:
+# style_widgets(incorrect = "goldenrod", correct = "purple", highlight = "firebrick")
 ```
-
-## Introduction {.unnumbered}
 
 :::::: {#obj-chap-002}
 ::::: my-objectives
@@ -26,88 +27,105 @@ Objectives
 :::::
 ::::::
 
-We start this chapter with the examination of a sample of 150 articles which were posted on Facebook and fact checked by five [BuzzFeed](https://www.buzzfeed.com/) journalists [@shu-2017]. Information about each article is stored in the `fake_news` dataset in the {**bayesrules**} package. To learn more about this dataset, type `?fake_news` in your console.
+## Introduction {.unnumbered}
+
+If you read this chapter carefully you will note that there there are many repetitions. Read the reason and consequences behind this educational strategy in @sec-000-repetitions and why I have created "Note" callouts.
+
+### Exploring the `fake_news` dataset {.unnumbered}
+
+We start this chapter with the examination of a sample of 150 articles which were posted on Facebook and fact checked by five [BuzzFeed](https://www.buzzfeed.com/) journalists [@shu-2017]. Information about each article is stored in the `fake_news` dataset in the {**bayesrules**} package.
 
 ::: {#tip-002-skim-data .callout-tip}
 ##### Explore and Summarize data
 
-To learn more about this dataset, type `?fake_news` in your console.
+To learn more about this dataset, type `?fake_news` in your console or go to [A collection of 150 news articles](https://bayes-rules.github.io/bayesrules/docs/reference/fake_news.html).
 
-In addition to typing `?fake_news` in your console, I recommend to use the `skim()` function from {**skimr**} package to get a summary of the dataset.
+In addition to read the help page, I recommend to use the `skim()` function from {**skimr**} package to get a summary of the dataset.
 :::
 
-::::::: my-r-code
+:::::: my-r-code
 :::: my-r-code-header
-::: {#cnj-002-load-fake-data}
-: Load relevant packages and the `fake_news` dataset
+::: {#cnj-002-load-and-skim-fake-data}
+: Load relevant packages and skim the `fake_news` dataset
 :::
 ::::
 
-:::: my-r-code-container
-::: {#lst-002-load-fake-data}
+::: my-r-code-container
 ```{r}
-#| label: load-fake-data
+#| label: tbl-002-load-fake-data
+#| tbl-cap: "Skim the `fake_news` dataset"
+#| lst-label: lst-002-load-fake-data
+#| lst-cap: "Load relevant packages and the `fake-news` dataset"
 
-# Load packages
-library(bayesrules)
-suppressPackageStartupMessages(library(tidyverse))
-suppressPackageStartupMessages(library(janitor))
 
 # Import article data
-data(fake_news)
+data(fake_news, package = "bayesrules")
 
 # Skim data
 skimr::skim(fake_news)
 
 ```
-
-Load relevant packages and the `fake_news` dataset
-:::
-::::
-:::::::
-
-The help file on `fake_news` describes the format: "A data frame with 150 rows and 6 variables". But as you can see from @cnj-002-load-fake-data it has 30 columns. I do not know where the dataset comes from, because the cited reference originated from an [article on BuzzFeed](https://www.buzzfeed.com/craigsilverman/partisan-fb-pages-analysis) uses a [different dataset](https://github.com/BuzzFeedNews/2016-10-facebook-fact-check/blob/master/data/facebook-fact-check.csv) with 12 columns.
-
-:::::: my-remark
-:::: my-remark-header
-::: {#rem-002-using-notes}
-: Added personal notes
-:::
-::::
-
-::: my-remark-container
-To understand better the different concepts and their relation to each other, I have added personal notes. These notes reflect my understanding at the time of this writing. It could therefore be the case that they contain some errors.
 :::
 ::::::
 
+The help file on `fake_news` describes the format: "A data frame with 150 rows and 6 variables". But as you can see from @tbl-002-load-fake-data it has 30 columns. I do not know where the dataset comes from, because the cited reference originated from an [article on BuzzFeed](https://www.buzzfeed.com/craigsilverman/partisan-fb-pages-analysis) uses a [different dataset](https://github.com/BuzzFeedNews/2016-10-facebook-fact-check/blob/master/data/facebook-fact-check.csv) with 12 columns.
+
+From the many different variables we are going to use only three: `type`, `title_has_excl` and `title_excl`. To get a feeling of the concrete data values look at a random sample of these three variables:
+
+:::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-002-glance-random-data}
+: Glance at the values of a subset of the `fake_news` dataset
+:::
+::::
+
+::: my-r-code-container
+```{r}
+#| label: tbl-002-glance-random-data
+#| tbl-cap: "First, last and eight random rows of the reduced `fake_news` dataset"
+#| lst-label: lst-002-glance-random-data
+#| lst-cap: "First, last and eight random rows of the reduced `fake_news` dataset"
+
+fake_news |> 
+  dplyr::select(type, title_has_excl, title_excl) |> 
+  my_glance_data(seed = 3) |> 
+  knitr::kable()
+```
+:::
+::::::
+
+From this small sample we see that only two articles of type `fake` have exclamation points. One of these `fake` article sports even two exclamation signs.
+
+### Unconditional probabilites as an intuitive approximation {.unnumbered}
+
 We can already see from the output of the `skimr::skim()` function that the `type` variable (`real` or `fake`) has the relation 90:60. Using the `tabyl()` function in the {**janitor**} package [@janitor], shows also the percentage (60%:40%).
 
-::::::: my-r-code
+:::::: my-r-code
 :::: my-r-code-header
 ::: {#cnj-002-relation-real-to-fake}
 : Relation of `real` to `fake` articles
 :::
 ::::
 
-:::: my-r-code-container
-::: {#lst-002-relation-real-to-fake}
+::: my-r-code-container
 ```{r}
-#| label: relation-real-to-fake
+#| label: tbl-002-relation-real-to-fake
+#| tbl-cap: "Relation of `real` to `fake` articles"
+#| lst-label: lst-002-relation-real-to-fake
+#| lst-cap: "Relation of `real` to `fake` articles"
 
 fake_news |>
   janitor::tabyl(type) |>
-  janitor::adorn_totals("row")
+  janitor::adorn_totals("row") |> 
+  knitr::kable()
 ```
-
-Relation of `real` to `fake` articles
 :::
-::::
-:::::::
+::::::
 
 ::: {#nte-002-marginal-probabilities .callout-note}
 ###### Unconditional, total or marginal probabilities
 
-To understand better the following text it is important to note that @cnj-002-relation-real-to-fake produces `r glossary("unconditional_probabilities", "unconditional")` or `r glossary("total_probability", "total probabilities")` also called as `r glossary("marginal_probability", "marginal probabilities")`.
+To understand better the following text it is important to note that @lst-002-relation-real-to-fake produces `r glossary("unconditional_probabilities", "unconditional")` or `r glossary("total_probability", "total probabilities")` also called as `r glossary("marginal_probability", "marginal probabilities")`. The unconditional probabilities serve as a prior probability model as can be seen in @fig-002-diagram-fake-news.
 
 \begin{align*}
 P(\text{fake}) &= 0.4 \\
@@ -118,21 +136,25 @@ P(\text{Total}) &= 1.0
 There is more information about these different concepts in the following sections. But it helped my understanding to note these different names for @lst-002-relation-real-to-fake.
 :::
 
-If we take the result of @cnj-002-relation-real-to-fake, we could say: "Since most articles are real, we should read and believe all articles". If we follow this rule we wouldn't miss no real article, but at the cost reading many fake articles. 4 out of 10 articles would be fake news.
+If we take the result of @lst-002-relation-real-to-fake, we could say: "Since most articles are real, we should read and believe all articles". If we follow this rule we wouldn't miss no real article, but at the cost reading many fake articles. 4 out of 10 articles would be fake news.
+
+### Conditional probabilities as an intuitive approximation {.unnumbered}
 
 We need to create a better filter that is not only supported by the overall relation but also by some features of the articles it selves. One of these features would be an exclamation sign for the headlines. Exclamation points in headlines are often perceived as shouting or juvenile, which can make the content seem less credible.
 
-::::::: my-r-code
+:::::: my-r-code
 :::: my-r-code-header
 ::: {#cnj-002-exclamation-usage}
 : Tabulate article type and exclamation usage = Conditional Probability
 :::
 ::::
 
-:::: my-r-code-container
-::: {#lst-002-exclamation-usage}
+::: my-r-code-container
 ```{r}
-#| label: exclamation-usage
+#| label: tbl-002-exclamation-usage
+#| tbl-cap: Exclamation usage
+#| lst-label: lst-002-exclamation-usage
+#| lst-cap: Exclamation usage
 
 fake_news |>
   janitor::tabyl(type, title_has_excl) |>
@@ -143,11 +165,8 @@ fake_news |>
   knitr::kable()
 
 ```
-
-Exclamation usage
 :::
-::::
-:::::::
+::::::
 
 ::: {#nte-002-conditional-probabilities .callout-note}
 ###### Conditional probabilities
@@ -160,7 +179,7 @@ P(\text{excl} \mid \text{real}) &=  2/90 &= 2.22\% \\
 P(\text{excl} \mid \text{total}) &=  18/150 &= 12.00\%  
 \end{align*}
 
-$P(\text{excl} \mid \text{total})$ is the normalizing constant! See @sec-002-normalizing-constant.
+$P(\text{excl} \mid \text{total})$ is the normalizing constant! See @sec-002-normalizing-constant-fake-news.
 
 ------------------------------------------------------------------------
 
@@ -176,17 +195,22 @@ The usage of an exclamation point might seem like an odd choice for a real news 
 
 Or formulated differently: Only 18 articles has an exclamation sign in the title. But almost all of them (with only two exceptions) are used in the titles of fake news articles.
 
+### Bayesian thinking process {.unnumbered}
+
 :::::: my-r-code
 :::: my-r-code-header
 ::: {#cnj-002-diagram-fake-news}
-: Bayesian knowledge-building diagram for whether or not the article is fake.
+: Bayesian knowledge-building diagram
 :::
 ::::
 
 ::: my-r-code-container
 ```{r}
-
-#| label: diagram-fake-news
+#| label: fig-002-diagram-fake-news
+#| fig-cap: "Bayesian knowledge-building diagram whether or not the article is fake."
+#| lst-label: lst-diagram-fake-news
+#| lst-cap: "Bayesian knowledge-building diagram whether or not the article is fake."
+#| fig-asp: 0.4
 
 DiagrammeR::grViz("
 digraph real_or_fake{
@@ -206,15 +230,48 @@ a -> c b -> c
 :::
 ::::::
 
-@cnj-002-diagram-fake-news shows the Bayesian thinking process.
+@fig-002-diagram-fake-news shows the Bayesian thinking process.
 
-1.  We start with a **prior undertanding**: From all the articles only 40% are `fake`. From this vantage point it would be feasible to judge a random article as `real`. After all the probability that it is an article of type `real` is higher than that it would be `fake`.
+1.  We start with a **prior understanding**: From all the articles only 40% are `fake`. From this vantage point it would be feasible to judge a random article as `real`. After all the probability that it is an article of type `real` is higher than that it would be `fake`.
 2.  But looking at exclamation signs in the title give us another more detailed perspective. The new **data changes our hypothesis**.
 3.  We have now another, a **posterior understanding**: Depending if the article has an exclamation point in the title or not, we can build a more probable hypotheses. Instead of 6:4 or 1.5 we have now a relation of 26.67:2.22 or 12. Based on the appearances of exclamations sign in the title our hypothesis is now 8 times more probable.
 
+:::::{.my-assessment}
+:::{.my-assessment-header}
+:::::: {#cor-002-quiz-1-understanding-article}
+: What best describes your updated, posterior understanding about the article?
+::::::
+:::
+::::{.my-assessment-container}
+
+```{r}
+#| label: quiz-001-1
+#| echo: false
+
+# use sample() to randomize the order
+opts_understanding <- base::sample(base::c(
+"The chance that this article is fake drops from 40% to 20%. The exclamation point in the title might simply reflect the author’s enthusiasm.",
+answer = "The chance that this article is fake jumps from 40% to roughly 90%. Though exclamation points are more common among fake articles, let’s not forget that only 40% of articles are fake.",
+"The chance that this article is fake jumps from 40% to roughly 98%. Given that so few real articles use exclamation points, this article is most certainly fake."
+))
+```
+
+`r longmcq(opts_understanding)`
+
+If your intuition was incorrect, don’t fret. By the end of this chapter, you will have learned how to support Bayesian thinking with rigorous Bayesian calculations.
+
+
+::::
+:::::
+
+
+
+
 ## Building a Bayesian Model for Events
 
-### Prior Probability Model
+After an intuitive approximation in the previous section we will go now into the details.
+
+### Prior Probability Model {#sec-002-prior-probability-fake-news}
 
 As a first step in our Bayesian analysis, we’ll formalize our prior understanding of whether the new article is fake.
 
@@ -257,7 +314,7 @@ There are three requirements of a valid probability model:
 ::: {#nte-002-total-probabilities .callout-note}
 ###### Prior Probability Model
 
-@tbl-002-prior-probability-model shows again the unconditional, marginal or total probabilities as I have already shown with @cnj-002-relation-real-to-fake with the result of @lst-002-relation-real-to-fake. See also my @nte-002-marginal-probabilities.
+@tbl-002-prior-probability-model shows again the unconditional, marginal or total probabilities as I have already shown with @tbl-002-relation-real-to-fake. See also my @nte-002-marginal-probabilities.
 
 \begin{align*}
 P(\text{fake}) &= 0.4 \\
@@ -270,7 +327,7 @@ P(\text{Total}) &= 1.0
 
 In the second step of our Bayesian analysis, we’ll summarize the insights from the data we collected on the new article. Specifically, we’ll formalize our observation that the exclamation point data is more compatible with fake news than with real news.
 
-#### Conditional Probability
+#### Conditional Probability {#sec-002-conditional-probability-fake-news}
 
 Conditional probabilities are fundamental to Bayesian analyses, and thus a quick pause to absorb this concept is worth it. In general, comparing the conditional vs unconditional probabilities, $P (A \mid B) \text{ vs } P (A)$, reveals the extent to which information about $B$ informs our understanding of $A$.
 
@@ -357,7 +414,7 @@ $$ {#eq-002-independent-events}
 :::
 ::::::
 
-#### Likelihood
+#### Likelihood {#sec-002-likelihood-fake-news}
 
 Let’s reexamine our fake news example with these conditional concepts in place. The conditional probabilities we derived above, $P (A \mid B) = 0.2667$ and $P (A \mid B^c) = 0.0222$, indicate that a whopping 26.67% of fake articles versus a mere 2.22% of real articles use exclamation points. Since exclamation point usage is so much more **likely** among fake news than real news, this data provides some evidence that the article is fake.
 
@@ -431,24 +488,24 @@ $$ {#eq-002-evaluate-relative-compatibility-of-data-with-events}
 
 # Prior probability
 row_prior <- fake_news |>  
-  count(type) |>  
-  mutate(prop = n / sum(n)) |>  
-  select(-n) |>  
-  pivot_wider(names_from = type, values_from = prop)
+  dplyr::count(type) |>  
+  dplyr::mutate(prop = n / sum(n)) |>  
+  dplyr::select(-n) |>  
+  tidyr::pivot_wider(names_from = type, values_from = prop)
 
 # Likelihood
 row_likelihood <- fake_news |>  
-  count(type, title_has_excl) |>  
-  pivot_wider(names_from = title_has_excl, values_from = n) |>  
-  mutate(likelihood = `TRUE` / (`TRUE` + `FALSE`)) |>  
-  select(-c(`FALSE`, `TRUE`)) |> 
-  pivot_wider(names_from = type, values_from = likelihood)
+  dplyr::count(type, title_has_excl) |>  
+  tidyr::pivot_wider(names_from = title_has_excl, values_from = n) |>  
+  dplyr::mutate(likelihood = `TRUE` / (`TRUE` + `FALSE`)) |>  
+  dplyr::select(-c(`FALSE`, `TRUE`)) |> 
+  tidyr::pivot_wider(names_from = type, values_from = likelihood)
 
 # build table
-bind_cols(Statistic = c("Prior probability", "Likelihood"),
-          bind_rows(row_prior, row_likelihood)) |>  
-  mutate(Total = fake + real) |>  
-  rename(`Fake ($\\mathbf{B}$)` = fake, 
+dplyr::bind_cols(Statistic = c("Prior probability", "Likelihood"),
+          dplyr::bind_rows(row_prior, row_likelihood)) |>  
+  dplyr::mutate(Total = fake + real) |>  
+  dplyr::rename(`Fake ($\\mathbf{B}$)` = fake, 
          `Real ($\\mathbf{B^c}$)` = real) |> 
   knitr::kable(digits = 4)
 
@@ -489,7 +546,7 @@ Compare the manual created @tbl-002-prior-model-and-likelihood with my @lst-002-
 
 ### Joint Probabilites and Normalizing Constants
 
-#### Joint Probabilites
+#### Joint Probabilites {#sec-002-joint-probabilities-fake-news}
 
 The `r glossary("marginal_probability", "marginal probability")` of observing exclamation points across all news articles, $P (A)$, provides an important point of comparison.
 
@@ -805,7 +862,7 @@ Joint probability model of the fake status and exclamation point usage across al
 ::::
 :::::::
 
-#### Normalizing Constant {#sec-002-normalizing-constant}
+#### Normalizing Constant {#sec-002-normalizing-constant-fake-news}
 
 ::: {#nte-002-normalizing-constant .callout-note}
 ###### Normalizing constant
@@ -853,10 +910,10 @@ We filled in (3) and (5) the figures applying the law of total probability (LTP)
 #| label: normalizing-constant-1
 
 fake_news |> 
-  count(type, title_has_excl) |> 
-  mutate(prop = n / sum(n)) |> 
-  filter(title_has_excl == TRUE) |>  
-  summarize(normalizing_constant = sum(prop))
+  dplyr::count(type, title_has_excl) |> 
+  dplyr::mutate(prop = n / sum(n)) |> 
+  dplyr::filter(title_has_excl == TRUE) |>  
+  dplyr::summarize(normalizing_constant = sum(prop))
 ##   normalizing_constant
 ## 1                 0.12
 ```
@@ -876,9 +933,9 @@ fake_news |>
 ```{r}
 #| label: normalizing-constant-2
 
-total_prob <- joint_prob %>% 
-  summarise(total = sum(joint)) %>% 
-  pull(total)
+total_prob <- joint_prob |>  
+  dplyr::summarise(total = base::sum(joint)) |>  
+  dplyr::pull(total)
 
 total_prob
 # Result: 0.1067 + 0.0133 = 0.12   
@@ -889,7 +946,7 @@ total_prob
 ::::::::::::
 ::::::::::::::::
 
-### Posterior probability model
+### Posterior probability model {#sec-002-posterior-probability-fake-news}
 
 #### Bayes rule!
 
@@ -917,7 +974,7 @@ $$
 \begin{align*}
 P (B \mid A) = \frac{P (A \cap B)}{P (A)} = \frac{P (B) \cdot L (B \mid A)}{P (A)}
 \end{align*}
-$$ {#eq-bayes-rule-1}
+$$ {#eq-002-bayes-rule-1}
 
 -   $P (B \mid A)$ is the posterior probability,
 -   $P (B)$ is the prior,
@@ -926,19 +983,19 @@ $$ {#eq-bayes-rule-1}
 
 where by the Law of Total Probability (@eq-002-ltp)
 
-$$P (A) = P (B) \cdot L (B \mid A) + P (B^c) \cdot L (B^c \mid A)$$ {#eq-bayes-rule-2}
+$$P (A) = P (B) \cdot L (B \mid A) + P (B^c) \cdot L (B^c \mid A)$$ {#eq-002-bayes-rule-2}
 
 More generally,
 
-$$\text{posterior} = \frac{\text{prior} \cdot \text{likelihood}}{\text{normalizing constant}}$$ {#eq-bayes-rule-general}
+$$\text{posterior} = \frac{\text{prior} \cdot \text{likelihood}}{\text{normalizing constant}}$$ {#eq-002-bayes-rule-general}
 
-To convince ourselves that Bayes’ Rule works, let’s directly apply it to our news analysis. Into (@eq-bayes-rule-1), we can plug the prior information that 40% of articles are fake, the 26.67% likelihood that a fake article would use exclamation points, and the 12% marginal probability of observing exclamation points across all articles. The resulting posterior probability that the incoming article is fake is roughly 0.889, just as we calculated from @tbl-002-joint-probability-model resp. @lst-002-joint-probability-model:
+To convince ourselves that Bayes’ Rule works, let’s directly apply it to our news analysis. Into (@eq-002-bayes-rule-1), we can plug the prior information that 40% of articles are fake, the 26.67% likelihood that a fake article would use exclamation points, and the 12% marginal probability of observing exclamation points across all articles. The resulting posterior probability that the incoming article is fake is roughly 0.889, just as we calculated from @tbl-002-joint-probability-model resp. @lst-002-joint-probability-model:
 
 $$
 \begin{align*}
 P (B \mid A) = \frac{P (B) \cdot L (B \mid A)}{P (A)} = \frac{0.4 \cdot 0.2667}{0.12} = \frac{0.1067}{0.12} = 0.889
 \end{align*}
-$$ {#eq-bayes-rule-with-data}
+$$ {#eq-002-bayes-rule-with-data}
 :::
 ::::::
 
@@ -1001,15 +1058,15 @@ posterior_prob <- joint_prob |>
   dplyr::select(type, posterior)
 
 # Create the final table
-result_table <- tibble(
+result_table <- tibble::tibble(
   Event = c("Prior Probability", "Posterior Probability"),
   fake = c(
-    prior_prob |> filter(type == "fake") |> pull(prior),
-    posterior_prob |> filter(type == "fake") |> pull(posterior)
+    prior_prob |> dplyr::filter(type == "fake") |> dplyr::pull(prior),
+    posterior_prob |> dplyr::filter(type == "fake") |> dplyr::pull(posterior)
   ),
   real = c(
-    prior_prob |> filter(type == "real") |> pull(prior),
-    posterior_prob |> filter(type == "real") |> pull(posterior)
+    prior_prob |> dplyr::filter(type == "real") |> dplyr::pull(prior),
+    posterior_prob |> dplyr::filter(type == "real") |> dplyr::pull(posterior)
   )
 ) |>
   dplyr::mutate(Total = fake + real)
@@ -1063,7 +1120,7 @@ joint_prob |>
 
 -   **5. Posterior Probability**: The `r glossary("Posterior_Probability", "Posterior Probability")`, also called the Posterior, is the updated probability of a hypothesis after incorporating new evidence, calculated using Bayes' theorem. It combines the prior probability—the initial belief about the hypothesis before observing data—with the likelihood, which is the probability of observing the evidence given the hypothesis. The posterior reflects a revised degree of belief in the hypothesis, integrating both background knowledge and observed data. It's essentially learning from experience - your understanding becomes more refined as you incorporate new information.
 
-The @eq-bayes-rule-1 can be expressed for our example as
+The @eq-002-bayes-rule-1 can be expressed for our example as
 
 $$
 \begin{align*}
@@ -1083,7 +1140,7 @@ posterior_prob <- joint_prob |>
   janitor::adorn_totals("row") 
   
 complete_prob <- joint_prob |>
-  dplyr::left_join(posterior_prob, by = join_by(type)) |> 
+  dplyr::left_join(posterior_prob, by = dplyr::join_by(type)) |> 
   tibble::as_tibble() |> 
   janitor::adorn_totals("row")
 
@@ -1091,14 +1148,23 @@ complete_prob |>
   knitr::kable(digits = 4)
 ```
 
-### Posterior Simulation
+### Posterior Simulation {#sec-002-posterior-simulation-fake-news}
 
 It’s important to keep in mind that the `r glossary("probability_model", "probability models")` we built for our news analysis above are just that – `r glossary("model_x", "models")`. They provide theoretical representations of what we observe in practice. To build intuition for the connection between the articles that might actually be posted to social media and their underlying models, let’s run a `r glossary("simulation_x", "simulation")`.
 
-#### Define article `type` and prior probabilities
+#### Define article `type` and prior probabilities {#sec-002-define-prior-probabilities}
 
 Define the possible article `type`, `real` or `fake`, and their corresponding prior probabilities:
 
+::::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-002-define-prior-probabilities}
+: Define article `type` and prior probabilities
+:::
+::::
+
+:::: my-r-code-container
+::: {#lst-002-define-prior-probabilities}
 ```{r}
 #| label: define-article-types
 
@@ -1108,6 +1174,11 @@ article <- data.frame(type = c("real", "fake"))
 # Define the prior model
 prior <- c(0.6, 0.4)
 ```
+
+Define the possible article `type`, `real` or `fake`, and their corresponding prior probabilities
+:::
+::::
+:::::::
 
 #### Randomly sample rows from the article data frame
 
@@ -1187,22 +1258,24 @@ sample_results_2b |>
 It is important to understand that these results are still random. Reflecting the potential error and variability in simulation, different seeds would typically give different numerical results though similar conclusions.
 :::
 
-#### Simulate 10.000 article
+#### Simulate 10.000 article {#sec-002-simulate-prior-probabilities}
 
 No let’s dream bigger: Let us simulate 10,000 articles and store the results in `article_sim` and display the result as a bar chart.
 
-:::::: my-r-code
+::::::: my-r-code
 :::: my-r-code-header
 ::: {#cnj-002-simulation-and-plot}
 : A bar plot of the fake vs real status of 10,000 simulated articles
 :::
 ::::
 
-::: my-r-code-container
+:::: my-r-code-container
 ```{r}
 #| label: fig-simulate-and-plot
-#| fig-cap: A bar plot of the fake vs real status of 10,000 simulated articles.
+#| fig-cap: A bar plot of the fake vs real status of 10,000 simulated articles
 #| fig-height: 4
+#| lst-label: lst-002-simulate-prior-probabilities
+#| lst-cap: A bar plot of the fake vs real status of 10,000 simulated articles
 
 # Simulate 10000 articles.
 base::set.seed(84735)
@@ -1215,8 +1288,10 @@ ggplot2::ggplot(article_sim, ggplot2::aes(x = type)) +
   ggplot2::geom_bar(width = 0.6) +
   ggplot2::theme(aspect.ratio = 3/1)
 ```
-:::
-::::::
+
+
+::::
+:::::::
 
 Reflecting the model @fig-simulate-and-plot from which these 10,000 articles were generated, *roughly* (but not exactly) 40% are fake:
 
@@ -1233,25 +1308,26 @@ Reflecting the model @fig-simulate-and-plot from which these 10,000 articles wer
 #| tbl-cap: "Numbers for the `fake` vs `real` status of 10,000 simulated articles."
 
 article_sim  |>  
-  tabyl(type)  |>  
-  adorn_totals("row") |> 
+  janitor::tabyl(type)  |>  
+  janitor::adorn_totals("row") |> 
   knitr::kable()
 ```
 :::
 ::::::
 
-#### Calculate the exclamation point usage
+#### Calculate the exclamation point usage {#sec-002-calculate-conditional-probabilites}
 
 Next, let’s caluclate the exclamation point usage among these 10,000 articles. The `data_model` variable specifies that there’s a 26.67% chance that any fake article and a 2.22% chance that any real article uses exclamation points:
 
-:::::: my-r-code
+::::::: my-r-code
 :::: my-r-code-header
 ::: {#cnj-002-calculate-exclamation-point-usage}
 : Calculate exclamation point usage
 :::
 ::::
 
-::: my-r-code-container
+:::: my-r-code-container
+::: {#lst-002-calculate-conditional-probabilities}
 ```{r}
 #| label: calculate-exclamation-point-usage
 
@@ -1263,23 +1339,27 @@ article_sim <- article_sim |>
 
 dplyr::glimpse(article_sim)
 ```
+
+Calculate exclamation point usage
 :::
-::::::
+::::
+:::::::
+
+#### Simulate the exclamation point usage {#sec-002-simulate-conditional-probabilities}
 
 From this data_model, we can simulate whether each article includes an exclamation point. This syntax is a bit more complicated. First, the `dplyr::group_by()` statement specifies that the exclamation point simulation is to be performed separately for each of the 10,000 articles. Second, we use `base::sample()` to simulate the exclamation point data, `no` or `yes`, based on the `data_model` and store the results as `usage`. Note that `base::sample()` is similar to `slice_sample()` but samples values from vectors instead of rows from data frames.
 
-:::::: my-r-code
+::::::: my-r-code
 :::: my-r-code-header
 ::: {#cnj-002-simulate-exclamation-points}
 : Simulate whether each article includes an exclamation point
 :::
 ::::
 
-::: my-r-code-container
-
-::: {#lst-simulate-exclamation-points}
+:::: my-r-code-container
+::: {#lst-002-simulate-conditional-probabilities}
 ```{r}
-#| label: simulate-exclamation-points
+#| label: simulate-exclamation-points-seed-3
 
 # Define whether there are exclamation points
 data <- c("no", "yes")
@@ -1287,39 +1367,39 @@ data <- c("no", "yes")
 # Simulate exclamation point usage with seed 3
 base::set.seed(3)
 article_sim2 <- article_sim |> 
-  dplyr::group_by(1:n()) |>  
+  dplyr::group_by(1:dplyr::n()) |>  
   dplyr::mutate(usage = base::sample(data, size = 1, 
                         prob = c(1 - data_model, data_model))) 
 article_sim2 |> 
-  tabyl(usage, type) |> 
-  adorn_totals(c("col","row"))
+  janitor::tabyl(usage, type) |> 
+  janitor::adorn_totals(c("col","row"))
 
 
 ```
 
 Simulate whether each article includes an exclamation point
-
 :::
-:::
-::::::
+::::
+:::::::
 
 The `article_sim` data frame now contains 10,000 simulated articles with different features, summarized in the table below. The patterns here reflect the underlying likelihoods that *roughly* 28% (1070 / 4031) of fake articles and 2% (136 / 5969) of real articles use exclamation points.
 
-
-::: {.callout-warning #wrn-002-different-seeds.differ-in-magnitude}
+::: {#wrn-002-different-seeds.differ-in-magnitude .callout-warning}
 ###### Different seeds don't guarantee similar magnitudes
 
-Note that the simulation in @lst-simulate-exclamation-points uses as seed the number 3 and not the previous seed number 84735. The reason is that with `base::set.seed(84735)` we will get extreme different values:
+Note that the simulation in @lst-002-simulate-conditional-probabilities uses as seed the number 3 and not the previous seed number 84735. The reason is that with `base::set.seed(84735)` we will get extreme different values:
 
 ```{r}
+#| label: simulate-exclamation-points-seed-84735
+#| 
 # Simulate exclamation point usage with seed 84735
 base::set.seed(84735)
 article_sim |> 
-  dplyr::group_by(1:n()) |>  
+  dplyr::group_by(1:dplyr::n()) |>  
   dplyr::mutate(usage2 = base::sample(data, size = 1, 
                         prob = c(1 - data_model, data_model))) |> 
-  tabyl(usage2, type) |> 
-  adorn_totals(c("col","row"))
+  janitor::tabyl(usage2, type) |> 
+  janitor::adorn_totals(c("col","row"))
 ```
 
 With seed `84735`, we got 0 real articles with exclamation points, which is extremely unlikely given that `data_model = 0.0222` for real articles. We know that different seeds create (small) different random number sequences that propagate through all 10,000 decisions. This random variations can accumulate - with 10,000 samples, small differences in the random sequence can therefore compound.
@@ -1328,21 +1408,21 @@ The key insight: **Different seeds don't guarantee similar magnitudes - they jus
 
 If we want more stable results that better reflect the true probabilities, we could:
 
-- Use a larger sample (we already have a sample of 10,000, which is good).
-- Run multiple simulations and average to see the long-run behavior.
-- Check if specific seeds are creating outliers.
-
+-   Use a larger sample (we already have a sample of 10,000, which is good).
+-   Run multiple simulations and average to see the long-run behavior.
+-   Check if specific seeds are creating outliers.
 :::
 
-@fig-exclamation-point-usage-1 provides a visual summary of these article characteristics. Whereas the left plot reflects the relative breakdown of exclamation point usage among real and fake news, the right plot frames this information within the normalizing context that only *roughly* 12% (1206 / 10000) of all articles use exclamation points.
+@fig-exclamation-point-usage-1 provides a visual summary of these article characteristics. Whereas the left plot reflects the relative breakdown of exclamation point usage among real and fake news, the right plot frames this information within the normalizing context that only *roughly* 12% (1206 / 10000) of all articles use exclamation points (see @lst-002-simulate-conditional-probabilities).
 
-:::::{.my-r-code}
-:::{.my-r-code-header}
-:::::: {#cnj-002-exclamation-point-usage}
+:::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-002-exclamation-point-usage}
 : Bar plots of exclamation point usage, both within fake vs real news and overall (Version 1)
-::::::
 :::
-::::{.my-r-code-container}
+::::
+
+::: my-r-code-container
 ```{r}
 #| label: fig-exclamation-point-usage-1
 #| fig-cap: Bar plots of exclamation point usage, both within fake vs real news and overall (Version 1).
@@ -1351,27 +1431,29 @@ p1 <- ggplot2::ggplot(article_sim2, ggplot2::aes(x = type, fill = usage)) +
   ggplot2::geom_bar(position = "fill", width = 0.6) + 
   ggplot2::theme(aspect.ratio = 3/1) +
   ggplot2::scale_fill_viridis_d(option = "E")
-p2 <- ggplot2::ggplot(article_sim2, aes(x = usage)) + 
+p2 <- ggplot2::ggplot(article_sim2, ggplot2::aes(x = usage)) + 
   ggplot2::geom_bar(width = 0.6) + 
   ggplot2::theme(aspect.ratio = 3/1)
 
 patchwork:::"-.ggplot"(p1, p2)
 ```
-
-::::
-:::::
-
-In the book is the code for the right plot in @fig-exclamation-point-usage-1 wrong. It says `ggplot2::ggplot(article_sim, aes(x = type))` instead of `ggplot2::ggplot(article_sim, aes(x = usage))` (see: <https://www.bayesrulesbook.com/chapter-2#fig:ch2-bars-articles>).
-
-I believe that even this correction is enough as the right plot should not only show the total numbers of exclamation points but also their relation to the article types as shown in @fig-exclamation-point-usage-2.
-
-:::::{.my-r-code}
-:::{.my-r-code-header}
-:::::: {#cnj-002-exclamation-point-usage}
-: Bar plots of exclamation point usage, both within fake vs real news and overall (Version2)
-::::::
 :::
-::::{.my-r-code-container}
+::::::
+
+In the book the code for the right plot in @fig-exclamation-point-usage-1 is wrong. It says `ggplot2::ggplot(article_sim, ggplot2::aes(x = type))` instead of `ggplot2::ggplot(article_sim, ggplot2::aes(x = usage))` (see: <https://www.bayesrulesbook.com/chapter-2#fig:ch2-bars-articles>).
+
+I believe that even this correction is not enough as the right plot should not only show the total numbers of exclamation points but also their relation to the article types as shown in @fig-exclamation-point-usage-2.
+
+:::::: my-r-code
+:::: my-r-code-header
+<div>
+
+: Bar plots of exclamation point usage, both within fake vs real news and overall (Version2)
+
+</div>
+::::
+
+::: my-r-code-container
 ```{r}
 #| label: fig-exclamation-point-usage-2
 #| fig-cap: Bar plots of exclamation point usage, both within fake vs real news and overall (Version 2).
@@ -1382,7 +1464,7 @@ p1 <- ggplot2::ggplot(article_sim2, ggplot2::aes(x = type, fill = usage)) +
   ggplot2::theme(aspect.ratio = 3/1) +
   ggplot2::scale_y_continuous(labels = scales::percent) +
   ggplot2::labs(
-    title = "Exclamation Usage by Article Type",
+    title = "Exclamation Usage\nby Article Type",
     x = "Article Type",
     y = "Percentage",
     fill = "Usage"
@@ -1390,11 +1472,11 @@ p1 <- ggplot2::ggplot(article_sim2, ggplot2::aes(x = type, fill = usage)) +
   ggplot2::scale_fill_viridis_d(option = "E")
 
 # Plot 2: Overall percentage distribution of article types
-p2 <- ggplot2::ggplot(article_sim2, aes(x = usage, fill = type)) + 
+p2 <- ggplot2::ggplot(article_sim2, ggplot2::aes(x = usage, fill = type)) + 
   ggplot2::geom_bar(width = 0.6) +
   ggplot2::theme(aspect.ratio = 3/1) +
   ggplot2::labs(
-    title = "Article Type by Exclamation Usage",
+    title = "Article Type\nby Exclamation Usage",
     x = "Exclamation Usage",
     y = "Count",
     fill = "Type"
@@ -1404,22 +1486,26 @@ p2 <- ggplot2::ggplot(article_sim2, aes(x = usage, fill = type)) +
 # Combine plots side by side
 patchwork:::"-.ggplot"(p1, p2)
 ```
+:::
+::::::
 
-::::
-:::::
+#### Display posterior probabilities {#sec-002-display-posterior-probabilities}
 
 Among the 1206 simulated articles that use exclamation points, roughly 88.7% are fake. This approximation is quite close to the actual posterior probability of 0.889. Of course, our posterior assessment of this article would change if we had seen different data, i.e., if the title didn’t have exclamation points. Figure 2.4 reveals a simple rule: If an article uses exclamation points, it’s most likely fake. Otherwise, it’s most likely real (and we should read it).
 
-:::::{.my-r-code}
-:::{.my-r-code-header}
-:::::: {#cnj-002-plot-exlamation-usage}
+::::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-002-plot-exlamation-usage}
 : Bar plots of real vs fake news, broken down by exclamation point usage
-::::::
 :::
-::::{.my-r-code-container}
+::::
+
+:::: my-r-code-container
 ```{r}
 #| label: fig-plot-exlamation-usage
 #| fig-cap: Bar plots of real vs fake news, broken down by exclamation point usage.
+#| lst-label: lst-002-display-posterior-probabilities
+#| lst-cap: Bar plots of real vs fake news, broken down by exclamation point usage.
 
 ggplot2::ggplot(article_sim2, ggplot2::aes(x = type)) + 
   ggplot2::geom_bar(width = 0.6) + 
@@ -1427,9 +1513,995 @@ ggplot2::ggplot(article_sim2, ggplot2::aes(x = type)) +
   ggplot2::facet_wrap(~ usage) 
 ```
 
+
+::::
+:::::::
+
+#### Summary
+
+To integrate the different simulation steps into the previous seection I will rename the action taken. Instead to focus about the concrete action (article types, exclamation usage) I will address the steps in general Bayesian terminology: From the prior to the posterior distribution we followed different steps of calculations and simulations:
+
+1.  Define the prior probabilities: See @lst-002-define-prior-probabilities.
+2.  Simulate the prior probabilities with many events ($\approx$ 10000 or more): See @lst-002-simulate-prior-probabilities.
+3.  Specify the data model with the conditional probabilities: See @lst-002-calculate-conditional-probabilities.
+4.  Simulate the conditional probabilities: See @lst-002-simulate-conditional-probabilities.
+5.  Display the posterior probabilities: See @lst-002-display-posterior-probabilities.
+
+## Example: Pop vs soda vs coke
+
+### Introduction
+
+There exist different preferences for carbonated soft drinks in different region of the United States. We would like to know the (posterior) probability where a person comes from if (s)he says "Pop" to fizzy drinks. The population distribution gives us the prior probability.
+
+The book uses rounded population data from 2020. The actual data from 2024 shows that there was a relative increase of the south population growth by 1 percent at the cost of the other three regions. The US population is growing by one person every 22 seconds.
+
+:::::: my-resource
+:::: my-resource-header
+::: {#lem-002-us-propulation}
+: References to US Population Statistics
+:::
+::::
+
+::: my-resource-container
+-   [Census Regions and Divisions of the United States](https://www2.census.gov/geo/pdfs/maps-data/maps/reference/us_regdiv.pdf)
+-   [US and World Population Clock](https://www.census.gov/popclock/)
+-   [United States Population Growth by Region](https://www.census.gov/popclock/data_tables.php?component=growth)
+:::
+::::::
+
+### Prior model {#sec-002-prior-model-pop-vs-soda}
+
+| Region    |  Population | Percentage |
+|:----------|------------:|-----------:|
+| Northeast |  57,431,458 |      17.3% |
+| Midwest   |  68,984,258 |      20.8% |
+| West      |  78,685,455 |      23.7% |
+| South     | 126,476,549 |      38.1% |
+| Total     | 331,577,720 |     100.0% |
+
+: Prior model of U.S. region in 2020 {#tbl-prior-model-us-region} {.striped}
+
+This prior model is summarized in @tbl-prior-model-us-region. Notice that the South is the most populous region and the Northeast the least ($P (S) > P (N )$). Thus, based on population statistics alone, there’s a 38% prior probability that the interviewee lives in the South: $P (S) = 0.38$.
+
+### Conditional probability {#sec-002-conditional-probability-pop-vs-soda}
+
+To combine the prior probability with data about usage of the word "Pop" we need the regional distribution of the preferred word for fizzy drinks. This would give us a better estimation where the person comes from.
+
+To evaluate this data, we can examine the `pop_vs_soda` dataset in the {**bayesrules**} package [@bayesrules] which includes 374250 responses to a volunteer survey conducted at [popvssoda.com](https://popvssoda.com/). To learn more about this dataset, look at [Pop vs Soda vs Coke](https://bayes-rules.github.io/bayesrules/docs/reference/pop_vs_soda.html) and inspect the random small dataset at @lst-002-random-glance-pop_vs_soda-data.
+
+::::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-002-random-glance-pop_vs_soda-data}
+: Random glance at the `pop_vs_soda` dataset from {**bayesrules**}
+:::
+::::
+
+:::: my-r-code-container
+::: {#lst-002-random-glance-pop_vs_soda-data}
+```{r}
+#| label: glance-pop_vs_soda-data
+
+my_glance_data(bayesrules::pop_vs_soda) |> 
+  knitr::kable()
+```
+
+A random glance at the `pop_vs_soda` dataset from {**bayesrules**}
+:::
+::::
+:::::::
+
+### Likelihood {#sec-002-likelihood-pop-vs-soda}
+
+Though the survey participants aren’t directly representative of the regional populations (@tbl-prior-model-us-region), we can use their responses to approximate the likelihood of people using the word pop in each region.
+
+::::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-002-summarize-pop-per-region}
+: Summarize the usage of the Word "Pop" per region
+:::
+::::
+
+:::: my-r-code-container
+::: {#lst-002-summarize-pop-per-region
+```{r}
+#| label: tbl-summarize-pop-per-region
+#| tbl-cap: Summarize the usage of the Word 'Pop' per region
+#| tbl-subcap:
+#|   - "Absolute"
+#|   - "Percentages"
+#| layout-ncol: 2
+
+library(bayesrules)
+
+# Load the data
+data(pop_vs_soda)
+
+# Summarize pop use by region in absolute
+pop_vs_soda |> 
+  janitor::tabyl(pop, region) |> 
+  janitor::adorn_totals("row") |> 
+  knitr::kable(digits = 4)
+
+# Summarize pop use by region in percentage
+pop_vs_soda |> 
+  janitor::tabyl(pop, region) |> 
+  janitor::adorn_percentages("col") |> 
+  janitor::adorn_totals("row") |> 
+  knitr::kable(digits = 4)
+
+```
+:::
+::::
+:::::::
+
+Letting $A$ denote the event that a person uses the word "pop," we’ll thus assume the following regional **likelihoods**:
+
+$L(M \mid A) = 0.6447$, $L(N \mid A) = 0.2734$, $L(S \mid A) = 0.0792$, $L(W \mid A) = 0.2943$.
+
+For example, 64.47% of people in the Midwest but only 7.92% of people in the South use the term “pop.” Comparatively then, the “pop” data is most likely if the interviewee lives in the Midwest and least likely if they live in the South, with the West and Northeast being in between these two extremes:
+
+$$L(M \mid A) > L(W \mid A) > L(N \mid A) > L(S\mid A)$$
+
+### Marginal Probability {#sec-002-marginal-probabilities-pop-vs-soda}
+
+Weighing the prior information about regional populations with the data that the interviewee used the word “pop,” what are we to think now? For example, considering the fact that 38% of people live in the South but that “pop” is relatively rare to that region, what’s the posterior probability that the interviewee lives in the South? Per Bayes’ Rule (@eq-002-bayes-rule-1 resp. @eq-002-bayes-rule-general), we can calculate this probability by
+
+$$
+P (S \mid A) =  \frac{P (S) \cdot L(S \mid A)}{P (A)}
+$$ {#eq-002-bayes-rule-pop}
+
+We already have two of the three necessary pieces of the puzzle, the `r glossary("prior_probability", "prior probability")` $P (S)$ and the `r glossary("likelihood_x", "likelihood")` $L(S \mid A)$. Consider the third, the `r glossary("marginal_probability", "marginal probability")` that a person uses the term “pop” across the entire U.S., $P (A)$. By extending the Law of Total Probability (@eq-002-ltp), we can calculate $P (A)$ by combining the likelihoods of using “pop” in each region, while accounting for the regional populations (using the rounded percentages of @tbl-prior-model-us-region). Accordingly, there’s a 28.28% chance that a person in the U.S. uses the word “pop”:
+
+$$
+\begin{align*}
+P (A) &= L(M \mid A) \cdot P (M ) + L(N \mid A) \cdot P (N ) + L(S\mid A) \cdot P (S) + L(W \mid A) \cdot P (W) \\
+&= 0.6447 ⋅ 0.21 + 0.2734 ⋅ 0.17 + 0.0792 ⋅ 0.38 + 0.2943 ⋅ 0.24 \\
+&\approx 0.2826
+\end{align*}
+$$
+
+### Posterior model {#sec-002-posterior-model-pop-vs-soda}
+
+Then plugging into (@eq-002-bayes-rule-pop), there’s a roughly 10.65% posterior chance that the interviewee lives in the South:
+
+$$P (S \mid A) =  \frac{0.38 ⋅ 0.0792} {0.2828} ≈ 0.1065$$
+
+We can similarly update our understanding of the interviewee living in the Midwest, Northeast, or West. @tbl-002-prior-and-posterior-model-pop summarizes the resulting posterior model of region alongside the original prior. Upon hearing the interviewee use “pop,” we now think it’s most likely that they live in the Midwest and least likely that they live in the South, despite the South being the most populous region.
+
+| region                | M      | N      | S      | W      | Total |
+|-----------------------|--------|--------|--------|--------|-------|
+| prior probability     | 0.21   | 0.17   | 0.38   | 0.24   | 1     |
+| posterior probability | 0.4791 | 0.1645 | 0.1065 | 0.2499 | 1     |
+
+: Posterior model of regional usages "pop" for carbonated soft drinks {#tbl-002-prior-and-posterior-model-pop} {.striped}
+
+## Building a Bayesian model for numerical random variables
+
+So far we had worked with categorical variable. The principles for building Bayesian models of numerical random variables are the same but differ in some details. We will explore these differences with the example of the chess games between Gary Kasparov and the IBM supercomputer Deep Blue. Of the six games played in 1996, Kasparov won three, drew two, and lost one. Thus, Kasparov won the overall match.
+
+### Prior Probability Model {#sec-002-prior-probability-chess-game}
+
+Yet Kasparov and Deep Blue were to meet again for a six-game match in 1997. Let $\pi$ denote Kasparov’s chances of winning any particular game in the re-match. (Greek letters are conventionally used to denote quantitative variables of interest.) Thus,$\pi$ is a measure of his overall skill relative to Deep Blue. Given the complexity of chess, machines, and humans, $\pi$ is unknown and can vary or fluctuate over time. Or, in short, $\mathbf{\pi}$ is a numerical random variable.
+
+As with the fake news analysis, our analysis of random variable $\pi$ will start with a prior model which
+
+(1) identifies what values $\pi$ can take, and
+(2) assigns a prior weight or probability to each, where
+(3) these probabilities sum to 1.
+
+| $\mathbf{\pi}$ | 0.2  | 0.5  | 0.8  | Total |
+|----------------|------|------|------|-------|
+| f($\pi$)       | 0.10 | 0.25 | 0.65 | 1     |
+
+: Prior model of $\pi$ Kasparov’s chance of beating Deep Blue {#tbl-002-prior-model-chess}
+
+Consider the prior model defined in @tbl-002-prior-model-chess. We’ll get into how we might build such a prior in later chapters. For now, let’s focus on interpreting and utilizing the given prior:
+
+The first thing you might notice is that this model greatly simplifies reality. Though Kasparov’s win probability $\pi$ can *technically* be any number from zero to one, this prior assumes that $\pi$ has a discrete set of possibilities: Kasparov’s win probability is either 20%, 50%, or 80%. Next, examine the `r glossary("probability_mass_function", "probability mass function")` (pmf) $f (\cdot)$ which specifies the prior probability of each possible $\pi$ value. This pmf reflects the prior understanding that Kasparov learned from the 1996 match-up, and so will most likely improve in 1997. Specifically, this pmf places a 65% chance on Kasparov’s win probability jumping to $\pi$ = 0.8 and only a 10% chance on his win probability dropping to $\pi$ = 0.2, i.e., f ($\pi$ = 0.8) = 0.65 and f ($\pi$ = 0.2) = 0.10.
+
+:::::: my-theorem
+:::: my-theorem-header
+::: {#thm-002-discrete-probability-model}
+: Discrete Probability Model
+:::
+::::
+
+::: my-theorem-container
+Let $Y$ be a discrete random variable. The probability model of $Y$ is specified by a `r glossary("probability_mass_function", "probability mass function")` (pmf) $f (y)$. This pmf defines the probability of any given outcome $y$,
+
+$$
+f (y) = P (Y = y)
+$$ {#eq-002-discrete-probability-model}
+
+and has the following properties:
+
+-   $0 ≤ f (y) ≤ 1 \text{ for all y}$; and
+-   $\sum_{\text{all y}} f (y) = 1$, i.e., the probabilities of all possible outcomes $y$ sum to $1$.
+:::
+::::::
+
+### Binomial Data Model {#sec-002-conditional-probabilities-chess-game}
+
+In the second step of our Bayesian analysis, we’ll collect and process data which can inform our understanding of $\pi$, Kasparov’s skill level relative to that of Deep Blue. Here, our data $Y$ is the number of the six games in the 1997 re-match that Kasparov wins. Since the chess match outcome isn’t predetermined, $Y$ is a **random variable** that can take any value in {0, 1, ..., 6}. Further, $Y$ inherently depends upon Kasparov’s win probability $\pi$. If $\pi$ were 0.80, Kasparov’s victories $Y$ would also tend to be high. If $\pi$ were 0.20, $Y$ would tend to be low. For our formal Bayesian analysis, we must model this dependence of $Y$ on $\pi$. That is, we must develop a `r glossary("conditional_probability", "conditional probability model")` of how $Y$ depends upon or is conditioned upon the value of $\pi$.
+
+:::::: my-theorem
+:::: my-theorem-header
+::: {#thm-002-conditional-propbability-model}
+: Conditional probability model of data $Y$
+:::
+::::
+
+::: my-theorem-container
+Let $Y$ be a discrete random variable and $\pi$ be a parameter upon which $Y$ depends. Then the conditional probability model of $Y$ given $\pi$ is specified by conditional pmf $f (y \mid \pi)$. This pmf specifies the conditional probability of observing $y$ given $\pi$,
+
+$$
+\begin{align*}
+f (y \mid \pi) = P (Y = y \mid \pi)
+\end{align*}
+$$ {#eq-002-conditional-probability-model}
+
+and has the following properties:
+
+-   $0 ≤ f (y \mid \pi) ≤ 1 \text{ for all y}$; and\
+-   $\sum_{\text{all y}} f (y \mid \pi) = 1$.
+:::
+::::::
+
+In modeling the dependence of $Y$ on $\pi$ in our chess example, we first make two assumptions about the chess match:
+
+(1) the outcome of any one game doesn’t influence the outcome of another, i.e., games are **independent**; and
+(2) Kasparov has an equal probability, $\pi$, of winning any game in the match, i.e., his chances don’t increase or decrease as the match goes on.
+
+This is a common framework in statistical analysis, one which can be represented by the `r glossary("Binomial model")`.
+
+:::::: my-theorem
+:::: my-theorem-header
+::: {#thm-002-binomial-model}
+: Binomial Model
+:::
+::::
+
+::: my-theorem-container
+The Binomial model Let random variable Y be the number of successes in a fixed number of trials $n$. Assume that the trials are independent and that the probability of success in each trial is $\p$. Then the conditional dependence of $Y$ on $\pi$ can be modeled by the `r glossary("Binomial model")` with parameters $n$ and $\pi$. In mathematical notation:
+
+$$Y \mid \pi \sim Bin(n, \pi)$$ {#eq-002-binomial-model}
+
+where “∼” can be read as “modeled by.” Correspondingly, the Binomial model is specified by the `r glossary("CPMF", "Conditional Probability Mass Function")`
+
+$$
+\begin{align*}
+f (y \mid \pi) = \binom{n}{y} \pi^y(1 − $\pi$)^{n−y} \text{ for y} \in \{0, 1, 2, . . . , n\}
+\end{align*}
+$$ {#eq-002-CPMF}
+
+where $\binom{n}{y} = \frac{n!}{y!(n−y)!}$
+:::
+::::::
+
+We can now say that the dependence of Kasparov’s victories Y in n = 6 games on his win probability $\pi$ follows a Binomial model,
+
+$$Y \mid \pi \sim Bin(6, \pi)$$
+
+with conditional pmf
+
+$$f (y \mid \pi) = \binom{6}{y} \pi^y(1 − \pi)^{6−y} \text{ for y} \in \{0, 1, 2, 3, 4, 5, 6\}$$ {#eq-002-concitional-pmf-chess}
+
+This pmf summarizes the conditional probability of observing any number of wins $Y = y$ for any given win probability $\pi$. For example, if Kasparov’s underlying chance of beating Deep Blue were $\pi$ = 0.8, then there’s a roughly 26% chance he’d win all six games:
+
+$$f (y = 6 \mid \pi = 0.8) = \binom{6}{6} 0.8^6(1 − 0.8)^{6−6} = 1 ⋅ 0.8^6 ⋅ 1 ≈ 0.26$$ {#eq-002-example-binom-1}
+
+And a near 0 chance he’d lose all six games:
+
+$$f (y = 0 \mid \pi = 0.8) = \binom{6}{0} 0.80(1 − 0.8)^{6−0} = 1 ⋅ 1 ⋅ 0.2^6 \approx 0.000064$$ {#eq-002-example-binom-2}
+
+::::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-002-example-pmf}
+: Two example PMFs calculated with R
+:::
+::::
+
+:::: my-r-code-container
+::: {#lst-002-example-pmf}
+```{r}
+#| label: example-pmf
+
+stats::dbinom(x = 6, size = 6, prob = 0.8)
+stats::dbinom(x = 0, size = 6, prob = 0.8)
+```
+
+6 and 0 wins of 6 trials: PMF when Kasparov’s chance of beating Deep Blue $\pi$ = 0.8.
+:::
+::::
+:::::::
+
+I have reproduced the manual calculation of @eq-002-example-binom-1, and @eq-002-example-binom-2 with R.
+
+@lst-002-binomial-model-chess plots the conditional pmfs $f (y \mid \pi)$, and thus the random outcomes of $Y$ , under each possible value of Kasparov’s win probability $\pi$. These plots confirm our intuition that Kasparov’s victories $Y$ would tend to be low if Kasparov’s win probability $\pi$ were low (far left) and high if $\pi$ were high (far right).
+
+::::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-002-binomial-model-chess}
+: The Probability Mass Function of a $Bin(6, \pi)$ model from @tbl-002-prior-model-chess
+:::
+::::
+
+:::: my-r-code-container
+```{r}
+#| label: fig-002-binomial-model-chess
+#| fig-cap: The pmf of a $Bin(6, \pi)$ model is plotted for each possible value of $\pi \in \{0.2, 0.5, 0.8\}$. The masses marked by the black lines correspond to the eventual observed data, $Y = 1$ win.
+#| lst-label: lst-002-binomial-model-chess
+#| lst-cap: Probability Mass Function of a $Bin(6, \pi)$ model
+
+# Create data frame with all combinations
+df <- base::expand.grid(
+  x = 0:6,  # number of successes (0 to size)
+  prob = c(0.2, 0.5, 0.8)
+) |> 
+  dplyr::mutate(
+    probability = stats::dbinom(x, size = 6, prob = prob),
+    prob_label = base::paste("Bin(6, ", prob, ")"),
+    highlight = dplyr::if_else(x == 1, "black", "gray")
+  )
+
+# Create lollipop chart with facets
+ggplot2::ggplot(df, ggplot2::aes(x = x, y = probability)) +
+  ggplot2::geom_linerange(
+    ggplot2::aes(
+      x = x, 
+      ymin = 0, 
+      ymax = probability, 
+      color = highlight), 
+    linewidth = 0.8) +
+  ggplot2::geom_point(ggplot2::aes(color = highlight), size = 3) +
+  ggplot2::scale_color_identity() +
+  ggplot2::facet_wrap(~ prob_label, ncol = 3) +
+  ggplot2::scale_x_continuous(breaks = 0:6) +
+  ggplot2::scale_y_continuous(breaks = seq(0, 1, by = 0.1)) +
+  ggplot2::labs(
+    x = "Number of Successes",
+    y = "Probability",
+    title = "Binomial Distribution (n = 6)"
+  ) +
+  ggplot2::theme_minimal() +
+  ggplot2::theme(
+    panel.grid.minor.y = ggplot2::element_line(color = "gray90", linewidth = 0.2),
+    panel.grid.major.y = ggplot2::element_line(color = "gray60", linewidth = 0.5),
+    panel.grid.major.x = ggplot2::element_line(color = "gray80", linewidth = 0.3),
+    panel.spacing = grid::unit(1.5, "lines"),
+    strip.background = ggplot2::element_rect(fill = "gray90", color = "gray50"),
+    strip.text = ggplot2::element_text(face = "bold", size = 11)
+  )
+```
+
+::::
+:::::::
+
+### Binomial Likelihood Function {#sec-002-likelihood-chess-game}
+
+The Binomial provides a theoretical model of the data $Y$ we might observe. In the end, Kasparov only won one of the six games against Deep Blue in 1997 ($Y = 1$). Thus, the next step in our Bayesian analysis is to determine how compatible this particular data is with the various possible $\pi$. Put another way, we want to evaluate the `r glossary("likelihood_x", "likelihood")` of Kasparov winning $Y = 1$ game under each possible $\pi$. It turns out that the answer is staring us straight in the face. Extracting only the masses in @lst-002-binomial-model-chess and @fig-002-binomial-model-chess that correspond to our observed data, $Y = 1$, reveals the likelihood function of $\pi$ (@fig-002-binomial-likelhood-chess).
+
+::::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-002-fig-binomial-likelhood-chess}
+: Binomial Likelihood Function for Kasparov winning $Y = 1$ game under each possible $\pi$
+:::
+::::
+
+:::: my-r-code-container
+```{r}
+#| label: fig-002-binomial-likelhood-chess
+#| fig-cap: Likelihood function $L(\pi \mid y = 1)$ of observing $Y = 1$ win in six games for any win probability $\pi \in \{0.2, 0.5, 0.8\}$
+#| fig-height: 4
+#| lst-label: lst-002-fig-binomial-likelhood-chess
+#| lst-cap: Likelihood function $L(\pi \mid y = 1)$ of observing $Y = 1$ win in six games
+
+# Create a data frame with the probabilities
+data <- tibble::tibble(
+  prob = c(0.2, 0.5, 0.8),
+  k = 1,
+  size = 6,
+  prob_k = dbinom(1, size = 6, prob = c(0.2, 0.5, 0.8))
+)
+
+# Create the lollipop chart
+ggplot2::ggplot(data, ggplot2::aes(x = prob, y = prob_k, group = prob)) +
+  ggplot2::geom_segment(ggplot2::aes(xend = prob, yend = 0), color = "black") +
+  ggplot2::geom_point(size = 3, color = "blue") +
+  ggplot2::labs(
+    x = "Probability of Success (p)", 
+    y = "Probability of Exactly 1 Success"
+    ) +
+  ggplot2::theme_minimal() +
+  ggplot2::theme(aspect.ratio = 3/1) +
+  ggplot2::scale_x_continuous(breaks = data$prob, labels = base::round(data$prob, 2))
+```
+
+::::
+:::::::
+
+Just as the likelihood in our fake news example was obtained by flipping a conditional probability on its head, the formula for the likelihood function follows from evaluating the conditional pmf $f (y \mid \pi)$ in @eq-002-concitional-pmf-chess at the observed data $Y = 1. \text{ For } \pi \in \{0.2, 0.5, 0.8\}$,
+
+$$
+\begin{align*}
+L(\pi \mid y = 1) = f (y = 1 \mid \pi) = \binom{6}{1} \pi^1(1 − \pi)^{6−1} = 6 \pi (1 − \pi)^5.
+\end{align*}
+$$
+
+@tbl-002-binomial-likelhood-chess summarizes the likelihood function evaluated at each possible value of $\pi$. For example, there’s a low 0.0015 likelihood of Kasparov winning just one game if he were the superior player, i.e., $\pi = 0.8$:
+
+$$
+\begin{align*}
+L(\pi = 0.8 \mid y = 1) = 6 \cdot 0.8 \cdot (1 − 0.8)^5 \approx 0.0015.
+\end{align*}
+$$
+
+There are some not-to-miss details here:
+
+(1) First, though it is equivalent in *formula* to the conditional pmf of $Y , f (y = 1 \mid \pi)$, we use the $L(\pi \mid y = 1)$ notation to reiterate that the likelihood is a function of the unknown win probability $\pi$ given the observed $Y = 1$ win data. In fact, the resulting likelihood formula depends only upon $\pi$.
+(2) Further, the likelihood function does not sum to one across $\pi$, and thus is not a probability model. Rather, it provides a mechanism by which to compare the compatibility of the observed data $Y = 1$ with different $\pi$.
+
+::::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-002-tbl-binomial-likelhood-chess}
+: Table of the Binomial Likelihood Function for Kasparov winning $Y = 1$ game under each possible $\pi$.
+:::
+::::
+
+:::: my-r-code-container
+```{r}
+#| label: tbl-002-binomial-likelhood-chess
+#| tbl-cap: Likelihood function of $\pi$ given Kasparov won 1 of 6 games
+#| lst-label: lst-002-binomial-likelhood-chess
+#| lst-cap: Likelihood function of $\pi$ given Kasparov won 1 of 6 games
+
+likelihood <- tibble::tibble(data) |> 
+  dplyr::select(prob, prob_k) |> 
+  tidyr::pivot_wider(
+    names_from = prob,
+    values_from = prob_k
+  ) |> 
+  tibble::add_column("π" = "L(π∣y = 1)", .before = "0.2")
+  
+likelihood |> 
+  knitr::kable()
+```
+
+::::
+:::::::
+
+Putting this all together, the likelihood function summarized in @lst-002-fig-binomial-likelhood-chess and @lst-002-binomial-likelhood-chess illustrates that Kasparov’s one game win is *most* consistent with him being the weaker player and *least* consistent with him being the better player: $L(\pi = 0.2 \mid y = 1) > L(\pi = 0.5 \mid y = 1) > L(\pi = 0.8\mid y = 1)$. In fact, it’s nearly impossible that Kasparov would have only won one game if his win probability against Deep Blue were as high as $\pi = 0.8: L(\pi = 0.8 \mid y = 1) \approx 0$.
+
+:::::: my-theorem
+:::: my-theorem-header
+::: {#thm-pmf-vs-likelihood-function}
+: Probability Mass Function versus Likelihood Function
+:::
+::::
+
+::: my-theorem-container
+When $\pi$ is known, the `r glossary("CPMF", "conditional pmf")` $f (\cdot \mid \pi)$ allows us to compare the probabilities of different possible values of data $Y$ (e.g., $y_{1}$ or $y_{2}$) occurring with $\pi$:
+
+$$
+f (y_{1} \mid \pi) \text{ vs } f (y_{2} \mid \pi)
+$$
+
+When $Y = y$ is known, the likelihood function $L(\cdot \mid y) = f (y\mid \cdot)$ allows us to compare the relative `r glossary("likelihood_x", "likelihood")` of observing data y under different possible values of $\pi$ (e.g., $\pi_{1}$ or $\pi_{2}$):
+
+$$
+L(\pi_{1} \mid y) \text{ vs } L(\pi_{2} \mid y)
+$$
+
+Thus, $L(\cdot \mid y)$ provides the tool we need to evaluate the relative compatibility of data $Y = y$ with various $\pi$ values.
+:::
+::::::
+
+### Normalizing Constant {#sec-002-normalizing-constant-chess-game}
+
+Consider where we are: In contrast to our prior model of $\pi$ (@tbl-002-prior-model-chess), our 1997 chess match data provides evidence that Deep Blue is now the dominant player (@tbl-002-binomial-likelhood-chess). As Bayesians, we want to *balance* this prior and likelihood information.
+
+Our mechanism for doing so, Bayes’ Rule, requires three pieces of information: the prior, likelihood, and a `r glossary("normalizing constant")`. We’ve taken care of the first two, now let’s consider the third. To this end, we must determine the `r glossary("total_probability", "total probability")` that Kasparov would win $Y = 1$ game across all possible win probabilities $\pi, f (y = 1)$. As we did in our other examples, we can appeal to the `r glossary("LTP", "Law of Total Probability")` (LTP) to calculate $f (y = 1)$.
+
+The idea is this: The overall probability of Kasparov’s one win outcome ($Y = 1$) is the sum of its parts: the likelihood of observing $Y = 1$ with a win probability $\pi$ that’s either 0.2, 0.5, or 0.8 *weighted by* the prior probabilities of these $\pi$ values. Taking a little leap from the LTP for events (@eq-002-bayes-rule-2), this means that
+
+$$f (y = 1) = \sum_{\pi \in \{0.2,0.5,0.8\}}{} L(\pi \mid y = 1)f (\pi)$$
+
+or, expanding the summation $\sum$ and plugging in the prior probabilities and likelihoods from @tbl-002-prior-model-chess and @tbl-002-binomial-likelhood-chess:
+
+$$f (y = 1)  = L(\pi = 0.2 \mid y = 1)f (\pi = 0.2) + $$ $$L(\pi = 0.5 \mid y = 1)f (\pi = 0.5) + $$ {#eq-002-total-probability-chess} $$L(\pi = 0.8 \mid y = 1)f (\pi = 0.8) $$\
+$$\approx 0.3932 \cdot 0.10 + 0.0938 \cdot 0.25 + 0.0015 \cdot 0.65 $$ $$\approx 0.0637$$ {#eq-002-normalizing-constant-chess}
+
+Thus, across all possible $\pi$, there’s only a roughly 6% chance that Kasparov would have won only one game.
+
+### Posterior Probability Model {#sec-002-posterior-model-chess-game}
+
+@fig-002-posterior-probability-model-chess summarizes what we know thus far and where we have yet to go:
+
+1.  Heading into their 1997 re-match, our **prior** model suggested that Kasparov’s win probability against Deep Blue was high (left plot).
+2.  But! Then he only won one of six games, a result that is most **likely** when Kasparov’s win probability is low (middle plot).
+3.  Our updated, **posterior** model (right plot) of Kasparov’s win probability will balance this prior and likelihood.
+
+Specifically, our formal calculations below will verify that Kasparov’s chances of beating Deep Blue most likely dipped to $\pi = 0.20$ between 1996 to 1997. It’s also relatively possible that his 1997 losing streak was a fluke, and that he’s more evenly matched with Deep Blue ($\pi = 0.50$). In contrast, it’s *highly* unlikely that Kasparov is still the superior player ($\pi = 0.80$).
+
+:::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-fig-002-posterior-probability-model-chess-figure}
+: Posterior Probability Model: Chess Game Kasparov-Deep Blue (Figure)
+:::
+::::
+
+::: my-r-code-container
+```{r}
+#| label: fig-002-posterior-probability-model-chess
+#| fig-cap: The prior (left), likelihood (middle), and posterior (right) models of $\pi$.
+#| lst-label: lst-002-posterior-probability-model-chess-figure
+#| lst-cap: The prior (left), likelihood (middle), and posterior (right) models of $\pi$.
+
+
+library(tidyverse)
+
+# Create data with pi (Kasparov's winning probability per game)
+chess_data <- tibble(
+  pi = c(0.2, 0.5, 0.8),
+  prior = c(0.10, 0.25, 0.65),
+  likelihood = c(0.393216, 0.09375, 0.001536)
+)
+
+# Calculate posterior probabilities
+normalizing_constant <- 0.0637
+
+chess_posterior <- chess_data |>
+  mutate(
+    # Joint probability = Prior × Likelihood
+    joint = prior * likelihood,
+    # Posterior = Joint / Normalizing Constant
+    posterior = joint / normalizing_constant
+  )
+
+
+# Create long format data for all three models
+chess_long <- chess_posterior |>
+  select(pi, prior, likelihood, posterior) |>
+  pivot_longer(cols = c(prior, likelihood, posterior), 
+               names_to = "model", 
+               values_to = "probability") |>
+  mutate(model = factor(model, levels = c("prior", "likelihood", "posterior")))
+
+# Create three separate lollipop graphs side by side with same y-scale
+ggplot(chess_long, ggplot2::aes(x = factor(pi), y = probability, color = model)) +
+  geom_point(size = 4, shape = 21, fill = "white") +
+  geom_segment(ggplot2::aes(xend = factor(pi), yend = 0), color = "black", alpha = 0.7) +
+  geom_text(ggplot2::aes(label = scales::percent(probability, 1)), 
+            vjust = -0.5, color = "black", size = 4) +
+  ggplot2::labs(
+    title = "Bayesian Update: Kasparov's Winning Probability per Game",
+    x = base::expression(pi ~ "(Kasparov's probability of winning any game)"),
+    y = "Probability",
+    color = "Model"
+  ) +
+  ggplot2::scale_color_manual(
+    values = c("prior" = "steelblue", "likelihood" = "darkgreen", "posterior" = "coral"),
+    labels = c("Prior", "Likelihood", "Posterior")
+  ) +
+  ggplot2::scale_y_continuous(
+    breaks = seq(0, 0.7, by = 0.1),
+    labels = scales::percent_format(),
+    limits = c(0, 0.7)
+  ) +
+  ggplot2::facet_wrap(~model, scales = "free_x", ncol = 3) +
+  ggplot2::theme_minimal() +
+  ggplot2::theme(
+    axis.text.x = ggplot2::element_text(size = 12),
+    axis.text.y = ggplot2::element_text(size = 10),
+    legend.position = "top",
+    strip.text = ggplot2::element_text(size = 14),
+    panel.grid.major.y = ggplot2::element_line(color = "gray60", linewidth = 0.5),
+    panel.grid.minor.y = ggplot2::element_blank(),
+    panel.spacing = grid::unit(3, "lines"),
+    plot.margin = ggplot2::margin(t = 10, r = 10, b = 10, l = 10)
+  )
+```
+:::
+::::::
+
+The posterior model plotted in @fig-002-posterior-probability-model-chess is specified by the **posterior pmf**
+
+$$f (\pi \mid y = 1).$$
+
+Conceptually, $f (\pi \mid y = 1)$ is the posterior probability of some win probability $\pi$ given that Kasparov only won one of six games against Deep Blue. Thus, defining the posterior $f (\pi \mid y = 1)$ isn’t much different than it was in our previous examples. Just as you might hope, Bayes’ Rule still holds:
+
+$$\text{posterior} = \frac{\text{prior} \cdot \text{likelihood}}{\text{normalizing constant}}$$ In the chess setting, we can translate this as
+
+$$
+f (\pi \mid y = 1) = \frac{f (\pi)L(\pi \mid y = 1)}{f (y = 1)} \text{ for } \pi \in \{0.2, 0.5, 0.8\}
+$$ All that remains is a little “plug-and-chug”: the prior f (π) is defined by @tbl-002-prior-model-chess, the likelihood $L(\pi \mid y = 1)$ by @tbl-002-binomial-likelhood-chess, and the normalizing constant $f (y = 1)$ by @eq-002-total-probability-chess. The posterior probabilities follow:
+
+$$
+\begin{align*}
+f (\pi = 0.2 \mid y = 1) =  \frac{0.10 \cdot 0.3932}{0.0637} \approx 0.617 \\
+f (\pi = 0.5 \mid y = 1) =  \frac{0.25 \cdot 0.0938}{0.0637} \approx 0.368 \\
+f (\pi = 0.8 \mid y = 1) =  \frac{0.65 \cdot 0.0015}{0.0637} \approx 0.015
+\end{align*}
+$$ {#eq-002-posterior-probability-model-chess}
+
+This posterior probability model is summarized in @tbl-002-posterior-probability-model-chess along with the prior, likelihood, and joint probability model for comparison. These details confirm the trends in and intuition behind @fig-002-posterior-probability-model-chess. Mainly, though we were fairly confident that Kasparov’s performance would have improved from 1996 to 1997, after winning only one game, the chances of Kasparov being the dominant player ($\pi = 0.8$) dropped from $0.65$ to $0.015$. In fact, the scenario with the greatest posterior support is that Kasparov is the weaker player, with a win probability of only $0.2$.
+
+:::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-tbl-002-posterior-probability-model-chess-table}
+: Posterior Probability Model: Chess Game Kasparov-Deep Blue (Table)
+:::
+::::
+
+::: my-r-code-container
+```{r}
+#| label: tbl-002-posterior-probability-model-chess
+#| tbl-cap: Bayesian update showing prior, likelihood, joint and posterior probabilities models of $\pi$ for Kasparov’s chance of beating Deep Blue in chess.
+#| code-fold: true
+
+chess_posterior |> 
+  knitr::kable(digits = 4)
+```
+:::
+::::::
+
+Above table used interim result `chess_posterior` from @lst-002-posterior-probability-model-chess-figure.
+
+We close this section by generalizing the tools we built for the chess analysis.
+
+:::::: my-theorem
+:::: my-theorem-header
+::: {#thm-002-bayes-rule-for-variables}
+: Bayes’ rule for variables
+:::
+::::
+
+::: my-theorem-container
+For any variables $\pi$ and $Y$ , let $f (\pi)$ denote the prior pmf of$\pi$ and \$L(\pi \mid y) denote the likelihood function of \pi given observed data $Y = y$. Then the posterior pmf of $\pi$ given data $Y = y$ is
+
+$$
+f (\pi \mid y = 1) = \frac{\text{prior} \cdot \text{likelihood}}{\text{normalizing constant}} = \frac{f (\pi)L(\pi \mid y)}{f (y)}
+$$ {#eq-002-posterior-pmf-for-variable}
+
+where, by the Law of Total Probability, the overall probability of observing data $Y = y$ across all possible $\pi$ is
+
+$$
+f (y) = \sum_{all \pi} f (\pi)L(\pi \mid y).
+$$ {#eq-002-total-probability-for-variable}
+:::
+::::::
+
+### Posterior Shortcut
+
+We don't need to calculate the **normalizing constant**. To begin, notice in @eq-002-posterior-probability-model-chess that $f (y = 1) = 0.0637$ appears in the denominator of $f (\pi \mid y = 1) \text{ for each } \pi \in \{0.2, 0.5, 0.8\}$. This explains the term `r glossary("normalizing constant")` – its only purpose is to normalize the posterior probabilities so that they sum to one:
+
+$$
+f (\pi = 0.2 \mid y = 1) + f (\pi = 0.5 \mid y = 1) + f (\pi = 0.8 \mid y = 1) = 1
+$$
+
+Yet we needn’t actually calculate $f (y = 1)$ to normalize the posterior probabilities. Instead, we can simply note that $f (y = 1)$ is some constant $1/c$, and thus replace @eq-002-posterior-probability-model-chess with
+
+$$
+\begin{align*}
+f (\pi = 0.2 \mid y = 1) = c \cdot 0.10 \cdot 0.3932 \propto 0.039320 \\ 
+f (\pi = 0.5 \mid y = 1) = c \cdot 0.25 \cdot 0.0938 \propto 0.023450 \\
+f (\pi = 0.8 \mid y = 1) = c \cdot 0.65 \cdot 0.0015 \propto 0.000975
+\end{align*}
+$$
+
+where $\propto$ denotes “proportional to.” Though these unnormalized posterior probabilities don’t add up to one,
+
+$$0.039320 + 0.023450 + 0.000975 = 0.063745,$$ 
+
+@fig-002-demonstrate-proportional-relationship demonstrates that they preserve the proportional relationships of the normalized posterior probabilities.
+
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-002-demonstrate-proportional-relationship}
+: Compare normalized and unnormalized posterior probabilities
+::::::
+:::
+::::{.my-r-code-container}
+```{r}
+#| label: fig-002-demonstrate-proportional-relationship
+#| fig-cap: The normalized posterior pmf of$\pi$π (left) and the unnormalized posterior pmf of $\pi$ (right) with different y-axis scales.
+#| lst-label: lst-002-demonstrate-proportional-relationship
+#| lst-cap: Demonstration of the same porportional relationship between normalized and unnormalized posterior pmf.
+#| fig-height: 3
+#| fig-width: 5
+
+lollipop_chart <- function(data, y_lab) {
+  ggplot2::ggplot(data, ggplot2::aes(x = x, y = y)) +
+  ggplot2::geom_segment(ggplot2::aes(x = x, xend = x, y = 0, yend = y), 
+               color = "steelblue", linewidth = 1) +
+  ggplot2::geom_point(color = "steelblue", size = 4) +
+  ggplot2::theme_minimal() +
+  ggplot2::labs(x = base::expression(pi), 
+       y = y_lab)
+}
+
+# Create the data frame
+data1 <- data.frame(
+  x = c(0.2, 0.5, 0.8),
+  y = c(0.617, 0.368, 0.015)
+)
+
+data2 <- data.frame(
+  x = c(0.2, 0.5, 0.8),
+  y = c(0.039320, 0.023450, 0.000975)
+)
+
+p1 <- lollipop_chart(data1, "f(π | y == 1)")
+p2 <- lollipop_chart(data2, paste("unnormalized", "f(π | y == 1)"))
+
+patchwork:::"-.ggplot"(p1, p2)
+```
+
 ::::
 :::::
 
+Thus, to *normalize* these unnormalized probabilities while preserving their relative relationships, we can compare each to the whole. Specifically, we can divide each unnormalized probability by their sum. For example:
+
+$$f (π = 0.2∣y = 1) = \frac{0.039320}{0.039320 + 0.023450 + 0.000975} \approx 0.617.$$
+
+Though we’ve just intuited this result, it also follows mathematically by combining @eq-002-posterior-pmf-for-variable and @eq-002-total-probability-for-variable:
+
+$$f (\pi \mid y) =  \frac{f \pi)L(\pi \mid y)}{f (y)} = \frac{f (\pi)L(\pi \mid y)}{\sum_{all} \pi f (\pi)L(\pi \mid y)}.$$
+
+We state the general form of this proportionality result below.
+
+:::::: my-theorem
+:::: my-theorem-header
+::: {#thm-002-proportionality}
+: Proportionality
+:::
+::::
+
+::: my-theorem-container
+Since $f (y)$ is merely a normalizing constant which does not depend on$\pi$, the posterior pmf $f (\pi \mid y)$ is proportional to the product of $f ($\pi\$) and $L(\pi \mid y)$:
+
+$$
+\begin{align*}
+f (\pi \mid y) =  \frac{f \pi)L(\pi \mid y)}{f (y)} \propto f (\pi)L(\pi \mid y)
+\end{align*}
+$$ {#eq-002-proportionality}
+
+That is,
+
+$$\text{posterior} \propto \text{prior} \cdot \text{likelihood}$$.
+
+The significance of this proportionality is that all the information we need to build the posterior model is held in the prior and likelihood.
+:::
+::::::
+
+### Posterior Simulation {#sec-002-posterior-simulation-chess-game}
+
+We’ll conclude this section with a simulation that provides insight into and supports our Bayesian analysis of Kasparov’s chess skills. Ultimately, we’ll simulate 10,000 scenarios of the six-game chess series. To begin, set up the possible values of win probability $\pi$ and the corresponding prior model $f (\pi)$:
+
+1.  Define possible win probabilities
+2.  Define the prior model
+3.  Simulate 10,000 possible outcomes of $\pi$ from the prior model and store the results in the `chess_sim` data frame.
+4.  From each of the 10,000 prior plausible values `pi`, we can simulate six games and record Kasparov’s number of wins, `y`. Since the dependence of `y` on `pi` follows a Binomial model, we can directly simulate `y` using the `stats::rbinom()` function with `size = 6` and `prob = pi`.
+5.  Show 10 randoms outcomes
+
+:::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-002-simulate-posterior-chess}
+: Posterior Simulation of Chess Game Kasparov Against Deep Blue
+:::
+::::
+
+::: my-r-code-container
+```{r}
+#| label: tbl-002-simulate-posterior-chess
+#| tbl-cap: 10 random rows of simulated 10000 chess outcomes
+#| lst-label: lst-002-simulate-posterior-chess
+#| lst-cap: Simulate 10000 chess outcomes
+
+# 1. Define possible win probabilities
+chess <- tibble::tibble(pi = c(0.2, 0.5, 0.8))
+
+# 2. Define the prior model
+prior <- c(0.10, 0.25, 0.65)
+
+# 3. Simulate 10000 values of pi from the prior
+base::set.seed(84735)
+chess_sim <- dplyr::slice_sample(
+  chess, n = 10000, 
+  weight_by = prior, 
+  replace = TRUE)
+
+# 4. Simulate 10000 match outcomes
+chess_sim <- chess_sim |>  
+  dplyr::mutate(y = stats::rbinom(10000, size = 6, prob = pi))
+
+# 5. Check it out
+my_glance_data(chess_sim) |> 
+  knitr::kable()
+
+```
+:::
+::::::
+
+The combined 10,000 simulated `pi` values closely approximate the prior model $f (\pi)$ (@tbl-002-prior-model-chess):
+
+:::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-002-combined-simulated-pi-values}
+: Combined simulates `pi` values
+:::
+::::
+
+::: my-r-code-container
+```{r}
+#| label: tbl-002-combined-simulated-pi-values
+#| tbl-cap: Combined simulated `pi` values
+#| lst-label: lst-002-combined-simulated-pi-values
+#| lst-cap: Combined simulated `pi` values
+
+# Summarize the prior
+chess_sim |> 
+  janitor::tabyl(pi) |> 
+  janitor::adorn_totals("row") |> 
+  knitr::kable()
+```
+:::
+::::::
+
+Further, the 10,000 simulated match outcomes `y` illuminate the dependence of these outcomes on Kasparov’s win probability `pi`, closely mimicking the `r glossary("CPMF", "conditional pmfs")` $f (y \mid \pi)$ from @fig-002-binomial-model-chess.
+
+:::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-002-mimicking-conditional-pmfs}
+: Mimicking conditional PMFs
+:::
+::::
+
+::: my-r-code-container
+```{r}
+#| label: fig-002-mimicking-conditional-pmfs
+#| fig-cap: A bar plot of simulated win outcomes y under each possible win probability $\pi$
+#| lst-label: lst-002-mimicking-conditional-pmfs
+#| lst-cap: A bar plot of simulated win outcomes y under each possible win probability $\pi$
+#| fig-height: 3
+
+# Plot y by pi
+ggplot2::ggplot(chess_sim, ggplot2::aes(x = y)) + 
+  ggplot2::stat_count(ggplot2::aes(y = ggplot2::after_stat(prop))) + 
+  ggplot2::facet_wrap(~ pi)
+```
+:::
+::::::
+
+Finally, let’s focus on the simulated outcomes that match the observed data that Kasparov won one game. Among these simulations, the majority (60.4%) correspond to the scenario in which Kasparov’s win probability $\pi$ was 0.2 and very few (1.8%) correspond to the scenario in which $\pi$ was 0.8. These observations very closely approximate the posterior model of $\pi$ which we formally built above (@tbl-002-posterior-probability-model-chess).
+
+:::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-002-summarize-posterior-approximation}
+: Summarizing the Posterior Approximation
+:::
+::::
+
+::: my-r-code-container
+```{r}
+#| label: tbl-summarize-posterior-approximation
+#| tbl-cap: Summarizing the posterior appropximation
+#| lst-label: lst-summarize-posterior-approximation
+#| lst-cap: Summarizing the posterior appropximation
+
+# Focus on simulations with y = 1
+win_one <- chess_sim |> 
+  dplyr::filter(y == 1)
+
+# Summarize the posterior approximation
+win_one  |>  
+  janitor::tabyl(pi) |>  
+  janitor::adorn_totals("row") |> 
+  knitr::kable()
+```
+:::
+::::::
+
+:::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-002-plot-posterior-approximation}
+: Plot of the posterior approximation
+:::
+::::
+
+::: my-r-code-container
+```{r}
+#| label: fig-plot-posterior-approximation
+#| fig-cap: A bar plot of 10,000 simulated $\pi$ values which approximates the posterior model.
+#| lst-label: lst-plot-posterior-approximation
+#| lst-cap: A bar plot of 10,000 simulated $\pi$ values which approximates the posterior model.
+#| fig.width: 3
+#| fig.height: 2
+
+# Plot the posterior approximation
+ggplot2::ggplot(win_one, ggplot2::aes(x = pi)) + 
+  ggplot2::geom_bar()
+
+```
+:::
+::::::
+
+## Summary
+
+### Common Steps of a Bayesian Analysis
+
+:::::{.my-procedure}
+:::{.my-procedure-header}
+:::::: {#prp-002-bayesian-analysis-steps}
+: Common Steps of a Bayesian Analysis
+::::::
+:::
+::::{.my-procedure-container}
+
+ Every Bayesian analysis consists of four common steps:  
+ 
+ 1. Construct a `r glossary("prior_model", "prior model")` for your variable of interest, $\pi$. The prior model specifies two important pieces of information: 
+    (a) the possible values of $\pi$ and 
+    (b) the relative prior plausibility of each.  
+2. Summarize the dependence of data $Y$ on $\pi$ via a `r glossary("CPMF", "conditional pmf")` $f (y \mid \pi)$.  
+3. Upon observing data $Y = y$, define the `r glossary("Likelihood-Function", "likelihood function")` $L(\pi \mid y) = f (y \mid \pi)$ which encodes the relative likelihood of observing data $Y = y$ under different $\pi$ values.  
+4. Build the `r glossary("posterior_model", "posterior model")` of $\pi$ via Bayes’ Rule which balances the prior and likelihood:
+
+$$
+\text{posterior} =  \frac{\text{prior} \cdot \text{likelihood}}{\text{normalizing constant}} \propto \text{prior} \cdot \text{likelihood}
+$$
+More technically,
+
+$$
+f (\pi \mid y) =  \frac{f (\pi)L(\pi \mid y)}{f (y)} \propto f (\pi)L(\pi \mid y)
+$$
+
+
+::::
+:::::
+
+Steps 2 and 3 have interim steps under different names:
+
+The conditional pmf is defined using the `r glossary("joint_probability", "joint probability")` mass function and the `r glossary("marginal_probability", "marginal probability")` also called the `r glossary("total_probability", "total probability")`.
+
+### Links to the different steps
+
+The chapter introduces Bayesian analysis with three different examples:
+
+1. Building a Bayesian model for events (yes or no?)
+    - Categorical boolean status of an article: fake or real (fake: yes or no)
+2. Building a Bayesian model for events (which region?)
+    - Categorical outcome of an interviewee’s region: Midwest, Northeast, South, or West.
+3. Building a Bayesian model for unknown random changes (level of chess skills?)
+    - Unknown (random) chances of winning a particular game in a six game competition: Simplified to three discrete numerical variables of 0.2, 0.5 and 0.8 representing the overall chess skills.
+    
+
+:::::{.my-procedure}
+:::{.my-procedure-header}
+:::::: {#prp-002-analysis-step-table}
+: Overview of the different analysis steps for each example
+::::::
+:::
+::::{.my-procedure-container}
+
+
+
+
+| Step of Analysis     | Interim step           | fake news                                  | pop vs. soda                                 | chess game                                    |
+|----------------------|------------------------|--------------------------------------------|----------------------------------------------|-----------------------------------------------|
+| prior model          |                        | @sec-002-prior-probability-fake-news       | @sec-002-prior-model-pop-vs-soda             | @sec-002-prior-probability-chess-game         |
+| conditional pmf      |                        | @sec-002-conditional-probability-fake-news | @sec-002-conditional-probability-pop-vs-soda | @sec-002-conditional-probabilities-chess-game |
+| likelihood           |                        | @sec-002-likelihood-fake-news              | @sec-002-likelihood-pop-vs-soda              | @sec-002-likelihood-chess-game                |
+|                      | joint probabilities    | @sec-002-joint-probabilities-fake-news     |                                              |                                               |
+|                      | normalizing constant   | @sec-002-normalizing-constant-fake-news    |                                              | @sec-002-normalizing-constant-chess-game      |
+|                      | marginal probabilities |                                            | @sec-002-marginal-probabilities-pop-vs-soda  |                                               |
+| posterior model      |                        | @sec-002-posterior-probability-fake-news   | @sec-002-posterior-model-pop-vs-soda         | @sec-002-posterior-model-chess-game           |
+| posterior simulation |                        | @sec-002-posterior-simulation-fake-news    |                                              | @sec-002-posterior-simulation-chess-game      |
+: Links to the sections of the different analysis steps for each example {#tbl-002-analysis-step}
+
+::::
+:::::
 
 
 

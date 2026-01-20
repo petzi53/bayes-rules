@@ -1,0 +1,454 @@
+# Used Packages {#sec-annex-900}
+
+
+```{r}
+#| label: setup
+#| results: hold
+#| include: false
+
+library(glossary)
+glossary::glossary_path("../glossary-pb/glossary.yml")
+```
+
+## bayesrules {#sec-annex-bayesrules}
+
+:::::: my-packagebox
+::: my-packagebox-header
+Package Profile: bayesrules
+:::
+
+------------------------------------------------------------------------
+
+:::: my-packagebox-container
+<center>[Datasets and Supplemental Functions from Bayes Rules! Book](https://www.bayesrulesbook.com)) [@bayesrules]</center>
+
+------------------------------------------------------------------------
+
+
+::: {layout="[10, 30]" layout-valign="center"}
+![](include/logoi/logo-bayes-rules-min.png){width="176"}
+
+Provides datasets and functions used for analysis and visualizations in the Bayes Rules! book (<https://www.bayesrulesbook.com>). The package contains a set of functions that summarize and plot Bayesian models from some conjugate families and another set of functions for evaluation of some Bayesian models.
+
+:::
+
+------------------------------------------------------------------------
+This is as the companion package to this book text. I will therefore explain the most important features and functions after I have met them during the book’s reading.
+
+::::
+::::::
+
+## DiagrammeR {#sec-annex-DiagrammeR}
+
+:::::: my-packagebox
+::: my-packagebox-header
+Package Profile: DiagrammeR
+:::
+
+------------------------------------------------------------------------
+
+:::: my-packagebox-container
+<center>[Graph/Network Visualization](https://rich-iannone.github.io/DiagrammeR/) [@DiagrammeR]</center>
+
+------------------------------------------------------------------------
+
+
+::: {layout="[10, 30]" layout-valign="center"}
+![](include/logoi/logo-DiagrammR-min.png){width="176"}
+
+
+Build graph/network structures using functions for stepwise addition and deletion of nodes and edges. Work with data available in tables for bulk addition of nodes, edges, and associated metadata. Use graph selections and traversals to apply changes to specific nodes or edges. A wide selection of graph algorithms allow for the analysis of graphs. Visualize the graphs and take advantage of any aesthetic properties assigned to nodes and edges.
+
+:::
+
+
+
+::::
+::::::
+
+
+## dplyr {#sec-annex-dplyr}
+
+:::::: my-package
+::: my-package-header
+Package Profile: dplyr
+:::
+
+:::: my-package-container
+<center>[A Grammar of Data Manipulation](https://dplyr.tidyverse.org/) [@dplyr]</center>
+
+------------------------------------------------------------------------
+
+::: {layout="[10, 30]" layout-valign="center"}
+![](include/logoi/logo-dplyr-min.png){width="176"}
+
+{**dplyr**} is a grammar of data manipulation, providing a consistent set of verbs that help you solve the most common data manipulation challenges. 
+
+:::
+
+------------------------------------------------------------------------
+
+- `mutate()` adds new variables that are functions of existing variables 
+- `select()` picks variables based on their names. 
+- `filter(`) picks cases based on their values. 
+- `summarise()` reduces multiple values down to a single summary. 
+- `arrange()` changes the ordering of the rows.
+
+These functions combine naturally with `group_by()` which allows you to perform any operation “by group”. You can learn more about them in [vignette("dplyr")](https://dplyr.tidyverse.org/articles/dplyr.html). As well as these single-table verbs, dplyr also provides a variety of two-table verbs, which you can learn about in [vignette("two-table")](https://dplyr.tidyverse.org/articles/two-table.html). [@dplyr]
+::::
+::::::
+
+
+## janitor {#sec-annex-janitor}
+
+::::::::: my-package
+::: my-package-header
+Package Profile: janitor
+:::
+
+::::::: my-package-container
+<center>[Simple Tools for Examining and Cleaning Dirty Data](https://sfirke.github.io/janitor/) [@janitor]</center>
+
+------------------------------------------------------------------------
+
+::: {layout="[10, 30]" layout-valign="center"}
+![](include/logoi/logo-janitor-min.png){width="176"}
+
+{**janitor**} has simple functions for examining and cleaning dirty data. It was built with beginning and intermediate R users in mind and is optimized for user-friendliness. Advanced R users can perform many of these tasks already, but with janitor they can do it faster and save their thinking for the fun stuff.
+:::
+
+------------------------------------------------------------------------
+
+**The main janitor functions:**
+
+-   perfectly format data.frame column names;
+-   create and format frequency tables of one, two, or three variables - think an improved `base::table()`; and
+-   provide other tools for cleaning and examining data.frames.
+
+The tabulate-and-report functions approximate popular features of SPSS and Microsoft Excel.
+
+{**janitor**} is a {**tidyverse**}-oriented package. Specifically, it plays nicely with the `%>%` pipe and is optimized for cleaning data brought in with the {**readr**} and {**readxl**} packages.
+
+::::: my-remark
+::: my-remark-header
+{janitor}: Personal Evaluation
+:::
+
+::: my-remark-container
+I am using {**janitor**} mostly in two ways:
+
+1.  as better `base::table()` function, using `janitor::tabyl()`
+    -   `base::table()` doesn't accept data.frames and is therefore not compatible with the pipe
+    -   `base::table()` doesn't output data.frames
+    -   `base::table()` results are hard to format (the most annoying "feature" for me)
+
+-   to add information and formatting to the table with the `janitor::adorn_*` functions
+    -   `janitor::adorn_totals()`
+    -   `janitor::adorn_percentages()`
+    -   `janitor::adorn_pct_formatting()`
+    -   `janitor::adorn_rounding()`
+    -   `janitor::adorn_ns()` (adding Ns = number of counts)
+    -   `janitor::adorn_title()`
+
+You could also use {**tidyverse**} commands (for instance for a two table `dplyr::count()` followed by `tidyr::pivot_wider()`) but the many `adorn_*`-functions make it easy to enhance the results. BTW: The prefix `adorn` comes from 'adornment' (ornament, decoration).
+:::
+:::::
+:::::::
+:::::::::
+
+## knitr {#sec-annex-knitr}
+
+::::: my-package
+::: my-package-header
+Package Profile: knitr
+:::
+
+::: my-package-container
+
+------------------------------------------------------------------------
+
+<center>[A General-Purpose Package for Dynamic Report Generation in R](https://yihui.org/knitr/) [@knitr]</center>
+
+------------------------------------------------------------------------
+
+(*There is no hexagon sticker available for {**knitr**}.*)
+
+Provides a general-purpose tool for dynamic report generation in R using Literate Programming techniques.
+:::
+:::::
+
+
+## patchwork {#sec-annex-patchwork}
+
+::::::::::::: my-package
+::: my-package-header
+Package Profile: patchwork
+:::
+
+::::::: my-package-container
+<center>[The Composer of Plots](https://patchwork.data-imaginist.com/) [@patchwork]</center>
+
+------------------------------------------------------------------------
+
+::: {layout="[10, 30]" layout-valign="center"}
+![](include/logoi/logo-patchwork-min.png){width="176"}
+
+The goal of {**patchwork**} is to make it ridiculously simple to combine separate `ggplots` into the same graphic. As such it tries to solve the same problem as `gridExtra::grid.arrange()` and `cowplot::plot_grid` but using an `r glossary("APIx", "API")` that incites exploration and iteration, and scales to arbitrarily complex layouts.
+:::
+
+------------------------------------------------------------------------
+
+The {**ggplot2**} package provides a strong API for sequentially building up a plot, but does not concern itself with composition of multiple plots. {**patchwork**} is a package that expands the API to allow for arbitrarily complex composition of plots by, among others, providing mathematical operators for combining multiple plots. Other packages that try to address this need (but with a different approach) are {**gridExtra**} and {**cowplot**}.
+
+Before plots can be laid out, they have to be assembled. Arguably one of patchwork’s biggest selling points is that it expands on the use of `+` in ggplot2 to allow plots to be added together and composed, creating a natural extension of the {**ggplot2**} API.
+
+While quite complex compositions can be achieved using `+`, `|`, and `/`, it may be necessary to take even more control over the layout. All of this can be controlled using the `patchwork::plot_layout()` function along with a couple of special placeholder objects.
+
+::::: my-remark
+::: my-remark-header
+{patchwork}: Personal Evaluation
+:::
+
+::: my-remark-container
+In this book I am using the dobble colon notation instead of a `library()` call. Without this call it is more difficult to use the {**patchwork**} package.
+
+See [Using plot arithmetic functions with `::` syntax](https://github.com/thomasp85/patchwork/issues/351#issuecomment-1931140157)
+
+| operator | function                    | effect       |
+|----------|-----------------------------|--------------|
+| \+       | `ggplot2:::"+.gg"()`        | side by side |
+| \-       | `patchwork:::"-.ggplot"()`  |              |
+| \|       | `patchwork:::"\|.ggplot"()` |              |
+| /        | `patchwork:::"/.ggplot"()`  | stacked      |
+| \*       | `patchwork:::"*.gg"()`      |              |
+| &        | `patchwork:::"&.gg"()`      |              |
+:::
+:::::
+:::::::
+::::::::
+
+## purrr {#sec-annex-purrr}
+
+:::::: my-package
+::: my-package-header
+Package Profile: purrr
+:::
+
+:::: my-package-container
+<center>[Functional Programming Tools](https://purrr.tidyverse.org/) [@purrr]</center>
+
+------------------------------------------------------------------------
+
+::: {layout="[10, 30]" layout-valign="center"}
+![](include/logoi/logo-purrr-min.png){width="176"}
+
+{**purrr**} enhances R’s functional programming (FP) toolkit by providing a complete and consistent set of tools for working with functions and vectors.
+:::
+
+------------------------------------------------------------------------
+
+If you’ve never heard of FP before, the best place to start is the family of `purrr::map()` functions which allow you to replace many for loops with code that is both more succinct and easier to read. The best place to learn about the `purrr::map()` functions is the [iteration chapter](https://r4ds.had.co.nz/iteration.html) in R for data science.
+::::
+::::::
+
+## skimr {#sec-annex-skimr}
+
+::::::::: my-package
+::: my-package-header
+Package Profile: skimr
+:::
+
+::::::: my-package-container
+<center>[Compact and Flexible Summaries of Data](https://docs.ropensci.org/skimr/) [@skimr]</center>
+
+------------------------------------------------------------------------
+
+::: {layout="[10, 30]" layout-valign="center"}
+![](include/logoi/logo-skimr-min.png){width="176"}
+
+A simple to use summary function that can be used with pipes and displays nicely in the console.
+:::
+
+------------------------------------------------------------------------
+
+The default summary statistics may be modified by the user as can the default formatting. Support for data frames and vectors is included, and users can implement their own skim methods for specific object types as described in a vignette. Default summaries include support for inline spark graphs. Instructions for managing these on specific operating systems are given in the [Using skimr](https://docs.ropensci.org/skimr/articles/skimr.html) vignette and the [README](https://github.com/ropensci/skimr/#skimr-).
+
+::::: my-remark
+::: my-remark-header
+{skimr}: Personal Evaluation
+:::
+
+::: my-remark-container
+At the moment I am just using the `skimr::skim()` function. I believe most of the many other functions for adaption are oriented to developers. But still: I need to have a closer look to this package.
+:::
+:::::
+:::::::
+:::::::::
+
+## tibble {#sec-annex-tibble}
+
+:::::: my-package
+::: my-package-header
+Package Profile: tibble
+:::
+
+:::: my-package-container
+<center>[Simple Data Frames](https://tibble.tidyverse.org/) [@tibble]</center>
+
+------------------------------------------------------------------------
+
+::: {layout="[10, 30]" layout-valign="center"}
+![](include/logoi/logo-tibble-min.png){width="176"}
+
+A tibble, or `tbl_df`, is a modern reimagining of the data.frame, keeping what time has proven to be effective, and throwing out what is not.
+:::
+
+------------------------------------------------------------------------
+
+Tibbles are data.frames that are lazy and surly: they do less (i.e. they don’t change variable names or types, and don’t do partial matching) and complain more (e.g. when a variable does not exist). This forces you to confront problems earlier, typically leading to cleaner, more expressive code. Tibbles also have an enhanced `print()` method which makes them easier to use with large datasets containing complex objects.
+::::
+::::::
+
+## tidyr {#sec-annex-tidyr}
+
+:::::: my-package
+::: my-package-header
+Package Profile: tidyr
+:::
+
+:::: my-package-container
+<center>[Tidy Messy Data](https://tidyr.tidyverse.org/) [@tidyr]</center>
+
+------------------------------------------------------------------------
+
+::: {layout="[10, 30]" layout-valign="center"}
+![](include/logoi/logo-tidyr-min.png){width="176"}
+
+The goal of {**tidyr**} is to help you create tidy data. Tidy data describes a standard way of storing data that is used wherever possible throughout the {**tidyverse**}. If you ensure that your data is tidy, you’ll spend less time fighting with the tools and more time working on your analysis.
+:::
+
+------------------------------------------------------------------------
+
+Tidy data is data where: - Every column is a variable. - Every row is an observation. - Every cell is a single value.
+::::
+::::::
+
+## tidyselect {#sec-annex-tidyselect}
+
+::::: my-package
+::: my-package-header
+Package Profile: tidyselect
+:::
+
+::: my-package-container
+
+------------------------------------------------------------------------
+
+<center>[Select from a Set of Strings](https://tidyselect.r-lib.org/index.html) [@tidyselect]</center>
+
+------------------------------------------------------------------------
+
+(*There is no hexagon sticker available for {**tidyselect**}.*)
+
+The {**tidyselect**} package is the backend of functions like `dplyr::select()` or `dplyr::pull()` as well as several {**tidyr**} verbs. It allows you to create selecting verbs that are consistent with other {**tidyverse**} packages.
+
+To learn about the selection syntax as a user of {**dplyr**} or {**tidyr**}, read the user-friendly [?language](https://tidyselect.r-lib.org/reference/language.html) reference.
+
+To learn how to implement tidyselect in your own functions, read [vignette("tidyselect")](https://tidyselect.r-lib.org/articles/tidyselect.html).
+
+To learn exactly how the {**tidyselect**} syntax is interpreted, read the technical description in [vignette("syntax")](https://tidyselect.r-lib.org/articles/syntax.html).
+:::
+:::::
+
+## tidyverse {#sec-annex-tidyverse}
+
+::::::::: my-package
+::: my-package-header
+Package Profile: tidyverse
+:::
+
+::::::: my-package-container
+<center>[Easily Install and Load the 'Tidyverse'](https://www.tidyverse.org/) [@tidyverse]</center>
+
+------------------------------------------------------------------------
+
+::: {layout="[10, 30]" layout-valign="center"}
+![](include/logoi/logo-tidyverse-min.png){width="176"}
+
+The {**tidyverse**} is an opinionated [collection of R packages](https://www.tidyverse.org/packages/) designed for data science.
+:::
+
+------------------------------------------------------------------------
+
+All packages share an underlying design philosophy, grammar, and data structures [@tidyverse]. Read more about the philosophy and purpose: [The tidy tools manifesto](https://tidyverse.tidyverse.org/articles/manifesto.html) and [Welcome to the {**tidyverse**}](https://tidyverse.tidyverse.org/articles/paper.html)
+
+::::: my-remark
+::: my-remark-header
+{tidyverse}: Personal Evaluation
+:::
+
+::: my-remark-container
+In this book I am not going to load {**tidyverse**} with all its packages. Instead I am using the `<package>::<function>` format to access the commands. Explicitly mentioned the used packages with every function call helps me to learn which package is responsible for which function.
+:::
+:::::
+:::::::
+:::::::::
+
+
+## webexercises {#sec-annex-webexercises}
+
+:::::: my-packagebox
+::: my-packagebox-header
+Package Profile: webexercises
+:::
+
+------------------------------------------------------------------------
+
+:::: my-packagebox-container
+<center>[webexercises](https://psyteachr.github.io/webexercises/) [@webexercises]</center>
+
+------------------------------------------------------------------------
+
+::: {layout="[10, 30]" layout-valign="center"}
+![](include/logoi/logo-webexercises-min.png){width="176"}
+
+
+Create Interactive Web Exercises in 'R Markdown' (Formerly 'webex') Functions for easily creating interactive web pages using 'R Markdown' that students can use in self-guided learning.
+
+:::
+
+------------------------------------------------------------------------
+
+The goal of {**webexercises**} is to enable instructors to easily create interactive web pages that students can use in self-guided learning. Although {**webexercises**} has fewer features than the {**learnr**} package, it is more lightweight: whereas {**learnr**} tutorials must be either hosted on a shiny server or run locally, {**webexercises**} creates standalone HTML files that require only a JavaScript-enabled browser. It is also extremely simple to use. See the [webexercises website](https://psyteachr.github.io/webexercises/) for demos and instructions.
+
+::::
+::::::
+
+## Glossary Entries {.unnumbered}
+
+```{r}
+#| label: glossary-table
+#| echo: false
+
+glossary_table()
+```
+
+
+------------------------------------------------------------------------
+
+## Session Info {.unnumbered}
+
+::: my-r-code
+::: my-r-code-header
+Session Info
+:::
+
+::: my-r-code-container
+```{r}
+#| label: session-info
+
+sessioninfo::session_info()
+```
+:::
+:::
+

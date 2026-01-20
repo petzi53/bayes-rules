@@ -7,7 +7,6 @@
 #| include: false
 
 base::source(file = "R/helper.R")
-
 ```
 
 
@@ -96,10 +95,6 @@ DiagrammeR::grViz("
 
 ::::
 :::::
-
-
-
-
 
 ## Glossary Entries {.unnumbered}
 

@@ -20,3 +20,23 @@ And this here is a footnote[^empty-file-template-1]
 @johnson2022
 
 @janitor
+
+@bayesrules
+
+@dplyr
+
+@knitr
+
+@patchwork
+
+@purrr
+
+@skimr
+
+@tibble
+
+[@tidyr; @tidyselect; @tidyverse]
+
+@DiagrammeR
+
+@webexercises

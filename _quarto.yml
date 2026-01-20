@@ -7,8 +7,9 @@ book:
   title: "Notes on Bayes Rules!"
   author: "Peter Baumgartner"
   date: last-modified
+  cover-image: img/cover.png
   date-format: YYYY-MM-DD HH:mm
-  favicon: "img/favicon_io/apple-touch-icon.png"
+  favicon: "include/favicon_io/apple-touch-icon.png"
   site-url: https://pbaumgartner-bayes-rules.share.connect.posit.cloud/
   repo-url: https://github.com/petzi53/bayes-rules
   repo-branch: main
@@ -21,6 +22,9 @@ book:
       chapters:
         - 001-big-picture.qmd
         - 002-bayes-rule.qmd
+  appendices:
+      - 900-used-packages.qmd
+      - 990-webexercises.qmd
 
 
 bibliography:
@@ -34,13 +38,14 @@ format:
     theme: cosmo
     highlight-style: atom-one
     css:
-     - quarto.css
-     - glossary.css
+     - include/quarto.css
+     - include/glossary.css
+     - include/webex.css
     number-sections: true
     toc-depth: 5
     toc-expand: 4
     toc_float: true
-    code-fold: show
+    code-fold: true
     code-summary: "Show/hide the code"
     code-tools: true
     code-link: true
@@ -48,6 +53,7 @@ format:
     df-print: default
     link-external-newwindow: true
     link-external-icon: true
+    include-after-body: include/webex.js
 
 filters:
    - include-code-files
@@ -120,27 +126,25 @@ crossref:
       reference-prefix: Paragraph
       key: par
 
-
-
 tip-cap-location: top
 pak-cap-location: top
 bul-cap-location: bottom
 
+# https://github.com/quarto-dev/quarto-cli/blob/main/src/resources/language/_language.yml
 language:
    crossref-cnj-title: "R Code"             # replaces "Conjecture"
-   crossref-cor-title: "Assessment"         # replaces "Corollary"
+   crossref-cor-title: "Quiz Yourself!"     # replaces "Corollary"
    crossref-def-title: "Experiment"         # replaces "Definition"
    crossref-exm-title: "Code Collection"    # replaces  "Example"
    crossref-exr-title: "Exercise"           # remains  "Exercise"
    crossref-fig-title: "Figure"             # remains  "Figure"
    crossref-lem-title: "Resource"           # replaces "Lemma"
-   crossref-lst-title: "Listing / Output"   # replaces  "Listing"
+   crossref-lst-title: "Listing"            # remains  "Listing"
    crossref-prp-title: "Procedure"          # replaces "Proposition"
    crossref-tbl-title: "Table"              # remains  "Table"
    crossref-thm-title: "Formula"            # replaces "Theorem"
 #   crossref-int-title: "Interpretation"
 
-# https://github.com/quarto-dev/quarto-cli/blob/main/src/resources/language/_language.yml
    callout-tip-title: "Tip"                 # green
    callout-note-title: "Note"               # blue
    callout-warning-title: "Warning"         # orange
