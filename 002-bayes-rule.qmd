@@ -1675,7 +1675,7 @@ We can similarly update our understanding of the interviewee living in the Midwe
 
 : Posterior model of regional usages "pop" for carbonated soft drinks {#tbl-002-prior-and-posterior-model-pop} {.striped}
 
-## Building a Bayesian model for numerical random variables
+## Building a Bayesian model for numerical random variables {#sec-002-discrete-variable-model}
 
 So far we had worked with categorical variable. The principles for building Bayesian models of numerical random variables are the same but differ in some details. We will explore these differences with the example of the chess games between Gary Kasparov and the IBM supercomputer Deep Blue. Of the six games played in 1996, Kasparov won three, drew two, and lost one. Thus, Kasparov won the overall match.
 
@@ -1750,7 +1750,7 @@ and has the following properties:
 In modeling the dependence of $Y$ on $\pi$ in our chess example, we first make two assumptions about the chess match:
 
 (1) the outcome of any one game doesn’t influence the outcome of another, i.e., games are **independent**; and
-(2) Kasparov has an equal probability, $\pi$, of winning any game in the match, i.e., his chances don’t increase or decrease as the match goes on.
+(2) Kasparov has an **equal probability**, $\pi$, of winning any game in the match, i.e., his chances don’t increase or decrease as the match goes on.
 
 This is a common framework in statistical analysis, one which can be represented by the `r glossary("Binomial model")`.
 
@@ -2171,7 +2171,7 @@ $$ {#eq-002-total-probability-for-variable}
 :::
 ::::::
 
-### Posterior Shortcut
+### Posterior Shortcut {#sec-002-posterior-shortcut}
 
 We don't need to calculate the **normalizing constant**. To begin, notice in @eq-002-posterior-probability-model-chess that $f (y = 1) = 0.0637$ appears in the denominator of $f (\pi \mid y = 1) \text{ for each } \pi \in \{0.2, 0.5, 0.8\}$. This explains the term `r glossary("normalizing constant")` – its only purpose is to normalize the posterior probabilities so that they sum to one:
 
@@ -2434,29 +2434,19 @@ ggplot2::ggplot(win_one, ggplot2::aes(x = pi)) +
 :::::{.my-procedure}
 :::{.my-procedure-header}
 :::::: {#prp-002-bayesian-analysis-steps}
-: Common Steps of a Bayesian Analysis
+: Four common steps of a Bayesian analysis
 ::::::
 :::
 ::::{.my-procedure-container}
 
  Every Bayesian analysis consists of four common steps:  
  
- 1. Construct a `r glossary("prior_model", "prior model")` for your variable of interest, $\pi$. The prior model specifies two important pieces of information: 
+ 1. **Prior model**: Construct a `r glossary("prior_model", "prior model")` for your variable of interest, $\pi$. The prior model specifies two important pieces of information: 
     (a) the possible values of $\pi$ and 
     (b) the relative prior plausibility of each.  
-2. Summarize the dependence of data $Y$ on $\pi$ via a `r glossary("CPMF", "conditional pmf")` $f (y \mid \pi)$.  
-3. Upon observing data $Y = y$, define the `r glossary("Likelihood-Function", "likelihood function")` $L(\pi \mid y) = f (y \mid \pi)$ which encodes the relative likelihood of observing data $Y = y$ under different $\pi$ values.  
-4. Build the `r glossary("posterior_model", "posterior model")` of $\pi$ via Bayes’ Rule which balances the prior and likelihood:
-
-$$
-\text{posterior} =  \frac{\text{prior} \cdot \text{likelihood}}{\text{normalizing constant}} \propto \text{prior} \cdot \text{likelihood}
-$$
-More technically,
-
-$$
-f (\pi \mid y) =  \frac{f (\pi)L(\pi \mid y)}{f (y)} \propto f (\pi)L(\pi \mid y)
-$$
-
+2. **Data model**: Summarize the dependence of data $Y$ on $\pi$ via a `r glossary("CPMF", "conditional pmf")` $f (y \mid \pi)$.  
+3. **Likelihood function**: Upon observing data $Y = y$, define the `r glossary("Likelihood-Function", "likelihood function")` $L(\pi \mid y) = f (y \mid \pi)$ which encodes the relative likelihood of observing data $Y = y$ under different $\pi$ values.  
+4. **Posterior model**: Build the `r glossary("posterior_model", "posterior model")` of $\pi$ via Bayes’ Rule which balances the prior and likelihood.
 
 ::::
 :::::
@@ -2464,6 +2454,29 @@ $$
 Steps 2 and 3 have interim steps under different names:
 
 The conditional pmf is defined using the `r glossary("joint_probability", "joint probability")` mass function and the `r glossary("marginal_probability", "marginal probability")` also called the `r glossary("total_probability", "total probability")`.
+
+:::::{.my-theorem}
+:::{.my-theorem-header}
+:::::: {#thm-002-bayes-theorem-summary}
+: Posterior model as an application of Bayes’ Rule balances prior and likelihood
+::::::
+:::
+::::{.my-theorem-container}
+
+$$
+\text{posterior} =  \frac{\text{prior} \cdot \text{likelihood}}{\text{normalizing constant}} \propto \text{prior} \cdot \text{likelihood}
+$$ {#eq-002-bayes-rule-summary-in-words}
+
+More technically,
+
+$$
+f (\pi \mid y) =  \frac{f (\pi)L(\pi \mid y)}{f (y)} \propto f (\pi)L(\pi \mid y)
+$$ {#eq-002-bayes-rule-summaryas-formula}
+
+
+
+::::
+:::::
 
 ### Links to the different steps
 

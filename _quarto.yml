@@ -22,6 +22,8 @@ book:
       chapters:
         - 001-big-picture.qmd
         - 002-bayes-rule.qmd
+        - 003-beta-binomial.qmd
+        - 004-balance-sequentiality.qmd
   appendices:
       - 900-used-packages.qmd
       - 990-webexercises.qmd
@@ -132,17 +134,17 @@ bul-cap-location: bottom
 
 # https://github.com/quarto-dev/quarto-cli/blob/main/src/resources/language/_language.yml
 language:
-   crossref-cnj-title: "R Code"             # replaces "Conjecture"
-   crossref-cor-title: "Quiz Yourself!"     # replaces "Corollary"
-   crossref-def-title: "Experiment"         # replaces "Definition"
-   crossref-exm-title: "Code Collection"    # replaces  "Example"
-   crossref-exr-title: "Exercise"           # remains  "Exercise"
-   crossref-fig-title: "Figure"             # remains  "Figure"
-   crossref-lem-title: "Resource"           # replaces "Lemma"
-   crossref-lst-title: "Listing"            # remains  "Listing"
-   crossref-prp-title: "Procedure"          # replaces "Proposition"
-   crossref-tbl-title: "Table"              # remains  "Table"
-   crossref-thm-title: "Formula"            # replaces "Theorem"
+   crossref-cnj-title: "R Code"             # replaces "Conjecture"  num-r-code
+   crossref-cor-title: "Quiz Yourself!"     # replaces "Corollary    num-assessment
+   crossref-def-title: "Experiment"         # replaces "Definition"  num-experiment
+   crossref-exm-title: "Code Collection"    # replaces  "Example"    num-code-collection
+   crossref-exr-title: "Exercise"           # remains  "Exercise"    num-exercise
+   crossref-fig-title: "Figure"             # remains  "Figure"      fig
+   crossref-lem-title: "Resource"           # replaces "Lemma"       num-ressource
+   crossref-lst-title: "Listing"            # remains  "Listing"     lst
+   crossref-prp-title: "Procedure"          # replaces "Proposition" num-procedure
+   crossref-tbl-title: "Table"              # remains  "Table"       tbl
+   crossref-thm-title: "Formula"            # replaces "Theorem"     num-theorem
 #   crossref-int-title: "Interpretation"
 
    callout-tip-title: "Tip"                 # green

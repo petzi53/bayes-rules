@@ -33,7 +33,14 @@ Provides datasets and functions used for analysis and visualizations in the Baye
 :::
 
 ------------------------------------------------------------------------
-This is as the companion package to this book text. I will therefore explain the most important features and functions after I have met them during the book’s reading.
+This is the companion package to this book text. I will therefore explain the most important features and functions during the book’s reading.
+
+- **Chapter 2**: datasets `fake_news` and `pop_vs_soda`
+- **Chapter 3**: 
+    - `plot_beta()`: Plots the `r glossary("Probability_Density_Function", "probability density function")` (pdf) for a $\text{Beta}(\alpha, \beta)$ model of variable $\pi$. By default `mean = FALSE` and `mode = FALSE`. But using mean or mode generates a warning.
+    - `summarize_beta()`: Summarizes the expected value, variance, and mode of a $\text{Beta}(\alpha, \beta)$ model for variable $\pi$.
+    - `plot_beta_binomial()`: Given information on the prior (alpha and data) and data (y and n), this function produces a plot of any combination of the corresponding prior pdf, scaled likelihood function, and posterior pdf. All three are included by default.
+    - `summarize_beta_binomial()`: Given information on the prior (alpha and data) and data (y and n), this function summarizes the mean, mode, and variance of the prior and posterior Beta models of $\pi$.
 
 ::::
 ::::::
@@ -210,7 +217,7 @@ While quite complex compositions can be achieved using `+`, `|`, and `/`, it may
 :::
 
 ::: my-remark-container
-In this book I am using the dobble colon notation instead of a `library()` call. Without this call it is more difficult to use the {**patchwork**} package.
+In this book I am using the double colon notation instead of a `library()` call. Without this call it is more difficult to use the {**patchwork**} package.
 
 See [Using plot arithmetic functions with `::` syntax](https://github.com/thomasp85/patchwork/issues/351#issuecomment-1931140157)
 
@@ -248,6 +255,49 @@ Package Profile: purrr
 ------------------------------------------------------------------------
 
 If you’ve never heard of FP before, the best place to start is the family of `purrr::map()` functions which allow you to replace many for loops with code that is both more succinct and easier to read. The best place to learn about the `purrr::map()` functions is the [iteration chapter](https://r4ds.had.co.nz/iteration.html) in R for data science.
+::::
+::::::
+
+## sessioninfo {#sec-annex-sessioninfo}
+
+:::::: my-packagebox
+::: my-packagebox-header
+Package Profile: sessioninfo
+:::
+
+------------------------------------------------------------------------
+
+:::: my-packagebox-container
+<center>[R Session Information](https://sessioninfo.r-lib.org) [@sessioninfo]</center>
+
+------------------------------------------------------------------------
+
+<center>(There is no HEXAGON sticker available for {**sessioninfo**}.)</center>
+
+------------------------------------------------------------------------
+
+::: {layout="[10, 30]" layout-valign="center"}
+
+Query and print information about the current R session. It is similar to `utils::sessionInfo()`, but includes more information about packages, and where they were installed from.
+
+
+
+:::
+
+------------------------------------------------------------------------
+
+**Differences from `utils::sessionInfo()`**
+
+- Additional platform details: time zone, pandoc version, RStudio version, etc.
+- Information about package sources, e.g. GitHub repo and hash for packages installed from GitHub.
+- Highlight package installation problems, e.g. if the loaded and on-disk versions are different, if the MD5 checksum of the package DLL is wrong, etc.
+- Highlight packages from unusual sources.
+- Information about external software via `external_info()`.
+- Information about the Python configuration if the {**reticulate**} package is loaded and configured.
+- Information about package libraries.
+- Compare two session info outputs with the `session_diff()` function.
+- Option to show loaded (default), attached or installed packages, or the recursive dependencies of the specified packages.
+
 ::::
 ::::::
 

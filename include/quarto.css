@@ -181,6 +181,7 @@ iframe {
 }
 
 .num-check-body {
+    margin-left: 1rem;
     font-size: 1rem;
     font-weight: 400;
     padding-right: 0.5em;

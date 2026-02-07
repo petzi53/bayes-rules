@@ -1,0 +1,15 @@
+{
+  "hash": "e4ef32fa3d861d3fe8deb6cab437650f",
+  "result": {
+    "engine": "knitr",
+    "markdown": "# Balance and Sequentiality in Bayesian Analyses {#sec-chap-004}\n\n\n\n\n\n\n::::: {#obj-chapXXX}\n:::: {.my-objectives}\n::: {.my-objectives-header}\nChapter section list\n:::\n\n::: {.my-objectives-container}\n\n\n:::\n::::\n:::::\n\n\n\n\n\n## Glossary Entries {.unnumbered}\n\n\n::: {.cell}\n::: {.cell-output .cell-output-stdout}\n\n```\n#> data frame with 0 columns and 0 rows\n```\n\n\n:::\n:::\n\n\n------------------------------------------------------------------------\n\n## Session Info {.unnumbered}\n\n::: my-r-code\n::: my-r-code-header\nSession Info\n:::\n\n::: my-r-code-container\n\n::: {.cell}\n\n```{.r .cell-code}\nsessioninfo::session_info()\n```\n\n::: {.cell-output .cell-output-stdout}\n\n```\n#> ─ Session info ───────────────────────────────────────────────────────────────\n#>  setting  value\n#>  version  R version 4.5.2 (2025-10-31)\n#>  os       macOS Tahoe 26.2\n#>  system   aarch64, darwin20\n#>  ui       X11\n#>  language (EN)\n#>  collate  en_US.UTF-8\n#>  ctype    en_US.UTF-8\n#>  tz       Europe/Vienna\n#>  date     2026-02-07\n#>  pandoc   3.8.3 @ /opt/homebrew/bin/ (via rmarkdown)\n#>  quarto   1.8.27 @ /usr/local/bin/quarto\n#> \n#> ─ Packages ───────────────────────────────────────────────────────────────────\n#>  ! package      * version date (UTC) lib source\n#>  P cli            3.6.5   2025-04-23 [?] CRAN (R 4.5.0)\n#>  P digest         0.6.39  2025-11-19 [?] CRAN (R 4.5.2)\n#>  P evaluate       1.0.5   2025-08-27 [?] CRAN (R 4.5.1)\n#>  P fastmap        1.2.0   2024-05-15 [?] CRAN (R 4.5.0)\n#>  P glossary     * 1.0.0   2023-05-30 [?] RSPM\n#>  P htmltools      0.5.9   2025-12-04 [?] CRAN (R 4.5.2)\n#>  P htmlwidgets    1.6.4   2023-12-06 [?] RSPM\n#>  P jsonlite       2.0.0   2025-03-27 [?] CRAN (R 4.5.0)\n#>  P knitr          1.51    2025-12-20 [?] CRAN (R 4.5.2)\n#>  P otel           0.2.0   2025-08-29 [?] RSPM\n#>    renv           1.1.7   2026-01-27 [1] RSPM\n#>  P rlang          1.1.7   2025-12-20 [?] Github (tidyverse/rlang@7a519a2)\n#>  P rmarkdown      2.30    2025-09-28 [?] CRAN (R 4.5.0)\n#>    rstudioapi     0.18.0  2026-01-16 [1] RSPM\n#>  P sessioninfo    1.2.3   2025-02-05 [?] RSPM\n#>  P webexercises * 1.1.0   2023-05-15 [?] RSPM\n#>    xfun           0.56    2026-01-18 [1] RSPM\n#>  P yaml           2.3.12  2025-12-10 [?] CRAN (R 4.5.2)\n#> \n#>  [1] /Users/petzi/Documents/Meine-Repos/bayes-rules/renv/library/macos/R-4.5/aarch64-apple-darwin20\n#>  [2] /Users/petzi/Library/Caches/org.R-project.R/R/renv/sandbox/macos/R-4.5/aarch64-apple-darwin20/4cd76b74\n#> \n#>  * ── Packages attached to the search path.\n#>  P ── Loaded and on-disk path mismatch.\n#> \n#> ──────────────────────────────────────────────────────────────────────────────\n```\n\n\n:::\n:::\n\n:::\n:::\n\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

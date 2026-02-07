@@ -14,6 +14,7 @@
 ## - my_ls_region: well being ladder score line chart for regions
 ## - my_pkgs_dl: Get number of downloads from RStudio CRAN Mirror
 ## - my_as_tibble_sf: Convert sf class to sf and tbl_df / tbl class
+## - my_plot_beta: Plot a Beta Model for pi
 
 ## glossary #####################################################
 library(glossary)
@@ -355,6 +356,101 @@ my_as_tibble_sf <- function(df) {
   } else {
     return("failed")
   }
+}
+
+##### my_plot_beta ##############################################
+# my_plot_beta: Plot a Beta Model for π
+# Purpose:
+# Plots the probability density function (pdf)
+# for a Beta(alpha, beta) model of variable π
+# alpha = alpha value, beta = beta value
+# show_mean = draw vertical line for mean: default = FALSE
+# show_mode = draw vertical line for mode: default = FALSE
+# show_legend = show or hide legend: default = FALSE
+# mean_color and mode_color: default = "darkblue"
+# mean_linetype: default = "solid"
+# mode_linetype: default = dashed
+# x_lab = x-axis value: default = expression(pi)
+# y_lab = y-axis value: default = expression(paste("f(", pi, ")")))
+my_plot_beta <- function(alpha, beta,
+                         show_mean = FALSE,
+                         show_mode = FALSE,
+                         show_legend = FALSE,  # Default is FALSE
+                         mean_color = "darkblue",
+                         mode_color = "darkblue",
+                         mean_linetype = "solid",
+                         mode_linetype = "dashed",
+                         x_lab = expression(pi),
+                         y_lab = expression(paste("f(", pi, ")")))
+{
+  # Calculate mean and mode
+  mean_val <- alpha / (alpha + beta)
+  mode_val <- (alpha - 1) / (alpha + beta - 2)
+
+  # Create base plot
+  p <- ggplot2::ggplot(data = tibble::tibble(x = base::c(0, 1)), ggplot2::aes(x)) +
+    ggplot2::stat_function(fun = stats::dbeta, n = 101,
+                  args = base::list(shape1 = alpha, shape2 = beta)) +
+    ggplot2::labs(x = x_lab, y = y_lab) +
+    ggplot2::theme_minimal()
+
+  # Create data frame for lines to show
+  lines_data <- tibble::tibble()
+
+  # Add mean line if requested
+  if (show_mean) {
+    lines_data <- dplyr::bind_rows(lines_data,
+                            tibble::tibble(
+                              x = mean_val,
+                              xend = mean_val,
+                              y = 0,
+                              yend = dbeta(mean_val, alpha, beta),
+                              type = "Mean",
+                              color = mean_color,
+                              linetype = mean_linetype
+                            ))
+  }
+
+  # Add mode line if requested and valid
+  if (show_mode && alpha > 1 && beta > 1) {
+    lines_data <- dplyr::bind_rows(lines_data,
+                            tibble::tibble(
+                              x = mode_val,
+                              xend = mode_val,
+                              y = 0,
+                              yend = dbeta(mode_val, alpha, beta),
+                              type = "Mode",
+                              color = mode_color,
+                              linetype = mode_linetype
+                            ))
+  }
+
+  # Add lines if any
+  if (base::nrow(lines_data) > 0) {
+    p <- p +
+      ggplot2::geom_segment(data = lines_data,
+            ggplot2::aes(x = x, xend = xend, y = y, yend = yend,
+                linetype = type, color = type), linewidth = 1) +
+      ggplot2::scale_linetype_manual(
+        values = rlang::set_names(lines_data$linetype, lines_data$type),
+        name = NULL
+      ) +
+      ggplot2::scale_color_manual(
+        values = rlang::set_names(lines_data$color, lines_data$type),
+        name = NULL
+      )
+
+    if (show_legend) {
+      p <- p + ggplot2::theme(
+        legend.position = c(0.9, 0.9),
+        legend.background = ggplot2::element_rect(fill = "white", color = "gray80")
+      )
+    } else {
+      p <- p + ggplot2::theme(legend.position = "none")
+    }
+  }
+
+  p
 }
 
 ## END

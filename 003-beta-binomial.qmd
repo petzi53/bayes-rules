@@ -1,0 +1,4180 @@
+# Beta-Binomial Bayesian Model {#sec-chap-003}
+
+```{r}
+#| label: setup
+#| results: hold
+#| include: false
+
+base::source(file = "R/helper.R")
+ggplot2::theme_set(ggplot2::theme_bw())
+```
+
+:::::: {#obj-chap-003}
+::::: my-objectives
+::: my-objectives-header
+Objectives
+:::
+
+::: my-objectives-container
+-   Utilize and tune continuous priors. You will learn how to interpret
+    and tune a continuous Beta prior model to reflect your prior
+    information about $\pi$.\
+-   Interpret and communicate features of prior and posterior models
+    using properties such as mean, mode, and variance.\
+-   Construct the fundamental Beta-Binomial model for proportion $\pi$.
+:::
+:::::
+::::::
+
+## Introduction {.unnumbered}
+
+In this chapter we analyse as campaign manager for Minnesota the support
+for Michelle, who has decided to run for president. We’ve conducted 30
+different polls throughout the election season. Though Michelle’s
+support has hovered around 45%, she polled at around 35% in the
+dreariest days and around 55% in the best days on the campaign trail.
+
+:::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-003-intro-poll-results}
+: Result of 30 polls results (left) and the corresponding prior model
+:::
+::::
+
+::: my-r-code-container
+```{r}
+#| label: fig-003-intro-poll-results
+#| fig-cap: The results of 30 previous polls of Minnesotans’ support of Michelle for president (left) and a corresponding continuous prior model for π, her current election support (right).
+#| lst-label: lst-003-intro-poll-results
+#| lst-cap: Result of 30 polls results (left) and the corresponding prior model (right)
+
+
+# Set seed for reproducibility
+base::set.seed(84735)
+
+# Simulate 30 poll results
+n_polls <- 30
+n_voters <- 50
+
+# Generate true support levels from Beta(45, 55)
+true_support <- stats::rbeta(n_polls, 45, 55)
+
+# Simulate poll results (number of supporters out of 50)
+poll_counts <- stats::rbinom(n_polls, size = n_voters, prob = true_support)
+
+# Convert to proportions
+poll_proportions <- poll_counts / n_voters
+
+# Create a data frame for plotting
+poll_data <- tibble::tibble(
+  support = poll_proportions
+)
+
+# LEFT PLOT: Histogram of poll results
+# Alternate version to get more control over the bins
+p1 <- ggplot2::ggplot(poll_data, ggplot2::aes(x = support)) +
+  ggplot2::geom_histogram(breaks = base::seq(0.3, 0.7, by = 0.05), 
+                 fill = "steelblue", color = "white") +
+  ggplot2::scale_x_continuous(limits = base::c(0, 1), breaks = base::seq(0, 1, 0.1)) +
+  ggplot2::labs(
+    title = "Distribution of 30 Previous Polls",
+    x = "Proportion Supporting Michelle",
+    y = "Count"
+  ) +
+  ggplot2::theme_minimal() +
+  ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5))
+
+# RIGHT PLOT: Beta(45, 55) prior density
+pi_values <- base::seq(0, 1, length.out = 1000)
+prior_density <- stats::dbeta(pi_values, 45, 55)
+
+prior_data <- tibble::tibble(
+  pi = pi_values,
+  density = prior_density
+)
+
+p2 <- ggplot2::ggplot(prior_data, ggplot2::aes(x = pi, y = density)) +
+  ggplot2::geom_line(color = "black", linewidth = 1) +
+  ggplot2::geom_area(fill = "lightyellow", alpha = 0.5) +
+  ggplot2::scale_x_continuous(limits = base::c(0, 1), breaks = base::seq(0, 1, 0.1)) +
+  ggplot2::labs(
+    title = "Prior Model for π",
+    x = "π (Michelle's Current Support)",
+    y = "density f(π)"
+  ) +
+  ggplot2::theme_minimal() +
+  ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5))
+
+# Display plots side by side
+patchwork:::"-.ggplot"(p1, p2)
+```
+:::
+::::::
+
+In @sec-002-discrete-variable-model we assumed that $\pi$ could only be
+0.2, 0.5, or 0.8 and we therefore defined with the chess example a
+*discrete* probability model. However, in the reality of Michelle’s
+election support and Kasparov’s chess skill, $\pi$ can be *any* value
+between 0 and 1. We can reflect this reality and conduct a more nuanced
+Bayesian analysis by constructing a **continuous prior probability
+model** of $\pi$. A reasonable prior is represented by the curve in
+@fig-003-intro-poll-results (right). Michelle’s support $\pi$ can be
+anywhere between 0 and 1, but is most likely around 0.45.
+
+We will dig into the details and build Michelle’s election model. We’ll
+then generalize this work to the fundamental **Beta-Binomial Bayesian
+model**. The power of the Beta-Binomial lies in its broad applications.
+Michelle’s election support $\pi$ isn’t the only variable of interest
+that lives on \[0,1\]. You might also imagine Bayesian analyses in which
+we’re interested in modeling the proportion of people that use public
+transit, the proportion of trains that are delayed, the proportion of
+people that prefer cats to dogs, and so on. The Beta-Binomial model
+provides the tools we need to study the proportion of interest, $\pi$,
+in each of these settings.
+
+## Beta prior model
+
+In building the Bayesian election model of Michelle’s election support
+among Minnesotans, $\pi$, we begin as usual: with the prior. Our
+*continuous* prior probability model of $\pi$ is specified by the
+`r glossary("probability_density_function", "probability density function")`
+(pdf) in @fig-003-intro-poll-results. Though it looks quite different,
+the role of this continuous pdf is the same as for the discrete
+`r glossary("probability_mass_function", "probability mass function")`
+(pmf) $f (\pi)$ in @tbl-002-prior-model-chess: to specify all possible
+values of $\pi$ and the relative plausibility of each. That is,
+$f (\pi)$ answers: What values can $\pi$ take and which are more
+plausible than others? Further, in accounting for *all* possible
+outcomes of $\pi$, the pdf *integrates* to or has an area of 1, much
+like a discrete pmf *sums* to 1.
+
+:::::: my-theorem
+:::: my-theorem-header
+::: {#thm-003-continuous-probability-models}
+: Continuous probability models
+:::
+::::
+
+::: my-theorem-container
+Let $\pi$ be a continuous random variable with probability density
+function $f (\pi)$. Then $f (\pi)$ has the following properties:
+
+-   $f (\pi) >= 0$;\
+-   $\int_\pi f (\pi)d\pi = 1$, i.e., the area under $f (\pi)$ is 1;
+    and\
+-   $P (a < \pi < b) = \int_{a}^{b} f (\pi)d\pi$ when $a <= b$, i.e.,
+    the area between any two possible values a and b corresponds to the
+    probability of $\pi$ being in this range.
+
+**Interpreting** $f (\pi)$
+
+It’s possible that $f (\pi) > 1$, thus a continuous pdf cannot be
+interpreted as a probability. Rather, $f (\pi)$ can be used to compare
+the plausibility of two different values of $\pi$: the greater
+$f (\pi)$, the more plausible the corresponding value of $\pi$.
+:::
+::::::
+
+### Beta foundation
+
+The next step is to translate the *picture* of our prior in
+@fig-003-intro-poll-results (right) into a formal probability model of
+$\pi$. That is, we must specify a formula for the pdf $f (\pi)$. In the
+world of probability, there are a variety of common “named” models, the
+pdfs and properties of which are well studied. Among these, it’s natural
+to focus on the `r glossary("Beta probability model")` here. Like
+Michelle’s support $\pi$, a Beta random variable is continuous and
+restricted to live on \[0,1\]. In this section, you’ll explore the
+*properties* of the Beta model and how to **tune** the Beta to reflect
+our prior understanding of Michelle’s support $\pi$. Let’s begin with a
+general definition of the Beta probability model.
+
+:::::: my-theorem
+:::: my-theorem-header
+::: {#thm-003-beta-model}
+: Beta model
+:::
+::::
+
+::: my-theorem-container
+Let $\pi$ be a random variable which can take any value between 0 and 1,
+i.e., $\pi \in [0, 1]$. Then the variability in π might be well modeled
+by a Beta model with shape
+`r glossary("hyperparameter", "hyperparameters")` $\alpha > 0$ and
+$\beta > 0$:
+
+$$\pi ∼ Beta(\alpha, \beta)$$ The Beta model is specified by continuous
+pdf
+
+$$
+f (\pi) =  \frac{\Gamma(\alpha + \beta)}{\Gamma(\alpha)\Gamma(\beta)}\pi_{\alpha-1}(1-\beta)^{\beta-1} \text{ for } \pi \in [0, 1]
+$$ {#eq-003-beta-model}
+
+where
+$\Gamma(z) = \int_{0}^{\infty}x^{z−1}e^{−y}dx \text{ and } \Gamma(z + 1) = z\Gamma(z)$.
+Fun fact: when $z$ is a positive integer, then $\Gamma(z)$ simplifies to
+$\Gamma(z) = (z − 1)!$.
+:::
+::::::
+
+This model is best understood by playing around.
+@fig-003-beta-model-variants plots the Beta pdf $f (\pi)$ under a
+variety of shape hyperparameters, $\alpha$ and $\beta$. Check out the
+various shapes the Beta pdf can take. This flexibility means that we can
+tune the Beta to reflect our prior understanding of $\pi$ by tweaking
+$\alpha$ and $\beta$. For example, notice that when we set
+$\alpha =\beta = 1$ (middle left plot), the Beta model is flat from $0$
+to $1$. In this setting, the Beta model is equivalent to perhaps a more
+familiar model, the standard
+`r glossary("Uniform distribution", "Uniform model")`.
+
+:::::: my-theorem
+:::: my-theorem-header
+::: {#thm-003-uniform-model}
+: The standard Uniform model
+:::
+::::
+
+::: my-theorem-container
+When it’s equally plausible for $\pi$ to take on any value between 0 and
+1, we can model $\pi$ by the standard Uniform model
+
+$$\pi ∼ Unif(0, 1)$$ with pdf $f (\pi) = 1 \text{ for } \pi \in [0, 1]$.
+The $Unif(0,1)$ model is a special case of $Beta(\alpha, \beta)$ when
+$\alpha = \beta = 1$.
+:::
+::::::
+
+::: {#nte-plot_beta-warning .callout-note}
+###### Warnings with `bayesrules::plot_beta()`
+
+At first I wanted for @fig-003-beta-model-variants to use the
+`bayesrules::plot_beta()` function, introduced in
+@sec-003-tuning-beta-prior. But when this function is used with the
+parameters `mean = TRUE` and `mode = TRUE` warnings are issued:
+
+> Warning in geom_segment(aes(x = mean, y = 0, xend = mean, yend =
+> dbeta(mean, : All aesthetics have length 1, but the data has 2 rows. ℹ
+> Please consider using `annotate()` or provide this layer with data
+> containing a single row.
+
+So I decided to create my own `my_plot_beta()` function. For the
+Beta(1,1) I also got a warning:
+
+> Removed 100 rows containing missing values or values outside the scale
+> range (`geom_vline()`).
+
+For a more smooth display I turned in @fig-003-beta-model-variants
+warnings with `warning = false` off:
+:::
+
+:::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-beta-model-variants}
+: Plot 9 different variants of the Beta model
+:::
+::::
+
+::: my-r-code-container
+```{r}
+#| label: fig-003-beta-model-variants
+#| fig-cap: Beta(α, β) pdfs f (π) under a variety of shape hyperparameters α and β (black curve). The mean and mode are represented by a thinner darkblue solid line and dashed line, respectively.
+#| lst-label: lst-003-beta-model-variants
+#| lst-cap: "`my_plot_beta()` function plotted with 9 examples of Beta models"
+
+
+p1 <- my_plot_beta(1,5, show_mean = TRUE, show_mode = TRUE)
+p2 <- my_plot_beta(1,2, show_mean = TRUE, show_mode = TRUE)
+p3 <- my_plot_beta(3,7, show_mean = TRUE, show_mode = TRUE)
+p4 <- my_plot_beta(1,1, show_mean = TRUE, show_mode = TRUE)
+p5 <- my_plot_beta(5,5, show_mean = TRUE, show_mode = TRUE)
+p6 <- my_plot_beta(20,20, show_mean = TRUE, show_mode = TRUE)
+p7 <- my_plot_beta(7,3, show_mean = TRUE, show_mode = TRUE)
+p8 <- my_plot_beta(2,1, show_mean = TRUE, show_mode = TRUE)
+p9 <- my_plot_beta(5,1, show_mean = TRUE, show_mode = TRUE)
+
+
+library(patchwork)
+combined_plot <- p1 + p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9 +
+                 plot_layout(ncol = 3)
+
+# Display the result
+combined_plot
+```
+:::
+::::::
+
+:::::: my-assessment
+:::: my-assessment-header
+::: {#cor-003-identify-patterns}
+: Identify patters in @fig-003-beta-model-variants
+:::
+::::
+
+::: my-assessment-container
+Take a minute to see if you can identify some other patterns in how
+shape hyperparameters $\alpha$ and $\beta$ reflect the typical values of
+$\pi$ as well as the variability in $\pi$.
+
+1.  How would you describe the typical behavior of a
+    $\text{Beta}(\alpha, \beta)$ variable $\pi$ when $\alpha = \beta$?
+
+```{r}
+#| label: question_1
+#| echo: false
+
+opts_1 <- c(
+   "Right-skewed with π tending to be less than 0.5.",
+   answer = "Symmetric with π tending to be around 0.5.",
+   "Left-skewed with π tending to be greater than 0.5."
+)
+```
+
+`r longmcq(opts_1)`
+
+2.  Using the same options as above, how would you describe the typical
+    behavior of a $\text{Beta}(\alpha, \beta)$ variable $\pi$ when
+    $\alpha > \beta$?
+
+```{r}
+#| label: question_2
+#| echo: false
+
+opts_2 <- c(
+   "Right-skewed with π tending to be less than 0.5.",
+   "Symmetric with π tending to be around 0.5.",
+   answer = "Left-skewed with π tending to be greater than 0.5."
+)
+```
+
+`r longmcq(opts_2)`
+
+2.  For which model is there greater variability in the plausible values
+    of $\pi$, $\text{Beta}(20,20)$ or $\text{Beta}(5,5)$?
+
+```{r}
+#| label: question_3
+#| echo: false
+
+opts_3 <- c(
+   "Beta(20,20)",
+   answer = "Beta(5,5)"
+)
+```
+
+`r longmcq(opts_3)`
+:::
+::::::
+
+We can support our observations of the behavior in $\pi$ with numerical
+measurements. The **mean** (or “expected value”) and **mode** of $\pi$
+provide **measures of central tendency**, or what’s *typical.*
+Conceptually speaking, the mean captures the average value of $\pi$,
+whereas the mode captures the most *plausible* value of $\pi$, i.e., the
+value of $\pi$ at which pdf $f (\pi)$ is maximized. These measures are
+represented by the solid and dashed vertical lines, respectively, in
+@fig-003-beta-model-variants. Notice that when $\alpha$ is less
+than$\beta$ (top row), the Beta pdf is right skewed, thus the mean
+exceeds the mode of $\pi$ and both are below 0.5. The opposite is true
+when $\alpha$ is greater than $\beta$ (bottom row). When $\alpha$ and
+$\beta$ are equal (center row), the Beta pdf is symmetric around a
+common mean and mode of 0.5. These trends reflect the formulas for the
+mean, denoted $E(\pi)$, and mode for a $\text{Beta}(\alpha, \beta)$
+variable $\pi%$:
+
+:::::: my-theorem
+:::: my-theorem-header
+::: {#thm-003-beta-mean-mode}
+: Formulae for Beta mean and mode
+:::
+::::
+
+::: my-theorem-container
+$$
+\begin{align*}
+E (\pi) &= \frac{\alpha}{\alpha + \beta} \\
+\text{Mode} (\pi) &= \frac{\alpha -1}{\alpha + \beta - 2} \text{ when } \alpha, \beta > 1
+\end{align*}
+$$ {#eq-003-beta-mean-mode}
+:::
+::::::
+
+For example, the central tendency of a $\text{Beta}(5, 5)$ variable
+$\pi$ can be described by
+
+$$
+E (\pi) = \frac{5}{5 + 5} = 0.5 \text{ and }  \text{  Mode}(\pi) = \frac{5 -1}{5 + 5 - 2} = 0.5
+$$
+
+@fig-003-beta-model-variants also reveals patterns in the variability of
+$\pi$. For example, with values that tend to be closer to the mean of
+0.5, the variability in$\pi$ is smaller for the $\text{Beta}(20,20)$
+model than for the \text{Beta}(5,5)\$ model.
+
+:::::: my-theorem
+:::: my-theorem-header
+::: {#thm-003-beta-var-sd}
+: Formulae for Beta variance and standard deviation
+:::
+::::
+
+::: my-theorem-container
+We can measure the variability of a $\text{Beta}(\alpha, \beta)$ random
+variable $\pi$ by **variance**
+
+$$
+\begin{align*}
+Var(\pi) = \frac{\alpha\beta}{(\alpha + \beta)^2(α + β + 1)}
+\end{align*}
+$$ {#eq-003-beta-variance}
+
+Roughly speaking, variance measures the typical *squared* distance of π
+values from the mean, E($\pi$). Since the variance thus has squared
+units, it’s typically easier to work with the **standard deviation**
+which measures the typical *unsquared* distance of $\pi$ values from
+E($\pi$):
+
+$$
+SD(\pi) ∶=  \sqrt{Var(π)}
+$$ {#eq-003-beta-sd}
+:::
+::::::
+
+For example, the values of a $\text{Beta}(5, 5)$ variable $\pi$ tend to
+deviate from their mean of 0.5 by 0.151, whereas the values of a
+$\text{Beta}(20, 20)$ variable tend to deviate from 0.5 by only 0.078:
+
+$$
+\sqrt{\frac{5 \cdot 5}{(5 + 5)^2(5+5+1)}} = 0.151 \text{ and } \sqrt{\frac{20 \cdot 20}{(20 + 20)^2(20+20+1)}} = 0.078
+$$
+
+The formulas above don’t magically pop out of nowhere. They are obtained
+by applying general definitions of mean, mode, and variance to the Beta
+pdf @eq-003-beta-mean-mode. I skip here the theory behind measuring
+central tendency and variability.
+
+### Tuning the Beta prior {#sec-003-tuning-beta-prior}
+
+With a sense for how the $\text{Beta}(\alpha, \beta)$ model works, let’s
+tune the shape hyperparameters $\alpha$ and $\beta$ to reflect our prior
+information about Michelle’s election support $\pi$. We saw in Figure
+@fig-003-intro-poll-results (left) that across 30 previous polls,
+Michelle’s average support was around 45 percentage points, though she
+roughly polled as low as 25 and as high as 55[^003-beta-binomial-1]
+percentage points. Our $\text{Beta}(\alpha, \beta)$ prior should have
+similar patterns. For example, we want to pick $\alpha$ and $\beta$ for
+which $\pi$ tends to be around 0.45,
+$E(\pi) = \alpha /(\alpha + \beta) ≈ 0.45$. Or, after some rearranging,
+
+[^003-beta-binomial-1]: and not 65 as printed in the book
+
+$$\alpha \approx \frac{9}{11}\beta$$
+
+:::::: my-procedure
+:::: my-procedure-header
+::: {#prp-003-rearrange-formula-for-beta-prior}
+: Rearrange formula $E(\pi) = \alpha /(\alpha + \beta) ≈ 0.45$
+:::
+::::
+
+::: my-procedure-container
+1.  **Start with the equation**:\
+    $\frac{\alpha}{\alpha + \beta} \approx 0.45$
+
+2.  **Multiply both sides by** $(\alpha + \beta)$ to eliminate the
+    denominator:\
+    $\alpha \approx 0.45(\alpha + \beta)$
+
+3.  **Expand the right-hand side**:\
+    $\alpha \approx 0.45\alpha + 0.45\beta$
+
+4.  **Subtract** $0.45\alpha$ from both sides to collect terms with
+    $\alpha$ on one side:\
+    $\alpha - 0.45\alpha \approx 0.45\beta$\
+    $0.55\alpha \approx 0.45\beta$
+
+5.  **Divide both sides by 0.55** to isolate $\alpha$:\
+    $\alpha \approx \frac{0.45}{0.55}\beta$
+
+6.  **Simplify the fraction**:\
+    $\alpha \approx \frac{9}{11}\beta$ (since
+    $0.45/0.55 = 45/55 = 9/11$)
+
+7.  **Final Result**:\
+    $$\alpha \approx \frac{9}{11}\beta$$
+:::
+::::::
+
+In a trial and error process, we use `bayesrules::plot_beta()` to plot
+Beta models with $\alpha$ and $\beta$ pairs that meet this constraint
+(e.g., Beta(9,11), Beta(18,22), Beta(27,33), Beta(36,44), Beta(45,55),
+Beta(54,66)). Among these, we find that the Beta(45,55) closely captures
+the typical outcomes and variability in the old polls:
+
+:::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-003-trial-and-error-beta-prior}
+: Trial and error to get similar plot as in the right part of
+@fig-003-intro-poll-results
+:::
+::::
+
+::: my-r-code-container
+```{r}
+#| label: fig-003-trial-and-error-beta-prior
+#| fig-cap: "Beta probability density function. From left to right, vom top to down: Beta(9,11), Beta(18, 22), Beta(27, 33), Beta(36, 44), Beta(45, 55), Beta(54, 66)."
+#| lst-label: lst-003-trial-and-error-beta-prior
+#| lst-cap: "Six different Beta probability density functions (pdf)."
+
+
+library(patchwork)
+
+p1 <- my_plot_beta(9, 11)
+p2 <- my_plot_beta(18, 22)
+p3 <- my_plot_beta(27, 33)
+p4 <- my_plot_beta(36, 44)
+p5 <- my_plot_beta(45, 55)
+p6 <- my_plot_beta(54, 66)
+
+(
+    combined_plot <- p1 + p2 + p3 + p4 + p5 + p6 + plot_layout(ncol = 3)
+)
+```
+:::
+::::::
+
+::: {#cau-003- .callout-caution}
+###### Difficult to find the appropriate model
+
+It is difficult in @fig-003-trial-and-error-beta-prior to decide which
+is the appropriate Beta model. Even producing bigger graphs displaying
+the measures of central tendency numerically and the x-coordinate with a
+mouse click in a Shiny app is not helpful. An exact visual estimate of
+the 95% (or 99%) confidence interval (= +/- 2 or +/- 3 standard
+deviations respectively) is not possible. One would have to show these
+limits in the graph itself.
+
+I have added the 95% credible interval values into
+@fig-003-plot-beta-trial. Now we can see the details and it is now easy
+to decide which Beta values have the nearest 95% credible interval to
+the previous polls for Michelle’s support.
+:::
+
+:::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-003-plot-beta-trials}
+: Plot Beta trials with showing a 95% `r glossary("credible interval")`
+:::
+::::
+
+::: my-r-code-container
+```{r}
+#| label: fig-003-plot-beta-trial
+#| fig-cap: Beta trials showing a 95% credible interval
+#| lst-label: lst-003-plot-beta-trial
+#| lst-cap: Plot several Beta trials showing a 95% credible interval
+
+my_plot_beta_trial <- function(alpha, beta) {
+
+    library(bayesrules)
+    library(ggplot2)
+    
+    # Calculate the quantiles
+    ci_95_lower <- qbeta(0.025, alpha, beta)
+    ci_95_upper <- qbeta(0.975, alpha, beta)
+    
+    # Create the Beta(alpha, beta) plot
+    p <- my_plot_beta(alpha, beta)
+    
+    # Add confidence interval lines and labels
+    p + 
+      geom_vline(xintercept = ci_95_lower, col = "blue", lty = 2, linewidth = 0.8) +
+      geom_vline(xintercept = ci_95_upper, col = "blue", lty = 2, linewidth = 0.8) +
+      
+      # Add text labels for 95% CI
+      annotate("text", x = ci_95_lower, y = 0.5, 
+               label = round(ci_95_lower, 3), 
+               color = "blue", hjust = 1.1, size = 3.5) +
+      annotate("text", x = ci_95_upper, y = 0.5, 
+               label = round(ci_95_upper, 3), 
+               color = "blue", hjust = -0.1, size = 3.5)
+
+}
+
+p1 <- my_plot_beta_trial(9, 11)
+p2 <- my_plot_beta_trial(18, 22)
+p3 <- my_plot_beta_trial(27, 33)
+p4 <- my_plot_beta_trial(36, 44)
+p5 <- my_plot_beta_trial(45, 55)
+p6 <- my_plot_beta_trial(54, 66)
+
+
+library(patchwork)
+(
+    combined_plot <- p1 + p2 + p3 + p4 + p5 + p6 + plot_layout(ncol = 3)
+)
+
+```
+:::
+::::::
+
+Thus, a reasonable prior model for Michelle’s election support is\
+$$\pi \sim\text{Beta}(45, 55)$$.
+
+with **prior pdf** $f (\pi)$ following from plugging 45 and 55 into
+(@eq-003-beta-model),
+
+$$
+f (\pi) =  \frac{\Gamma(100)}{\Gamma(45)\Gamma(55)}\pi^{44}(1 - \pi)^{54} \text{ for } \pi \in [0, 1]
+$$ {#eq-003-prior-pdf-45-55}
+
+By (@eq-003-beta-mean-mode), this model specifies that Michelle’s
+election support is most likely around 45 percentage points, with
+**prior mean** and **prior mode**
+
+$$
+E(\pi) = \frac{45}{45 + 55} = 0.4500 \text{ and } Mode(\pi) = \frac{45 - 1}{45 + 55 -2} = 0.4490.
+$$ {#eq-prior-mean-and-mode-45-55}
+
+Further, by (@eq-003-beta-variance), the potential variability in $\pi$
+is described by a **prior standard deviation** of 0.05. That is, our
+other prior assumptions about Michelle’s possible election support tend
+to deviate by 5 percentage points from the prior mean of 45%:
+
+$$
+\begin{align*}
+Var(\pi) &= \frac{45 \cdot 55}{(45 + 55)^2{45 + 55 +1}} = 0.0025 \\
+SD(\pi) &= \sqrt{0-0025} = 0.05
+\end{align*}
+$$ {#eq-003-sd-45-55}
+
+## Binomial data model & likelihood function
+
+In the second step of our Bayesian analysis of Michelle’s election
+support $\pi$, you’re ready to collect some data. You plan to conduct a
+new poll of $n = 50$ Minnesotans and record $Y$ , the number that
+support Michelle. The results depend upon, and thus will provide insight
+into, $\pi$ – the greater Michelle’s actual support, the greater $Y$
+will tend to be.
+
+To *model* the dependence of $Y$ on $\pi$, we can make the following
+assumptions about the poll:
+
+(1) voters answer the poll *independently* of one another; and
+(2) the *probability* that any polled voter supports your candidate
+    Michelle is $\pi$.
+
+It follows from our work in
+@sec-002-conditional-probabilities-chess-game that, conditional on
+$\pi$, $Y$ is Binomial. Specifically,
+
+$$Y ∣π ∼ Bin(50, π)$$ with conditional pmf $f (y \mid \pi)$ defined for
+$y \in \{0, 1, 2, ..., 50\}$,
+
+$$
+f (y \mid \pi) = P (Y = y \mid \pi) = \binom{50}{y} \pi^y(1 − π)^{50−y}.
+$$ {#eq-003-binomial-data-model}
+
+The `r glossary("CPMF", "conditional pmf")` $f (y \mid \pi)$ provides
+answers to a *hypothetical* question: *if* Michelle’s support were some
+given value of $\pi$, then how many of the 50 polled voters $Y = y$
+might we expect to support her? @fig-003-binomial-data-model plots this
+pmf under a range of possible $\pi$. These plots formalize our
+understanding that *if* Michelle’s support $\pi$ were low (top row), the
+polling result $Y$ is also likely to be low. *If* her support were high
+(bottom row), $Y$ is also likely to be high.
+
+:::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-003-binomial-data-model}
+: Conditional Binomial Model of Michelle’s support in 50 polls
+:::
+::::
+
+::: my-r-code-container
+```{r}
+#| label: fig-003-binomial-data-model
+#| fig-cap: The Bin(50, π) pmf f (y∣π) is plotted for values of π ∈ {0.1, 0.2, . . . , 0.9}. The pmfs at the observed value of polling data Y = 30 are highlighted in black.
+#| lst-label: lst-003-binomial-data-model
+#| lst-cap: Bin(50, π) pmf f (y∣π) is plotted for values of π ∈ {0.1, 0.2, . . . , 0.9}.
+
+# Create data frame with all combinations
+df <- base::expand.grid(
+  x = 0:50,  # number of successes (0 to size)
+  prob = base::seq(
+      from = 0.1, 
+      to = 0.9, 
+      by = 0.1)
+) |> 
+  dplyr::mutate(
+    probability = stats::dbinom(x, size = 50, prob = prob),
+    prob_label = base::paste("Bin(50, ", prob, ")"),
+    highlight = dplyr::if_else(x == 30, "black", "gray")
+  )
+
+# Create lollipop chart with facets
+ggplot2::ggplot(df, ggplot2::aes(x = x, y = probability)) +
+  ggplot2::geom_linerange(
+    ggplot2::aes(
+      x = x, 
+      ymin = 0, 
+      ymax = probability, 
+      color = highlight), 
+    linewidth = 0.8) +
+  ggplot2::geom_point(ggplot2::aes(color = highlight), size = 1) +
+  ggplot2::scale_color_identity() +
+  ggplot2::facet_wrap(~ prob_label, ncol = 3) +
+  ggplot2::scale_x_continuous(breaks = base::seq(0, 50, by = 5)) +
+  ggplot2::scale_y_continuous(breaks = base::seq(0, 0.20, by = 0.05)) +
+  ggplot2::labs(
+    x = "y",
+    y = base::expression("f (y|π)"),
+    title = "Binomial Distribution (n = 50)"
+  ) +
+  ggplot2::theme_minimal() +
+  ggplot2::theme(
+    panel.grid.minor.y = ggplot2::element_line(color = "gray90", linewidth = 0.2),
+    panel.grid.major.y = ggplot2::element_line(color = "gray60", linewidth = 0.5),
+    panel.grid.major.x = ggplot2::element_line(color = "gray80", linewidth = 0.3),
+    panel.spacing = grid::unit(1.5, "lines"),
+    strip.background = ggplot2::element_rect(fill = "gray90", color = "gray50"),
+    strip.text = ggplot2::element_text(face = "bold", size = 11)
+  )
+```
+:::
+::::::
+
+In *reality*, we ultimately observe that the poll was a huge success: Y
+= 30 of n = 50 (60%) polled voters support Michelle! This result is
+highlighted by the black lines among the pmfs in
+@fig-003-binomial-data-model. To focus on just these results that match
+the observed polling data, we extract and compare these black lines in a
+single plot (Figure 3.5). These represent the *likelihoods* of the
+observed polling data, $Y = 30$, at each potential level of Michelle’s
+support $\pi$ in $\{0.1, 0.2, . . . , 0.9\}$. In fact, this discrete set
+of scenarios represents a small handful of points along the complete
+continuous `r glossary("Likelihood-Function", "likelihood function")`
+$L(\pi \mid y = 30)$ defined for any $\pi$ between $0$ and $1$ (black
+curve).
+
+:::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-003-likelihood-function}
+: Conditional likelihood function for Michelle’s support in 50 polls
+:::
+::::
+
+::: my-r-code-container
+```{r}
+#| label: fig-003-likelihood-function
+#| fig-cap: The likelihood function, $L(\pi \mid y = 30)$, of Michelle’s election support π given the observed poll in which $Y = 30$ of $n = 50$ polled Minnesotans supported her. The vertical lines represent the likelihood evaluated at $\pi$ in $\{0.1, 0.2, . . . , 0.9\}$.
+#| results: hold
+#| lst-label: lst-003-likelihood-function
+#| lst-cap: Likelihood function of Michelle’s election support
+#| fig-height: 3
+#| fig-width: 5
+
+
+# Define the likelihood function
+likelihood <- function(pi, y = 30, n = 50) {
+  base::choose(n, y) * pi^y * (1 - pi)^(n - y)
+}
+
+# Create data for continuous curve
+df_continuous <- tibble::tibble(
+  pi = base::seq(0, 1, length.out = 1000)
+    ) |> 
+  dplyr::mutate(L = purrr::map_dbl(pi, likelihood))
+
+# Create data for discrete vertical lines
+df_discrete <- tibble::tibble(
+  pi = base::seq(0.1, 0.9, by = 0.1)
+    )  |> 
+  dplyr::mutate(L = purrr::map_dbl(pi, likelihood))
+
+# Create the plot
+ggplot2::ggplot() +
+  # Continuous likelihood curve
+  ggplot2::geom_line(data = df_continuous, 
+            ggplot2::aes(x = pi, y = L), 
+            linewidth = 1.2) +
+  # Vertical lines at discrete values
+  ggplot2::geom_segment(data = df_discrete, 
+               ggplot2::aes(x = pi, xend = pi, y = 0, yend = L),
+               linewidth = 0.8) +
+  # Points at discrete values
+  ggplot2::geom_point(data = df_discrete, 
+             ggplot2::aes(x = pi, y = L), 
+             size = 3) +
+  # Labels and formatting
+  ggplot2::labs(
+    x = base::expression(pi),
+    y = base::expression(L(pi*"|"*y==30)),
+    title = base::expression("Likelihood Function: "*L(pi*"|"*y==30))
+  ) +
+  ggplot2::scale_x_continuous(breaks = seq(0, 1, 0.1)) +
+  ggplot2::theme_minimal(base_size = 14) +
+  ggplot2::theme(
+    plot.title = ggplot2::element_text(hjust = 0.5, size = 16),
+    axis.title = ggplot2::element_text(size = 14)
+  )
+
+# Print key values using tidyverse approach
+tibble::tibble(
+  pi = c(0.4, 0.5, 0.6, 0.7, 0.8),
+  likelihood = purrr::map_dbl(pi, likelihood)
+    )  |> 
+  dplyr::mutate(label = stringr::str_glue(
+      "L(π={pi}|y=30) = {round(likelihood, 6)}")) |> 
+  dplyr::pull(label) |> 
+  purrr::walk(cat, "\n")
+
+# Find maximum
+df_continuous  |> 
+  dplyr::slice_max(L, n = 1)  |> 
+  dplyr::mutate(label = stringr::str_glue(
+      "Maximum likelihood occurs at π = {round(pi, 3)}"))  |> 
+  dplyr::pull(label)  |> 
+  base::cat("\n")
+```
+:::
+::::::
+
+Recall that the likelihood function is defined by turning the Binomial
+pmf on its head. Treating $Y = 30$ as observed data and $\pi$ as
+unknown, matching the reality of our situation, the Binomial likelihood
+function of $\pi$ follows from plugging $y = 30$ into the Binomial pmf
+(@eq-003-binomial-data-model):
+
+$$
+L(\pi \mid y = 30) = \binom{50}{30} \pi^{30}(1 − \pi)^{20} \text{ for } \pi \in [0, 1].
+$$ {#eq-003-binomial-likelihood-function-michelle}
+
+For example, matching what we see in @fig-003-likelihood-function, the
+chance that $Y = 30$ of $50$ polled voters would support Michelle is
+$0.115$ if her underlying support were $\pi = 0.6$:
+
+$$
+L(\pi = 0.6 \mid y = 30) = \binom{50}{30} 0.6^{30}(1 − 0.6)^{20} \approx 0.115
+$$
+
+but only$0.042$ if her underlying support were $\pi = 0.5$:
+
+$$
+L(\pi = 0.5 \mid y = 30) = \binom{50}{30} 0.5^{30}(1 − 0.5)^{20} \approx 0.042
+$$
+
+The likelihood function is calculated in R with the following code
+snippet:
+
+```{r}
+#| label: likelihood-function
+#| code-fold: false
+likelihood <- function(pi, y, n) {
+  base::choose(n, y) * pi^y * (1 - pi)^(n - y)
+}
+
+```
+
+For instance: From $n = 50$ people that were asked (= polls), $Y = 30$
+people voted for Michelle ($= 60\% = 0.6 \pi$), so the result of
+`likelihood(pi = 0.6, y = 30, n = 50)` =
+`r likelihood(pi = 0.6, y = 30, n = 50)`.
+
+It’s also important to remember here that $L(\pi \mid y = 30)$ is a
+function of \pi that provides insight into the relative compatibility of
+the observed polling data $Y = 30$ with different $\pi \in [0, 1]$. The
+fact that $L(\pi \mid y = 30)$ is maximized when $\pi = 0.6$ suggests
+that the 60% support for Michelle among polled voters is most likely
+when her underlying support is also at 60%. This makes sense! The
+farther that a hypothetical $\pi$ value is from $0.6$, the less likely
+we would be to observe our poll result – $L(\pi \mid y = 30)$
+effectively drops to 0 for $\pi$ values under $0.3$ and above $0.9$.
+Thus, it’s extremely unlikely that we would’ve observed a 60% support
+rate in the new poll if, in fact, Michelle’s underlying support were as
+low as 30% or as high as 90%.
+
+## The Beta posterior model
+
+We now have two pieces of our Bayesian model in place:
+
+1.  the `r glossary("Beta Probability Model", "Beta")`
+    `r glossary("prior_model", "prior model")` for Michelle’s support
+    $\pi$ and
+2.  the `r glossary("Binomial model")` for the dependence of polling
+    data Y on $\pi$:
+
+$$
+\begin{align*}
+Y \mid \pi &\sim Bin(50, \pi)\\
+\pi &\sim Beta(45, 55)
+\end{align*}
+$$
+
+:::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-003-prior-scaled-likelihood}
+: Prior model with scaled likelihood function
+:::
+::::
+
+::: my-r-code-container
+```{r}
+#| label: fig-003-prior-scaled-likelihood
+#| fig-cap: The prior model of $\pi$ along with the (scaled) likelihood function of $\pi$ given the new poll results in which $Y = 30$ of $n = 50$ polled Minnesotans support Michelle.
+#| fig-height: 3
+#| lst-label: lst-003-prior-scaled-likelihood
+#| lst-cap: Prior model with scaled likelihood function
+
+
+# Parameters
+n <- 50  # number of trials
+alpha_prior <- 45
+beta_prior <- 55
+y_observed <- 30  # 30 successes out of 50 trials
+
+# Create a range of pi values
+pi_values <- base::seq(0, 1, length.out = 1000)
+
+# Prior: Beta(45, 55)
+prior <- stats::dbeta(pi_values, alpha_prior, beta_prior)
+
+# Likelihood: Bin(50, pi) for observed y
+likelihood <- stats::dbinom(y_observed, n, pi_values)
+
+# Scale the likelihood to integrate to 1 (normalize to a probability density)
+# The integral of a binomial likelihood over pi is 1, so we just need to normalize
+# We can approximate the integral using the trapezoidal rule
+# integral_likelihood <- base::sum(base::diff(pi_values) * (likelihood[-1] + likelihood[-length(likelihood)])) / 2
+# scaled_likelihood <- likelihood / integral_likelihood
+
+# Normalize the likelihood to integrate to 1
+scaled_likelihood <- likelihood / sum(likelihood * (pi_values[2] - pi_values[1]))
+
+# Create data frame for plotting
+plot_data <- tibble::tibble(
+  pi = pi_values,
+  Prior = prior,
+  `Scaled Likelihood` = scaled_likelihood
+)
+
+# Reshape data for ggplot2
+plot_data_long <- tidyr::pivot_longer(plot_data, 
+                                cols = c(Prior, `Scaled Likelihood`),
+                                names_to = "Distribution",
+                                values_to = "Density")
+
+# Plot with filled areas
+ggplot2::ggplot(plot_data_long, 
+      ggplot2::aes(x = pi, y = Density, fill = Distribution)) +
+  ggplot2::geom_area(alpha = 0.6, position = "identity") +
+  ggplot2::geom_line(aes(color = Distribution), linewidth = 1, color = "black") +
+  ggplot2::scale_fill_manual(values = c("Prior" = "#f0e442", 
+                                "Scaled Likelihood" = "#0071b2")) +
+  ggplot2::labs(x = base::expression(pi), 
+       y = "Density",
+       title = "Prior and Scaled Likelihood") +
+  ggplot2::theme_minimal() +
+  theme(legend.position = "right",
+        legend.title = element_blank())
+```
+:::
+::::::
+
+In @fig-003-prior-scaled-likelihood I have used my own code using
+{**ggplot2**} because the function
+`bayesrules::plot_beta_binomial(alpha = 45, beta = 55, y = 30, n = 50)`
+displays also the posterior model. But for educational reasons it is
+important at this stage only to compare prior model and (scaled)
+likelihood function.
+
+::: {#nte-003-prior-scaled-likelihood .callout-note}
+###### Scaling likelihood to integrate to 1
+
+I didn't know how to compute the area under the likelihood function to
+integrate it to 1. I used `r glossary("Claude Sonnet 4.5")` which
+proposed the likelihood scaling. The procedure consists of several
+steps, where two steps were completely new for me:
+
+**1. Trapezoidal rule**:
+
+The trapezoidal rule is a numerical integration method used to
+approximate the area under a curve. It approximates the area under a
+curve by dividing it into trapezoids rather than rectangles (as in the
+Riemann sum).
+
+For a function f(x) over interval \[a,b\]:
+
+-   Divide the interval into n subintervals
+-   Approximate the area under the curve in each subinterval as a
+    trapezoid
+-   Sum the areas of all trapezoids
+
+The trapezoidal rule is more accurate than the rectangle rule because:
+
+-   It accounts for the slope of the function between points
+-   It's exact for linear functions
+-   It's more accurate for smooth functions than the rectangle rule
+
+In the context of our R code:
+
+-   `pi_values` represents the x-axis values ($\pi$ values from 0 to 1)
+-   `likelihood` represents the y-axis values (the likelihood function)
+-   `diff(pi_values)` gives the width of each subinterval
+
+The trapezoidal rule approximates the integral as:
+`sum(diff(pi_values) * (likelihood[-1] + likelihood[-length(likelihood)])) / 2`
+
+**2. `diff()` function**
+
+The `diff()` function in R calculates the **differences between
+consecutive elements** of a vector. In the context of our code,
+`diff(pi_values)` is used to compute the spacing between adjacent values
+in the `pi_values` vector.
+
+Here's a breakdown of what it does:
+
+-   **Input**: `pi_values` is a sequence of values from 0 to 1, created
+    with `seq(0, 1, length.out = 1000)`. This creates 1000 evenly spaced
+    values between 0 and 1.
+-   **What diff() does**: If `pi_values` has values `[a, b, c, d, ...]`,
+    then `diff(pi_values)` returns `[b-a, c-b, d-c, ...]`. Since
+    `pi_values` is evenly spaced, all differences will be equal to
+    `1/999` (approximately 0.001001)
+
+3.  **Why we use it**: In the integral calculation, we use the
+    trapezoidal rule:
+    `sum(diff(pi_values) * (likelihood[-1] + likelihood[-length(likelihood)])) / 2`.
+    In this formula `diff(pi_values)` gives us the width of each
+    interval between consecutive $\pi$ values. This width is multiplied
+    by the average height of the likelihood function at the two
+    endpoints to approximate the area under the curve.
+
+4.  **Example**:
+
+    ``` r
+    pi_values <- seq(0, 1, length.out = 5)
+    # pi_values = [0, 0.25, 0.5, 0.75, 1]
+    diff(pi_values)  # Returns [0.25, 0.25, 0.25, 0.25]
+    ```
+
+**Summary** - The trapezoidal rule is particularly useful in our case
+because it provides a good approximation of the integral of the
+likelihood function, which we need to normalize it to a probability
+density. - The `diff()` function is essential for numerical integration
+because it provides the width of each interval in the trapezoidal rule,
+which is used to approximate the area under the curve.
+
+To see the differences the following code uses a much coarser grid (20
+points instead of 1000) to make the difference between the two methods
+clearly visible. The rectangle rule uses bars, while the trapezoidal
+rule connects consecutive points with straight lines to form trapezoids.
+
+```{r}
+#| label: fig-003-integral-difference
+#| fig-cap: Compare the rectangle rule (bars) with the trapezoidal integration rule
+#| lst-label: lst-003-integral-difference
+#| lst-cap: Rectangle rule vs trapezoidal integration rule
+#| results: hold
+
+# Create a coarser grid to make the difference visible
+pi_values <- base::seq(0, 1, length.out = 20)
+
+# Calculate binomial likelihood for y=30, n=50
+likelihood <- stats::dbinom(30, size = 50, prob = pi_values)
+
+# Rectangle rule (left endpoint)
+dx <- base::diff(pi_values)[1]
+integral_rectangle <- base::sum(likelihood[-base::length(likelihood)] * dx)
+
+# Trapezoidal rule
+integral_trapezoid <- base::sum((likelihood[-1] + likelihood[-base::length(likelihood)]) / 2 * dx)
+
+# Create visualization data
+rect_df <- base::data.frame(
+  x = pi_values[-base::length(pi_values)],
+  xend = pi_values[-1],
+  y = 0,
+  yend = likelihood[-base::length(likelihood)]
+)
+
+trap_df <- base::data.frame(
+  x = pi_values,
+  y = likelihood
+)
+
+# Visualize both methods
+ggplot2::ggplot() +
+  # Rectangle rule
+  ggplot2::geom_rect(data = rect_df, 
+            ggplot2::aes(xmin = x, xmax = xend, ymin = y, ymax = yend),
+            fill = "blue", alpha = 0.3, color = "blue") +
+  # Trapezoidal rule
+  ggplot2::geom_polygon(data = base::data.frame(
+    x = base::c(pi_values, base::rev(pi_values)),
+    y = base::c(likelihood, rep(0, base::length(likelihood)))
+      ), 
+      ggplot2::aes(x = x, y = y), fill = "red", alpha = 0.3) +
+  # Actual function
+  ggplot2::geom_line(data = trap_df, ggplot2::aes(x = x, y = y), 
+            color = "black", linewidth = 1) +
+  ggplot2::geom_point(data = trap_df, ggplot2::aes(x = x, y = y), 
+             color = "black", size = 2) +
+  ggplot2::labs(x = "π", y = "Likelihood",
+       title = "Rectangle Rule (blue) vs Trapezoidal Rule (red)") +
+  ggplot2::theme_minimal()
+
+# Print numerical comparison
+base::cat("Rectangle rule integral:", integral_rectangle, "\n")
+base::cat("Trapezoidal rule integral:", integral_trapezoid, "\n")
+base::cat("Difference:", abs(integral_rectangle - integral_trapezoid), "\n")
+```
+
+In fact the numerical difference between these two methods is extremely
+small: The difference is in the 18th decimal place!
+:::
+
+These pieces of the puzzle are shown together in
+@fig-003-prior-scaled-likelihood where, *only for the purposes of visual
+comparison to the prior*, the likelihood function is scaled to integrate
+to 1. (The scaled likelihood function is calculated by
+$L(\pi \mid  y)/ \int_{0}^{1} L(\pi \mid y)d\pi$.) The prior and data,
+as captured by the likelihood, don’t completely agree. Constructed from
+old polls, the prior is a bit more pessimistic about Michelle’s election
+support than the data obtained from the latest poll. Yet both insights
+are valuable to our analysis. Just as much as we shouldn’t ignore the
+new poll in favor of the old, we also shouldn’t throw out our bank of
+prior information in favor of the newest thing (also great life advice).
+Thinking like Bayesians, we can construct a
+`r glossary("posterior_model", "posterior model")` of $\pi$ which
+combines the information from the prior with that from the data.
+
+:::::: my-assessment
+:::: my-assessment-header
+::: {#cor-003-quiz-combine-posterior}
+: Which plot reflects the correct posterior model of Michelle’s election
+support $\pi$?
+:::
+::::
+
+::: my-assessment-container
+```{r}
+#| label: quiz-combine-posterior
+#| out-width: "100%"
+
+knitr::include_graphics("img/003-quiz-combine-posterior.png")
+```
+
+<center>**Which plot reflects the correct posterior model of Michelle’s
+election support** $\pi$?: `r mcq(c("a", answer="b", "c"))`</center>
+
+<br />
+:::
+::::::
+
+The plot of the above solution is the only plot in which the posterior
+model of $\pi$ strikes a balance between the relative pessimism of the
+prior and optimism of the data. You can reproduce this correct posterior
+using the `bayesrules::plot_beta_binomial()` function, plugging in the
+prior `r glossary("hyperparameter", "hyperparameters")`
+($\alpha = 45, \beta = 55$) and data ($y = 30$ of $n = 50$ polled voters
+support Michelle):
+
+:::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-003-plot-beta-binomial-michelle}
+: Plot Beta-Binomial for Michelle support $\pi$
+:::
+::::
+
+::: my-r-code-container
+```{r}
+#| label: fig-003-plot-beta-binomial-michelle
+#| fig-cap: The prior pdf, scaled likelihood function, and posterior pdf of Michelle’s election support $\pi$
+#| lst-label: lst-003-plot-beta-binomial-michelle
+#| lst-cap: Plot beta-binomial for Michelle support
+#| fig-height: 3
+#| fig-width: 7
+
+bayesrules::plot_beta_binomial(alpha = 45, beta = 55, y = 30, n = 50) 
+```
+:::
+::::::
+
+In its balancing act, the posterior here is slightly “closer” to the
+prior than to the likelihood. (We’ll gain intuition for why this is the
+case in @sec-chap-004.) The posterior being *centered* at $\pi = 0.5$
+suggests that Michelle’s support is equally likely to be above or below
+the 50% threshold required to win Minnesota. Further, combining
+information from the prior and data, the *range* of posterior plausible
+values has narrowed: we can be fairly certain that Michelle’s support is
+somewhere between 35% and 65%. You might also recognize something new:
+like the prior, the posterior model of $\pi$ is continuous and lives on
+\[0,1\]. That is, like the prior, the posterior appears to be a
+$\text{Beta}(\alpha, \beta)$ model where the shape parameters have been
+*updated* to combine information from the prior and data. This is indeed
+the case. Conditioned on the observed poll results ($Y = 30$), the
+posterior model of Michelle’s election support is $\text{}(75, 75)$:
+
+$$\pi \mid (Y = 30) \sim \text{Beta}(75, 75)$$ with a corresponding pdf
+which follows from @eq-003-beta-model
+
+$$
+f (\pi \mid y) =  \frac{\Gamma(150)}{\Gamma(75)\Gamma(75)} \pi^{74}(1- \pi)^{74} \text{ for } \pi \in [0, 1]
+$$ {#eq-posterior-model-michelle}
+
+Before backing up this claim with some math, let’s examine the evolution
+in your understanding of Michelle’s election support $\pi$. The
+`bayesrules::summarize_beta_binomial()` function summarizes the typical
+values and variability in the prior and posterior models of $\pi$. These
+calculations follow directly from applying the prior and posterior Beta
+parameters into @eq-003-beta-mean-mode and @eq-003-beta-variance:
+
+:::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-003-summarize-beta-binomial-michelle}
+: Typical values and variability in the prior and posterior models of
+$\pi$ support for Michelle
+:::
+::::
+
+::: my-r-code-container
+```{r}
+#| label: tbl-003-summarize-beta-binomial-michelle
+#| tbl-cap: Summarizing the typical values and variability in the prior and posterior models of $\pi$ support for Michelle
+#| lst-label: lst-003-summarize-beta-binomial-michelle
+#| lst-cap: Typical values and variability in the prior and posterior models of Michelle's support
+
+bayesrules::summarize_beta_binomial(alpha = 45, beta = 55, y = 30, n = 50) |> 
+  knitr::kable()
+```
+:::
+::::::
+
+A comparison illuminates the polling data’s influence on the posterior
+model. Mainly, after observing the poll in which 30 of 50 people
+supported Michelle, the expected value of her underlying support $\pi$
+nudged up from approximately 45% to 50%. On the other hand, the
+variability within the model decreased, indicating a narrower range of
+posterior plausible $\pi$ values in light of the polling data:
+
+::::::: {#nte-003-calculate-prior-mean-sd-beta-michelle .callout-note}
+###### Prior mean E ($\mu$) and standard deviation SD ($\sigma$) for Beta(45, 55)
+
+For the calculation to compare prior with posterior values I am going to
+use for the prior part the already explained formula for the prior mean
+and stadard deviation of the beta model $\text{Beta}(45, 55)$ in
+@eq-003-beta-mean-mode resp. @eq-003-beta-variance.
+
+:::::: my-theorem
+:::: my-theorem-header
+::: {#thm-003-calculate-prior-mean-sd-beta-michelle}
+: Calculate prior mean and standard deviation for the Beta model
+$\text{Beta}(45, 55)$ for Michelle support $\pi$
+:::
+::::
+
+::: my-theorem-container
+**Prior Mean = E of Beta(45, 55)**
+
+$$
+\begin{align*}
+E(\pi) = \frac{\alpha}{\alpha + \beta} = \frac{45}{45+55} = \frac{45}{100} = \bf{0.45}
+\end{align*}
+$$ {#eq-003-calculate-mean-prior-beta-michelle}
+
+**Prior Standard Deviation = SD of Beta(45, 55)\$**
+
+$$
+\begin{align*}
+SD(\pi) &= \sqrt{\frac{\alpha\beta}{(\alpha + \beta)^2 \cdot (α + β + 1)}} 
+=  \sqrt{\frac{45 \cdot 55}{(45 + 55)^2 \cdot (45 + 55 + 1)}} \\
+&= \sqrt{\frac{2475}{(100)^2 \cdot (101)}} 
+= \sqrt{\frac{2475}{1010000}} 
+= \sqrt(0.002450495) \\
+&= \bf{0.04950247} \\
+\end{align*}
+$$ {#eq-003-calculate-standard-deviation-prior-beta-michelle}
+:::
+::::::
+:::::::
+
+::::::::: {#nte-003-calculate-posterior-mean-sd-beta-michelle .callout-note}
+###### Posterior mean E ($\mu$) and standard deviation SD ($\sigma$) for Beta(75, 75) = Beta-Binomial Beta(45, 55), y = 30, n = 50
+
+There are two possible calculations for the posterior mean and standard
+deviation:
+
+1.  Using again the formulae from @eq-003-beta-mean-mode resp.
+    @eq-003-beta-variance, but this time updated to combine information
+    from the prior and data resulting in the beta model
+    $\text{Beta}(75, 75)$.
+2.  Using the integrated formulae
+    @eq-003-beta-binomial-mean-mode-variance for the Beta-Binomial model
+    which are specified later in @sec-003-beta-binomial-model.
+
+:::::::: my-theorem
+:::: my-theorem-header
+::: {#thm-003-calculate-posterior-mean-sd-beta-michelle}
+: Calculate posterior mean and standard deviation for the Beta model
+$\text{Beta}(75, 75)$ = Beta-Binomial Beta(45, 55), y = 30, n = 50 for
+Michelle support $\pi$
+:::
+::::
+
+::::: my-theorem-container
+::: {#big-text style="font-size: 150%"}
+**Posterior Mean**
+:::
+
+**Posterior Mean = E of `Beta(75, 75)`: Version 1**
+
+There are two steps:
+
+1.  At first I have to calculate the Beta-Binomial model using
+    @eq-003-beta-binomial-formula (presented in the next section) to get
+    the value for the posterior Beta.
+
+$$
+\begin{align*}
+\pi \mid (Y = y) &\sim \text{Beta}(\alpha + y, \beta + n − y) \\
+&\sim \text{Beta}(45 + 30, 55 + 50 − 30) \\
+&\sim \bf{\text{Beta}(75, 75)}
+\end{align*}
+$$ {#eq-calculate-posterior-beta-michelle}
+
+2.  Then I can calculate with the posterior Beta the measures for the
+    central tendency.
+
+$$
+\begin{align*}
+E(\pi) = \frac{\alpha}{\alpha + \beta} = \frac{75}{75+75} = \frac{75}{150} = \bf{0.5}
+\end{align*}
+$$ {#eq-003-calculate-mean-posterior-beta-michelle-1}
+
+**Posterior Mean = E of Beta-Binomial `Beta(45, 55), y = 30, n = 50`:
+Version 2**
+
+$$
+\begin{align*}
+E(\pi) = \frac{\alpha + y}{\alpha + \beta + n} &= \frac{45 + 30}{45 + 55 + 50} = \frac{75}{150} = \bf{0.5}
+\end{align*}
+$$ {#eq-003-calculate-mean-posterior-beta-michelle-2}
+
+::: {style="font-size: 150%"}
+**Posterior Standard Deviation**
+:::
+
+**Posterior Standard Deviation = SD of `Beta(75, 75)`: Version 1**
+
+$$
+\begin{align*}
+SD(\pi) &= \sqrt{\frac{\alpha\beta}{(\alpha + \beta)^2 \cdot (α + β + 1)}} 
+=  \sqrt{\frac{75 \cdot 75}{(75 + 75)^2 \cdot (75 + 75 + 1)}} \\
+&= \sqrt{\frac{5625}{(150)^2 \cdot (151)}} 
+= \sqrt{\frac{5625}{22500 \cdot 151}}
+= \sqrt{\frac{5625}{3397500}} \\
+&= \sqrt{0.001655629} = \bf{0.04068942} \\
+\end{align*}
+$$ {#eq-003-calculate-standard-deviation-posterior-beta-michelle-1}
+
+**Posterior Standard Deviation = SD of `Beta(45, 55), y = 30, n = 50`:
+Version 2**
+
+$$
+\begin{align*}
+SD(\pi \mid Y = y) &=  \sqrt{\frac{(\alpha + y)(\beta + n − y)}{(\alpha + \beta + n)^2(\alpha + \beta + n + 1)}} \\
+&= \sqrt{\frac{(45 + 30)(55 + 50 − 30)}{(45 + 55 + 50)^2(45 + 55 + 50 + 1)}} \\
+&= \sqrt{\frac{(75)(75)}{(150)^2(151)}} = \sqrt{\frac{5625}{22500 \cdot 151}} \\
+&= \sqrt{\frac{5625}{3397500}} = \sqrt{0.001655629} \\
+&= \bf{0.04068942}
+\end{align*}
+$$ {#eq-003-calculate-standard-deviation-posterior-beta-michelle-2}
+:::::
+::::::::
+
+<center>**Compare these manually calculated values with the computed
+results in @tbl-003-summarize-beta-binomial-michelle using
+`bayesrules::summarize_beta_binomial()`.**</center>
+:::::::::
+
+If you’re happy taking our word that the posterior model of $\pi$ is
+`Beta(75,75)`, you can skip to @sec-003-beta-binomial-model and still be
+prepared for the next material in the book. However, we strongly
+recommend that you consider the magic from which the posterior is built.
+Going through the process can help you further develop intuition for
+Bayesian modeling.
+
+As with our previous Bayesian models, the posterior conditional pdf of
+$\pi$ strikes a balance between the prior pdf $f (\pi)$ and the
+likelihood function $L(\pi \mid y = 30)$ via Bayes’ Rule
+@eq-002-posterior-pmf-for-variable:
+
+$$
+f (\pi \mid y = 30) =  \frac{f (\pi)L(\pi \mid y = 30)}{f (y = 30)}
+$$
+
+Recall from @sec-002-posterior-shortcut that $f (y = 30)$ is a
+**normalizing constant**, i.e., a constant across $\pi$ which scales the
+posterior pdf $f (\pi \mid y = 30)$ to integrate to 1. **We don’t need
+to calculate the normalizing constant in order to construct the
+posterior model**. Rather, we can simplify the posterior construction by
+utilizing the fact that the posterior pdf is proportional to the product
+of the prior pdf (@eq-003-prior-pdf-45-55) and likelihood function
+(@eq-003-binomial-likelihood-function-michelle):
+
+$$
+\begin{align*}
+f (\pi \mid y = 30) \propto f (\pi)L(\pi \mid y = 30)\\  
+&=  \frac{\Gamma(100)}{\Gamma(45)\Gamma(55)}  \pi^{44}(1 − π)^{54} \cdot \binom{50}{30} \pi^{30}(1 − \pi)^{20}  \\
+&=\left[\frac{\Gamma(100)}{\Gamma(45)\Gamma(55)}\right] \cdot \pi^{74}(1 − π)^{74}  \\
+&\propto \pi^{74}(1 − \pi)^{74}
+\end{align*}
+$$
+
+In the third line of our calculation, we combined the constants and the
+elements that depend upon $\pi$ into two different pieces. In the final
+line, we made a big simplification: we dropped all constants that don’t
+depend upon $\pi$. We don’t need these. Rather, it’s the dependence of f
+($\pi$ \mid y = 30) on π that we care about:
+
+$$f ( \pi \mid y = 30) = c \pi^{74}(1 − \pi)^{74} \propto \pi^{74}(1 − \pi)^{74}$$
+
+We *could* complete the definition of this posterior pdf by calculating
+the normalizing constant $c$ for which the pdf integrates to 1:
+
+$$
+1 = \int f (\pi \mid y = 30)d\pi = \int c \cdot \pi^{74}(1 − \pi)^{74}d\pi ⇒ c =  \frac{1}{\int \pi^{74}(1 − \pi)^{74}d\pi}
+$$
+
+But again, we don’t need to do this calculation. The pdf of $\pi$ is
+defined by its structural dependence on $\pi$, that is, the
+`r glossary("kernel")` of the pdf. Notice here that
+$f (\pi \mid y = 30)$ has the same kernel as the normalized
+$\text{Beta}(75,75)$ pdf in @eq-posterior-model-michelle:
+
+$$
+f (\pi \mid y = 30) =  \frac{\Gamma(150)}{\Gamma(75)\Gamma(75)}  \pi^{74}(1 − \pi)^{74} \propto \pi^{74}(1 − \pi)^{74}
+$$
+
+The fact that the unnormalized posterior pdf $f (\pi \mid y = 30)$
+matches an unnormalized $\text{Beta}(75,75)$ pdf verifies our claim that
+$\pi \mid (Y = 30) \sim \text{Beta}(75, 75)$. Magic. For extra practice
+in identifying the posterior model of π from an unnormalized posterior
+pdf or kernel, take the following quiz:
+
+:::::: my-assessment
+:::: my-assessment-header
+::: {#cor-003-quiz-identify-posterior-model}
+: Identify the posterior model of $\pi$ from an unnormalized posterior
+pdf or kernel
+:::
+::::
+
+::: my-assessment-container
+For each scenario below, identify the correct Beta posterior model of
+$\pi\in [0, 1]$ from its unnormalized pdf:
+
+a.  f $(\pi \mid y) \propto \pi^{3−1}(1 − \pi)^{12−1}$
+    `r mcq(c("Beta(12,3)", answer = "Beta(3,12)", "Beta(2,11)", "Beta(11,2)"))`
+b.  $f (\pi \mid y) \propto \pi^{11}(1 − \pi)^{2}$
+    `r mcq(c(answer = "Beta(12,3)", "Beta(3,12)", "Beta(2,11)", "Beta(11,2)"))`
+c.  $f (\pi \mid y) \propto 1$
+    `r mcq(c(answer = "Beta(0,0)", "Beta(0,1)", "Beta(1,0)", answer = "Beta(1,1)"))`
+:::
+::::::
+
+Now, instead of identifying a model from a kernel, practice identifying
+the kernels of models.
+
+:::::: my-assessment
+:::: my-assessment-header
+::: {#cor-003-quiz-indentify-model-kernels}
+: Identify the kernels of models
+:::
+::::
+
+::: my-assessment-container
+Identify the kernels of each pdf below.
+
+1.  $f (\pi \mid y) = ye^{−\pi y} \text{ for } \pi > 0$
+    `r mcq(c("a", "b", "c", answer = "d"))`
+
+<!-- -->
+
+a.  y
+b.  $e^{−\pi}$
+c.  $ye^{−\pi}$
+d.  $e^{-\pi y}$
+
+<!-- -->
+
+2.  $f (\pi \mid y) = \frac{2y}{ (y−1)!} \pi^{y−1}e^{−2\pi} \text{ for } \pi > 0$
+    `r mcq(c(answer = "a", "b", "c", "d"))`
+
+<!-- -->
+
+a.  y
+b.  $e^{−\pi}$
+c.  \$ye\^{−\pi}
+d.  e\^{−\pi y}
+
+<!-- -->
+
+3.  $f (\pi) = 3\pi^2 \text{ for } \pi \in [0, 1]$
+    `r mcq(c("a", answer = "b", "c", "d"))`
+
+<!-- -->
+
+a.  $\pi$
+b.  $\pi^2$
+c.  $3\pi^2$
+d.  3
+:::
+::::::
+
+## Beta-Binomial Model {#sec-003-beta-binomial-model}
+
+In the previous section we developed the fundamental Beta-Binomial model
+for Michelle’s election support $\pi$. In doing so, we assumed a
+specific $\text{Beta}(45,55)$ prior and a specific polling result (Y =
+30 of n = 50 polled voters supported your candidate) within a specific
+context. This was a special case of the more general
+`r glossary("Beta-Binomial-Model", "Beta-Binomial model")`:
+
+$$
+\begin{align*}
+Y \mid \pi &\sim \text{Bin}(n, \pi) \\
+\pi &\sim \text{Beta}(\alpha, \beta)
+\end{align*}
+$$ {#eq-003-beta-binomial-model}
+
+This general model has vast applications, applying to *any* setting
+having a parameter of interest $\pi$ that lives on $[0,1]$ with *any*
+tuning of a $\text{Beta}$ prior and *any* data $Y$ which is the number
+of “successes” in $n$ fixed, independent trials, each having probability
+of success $\pi$.
+
+For example, $\pi$ might be a coin’s tendency toward Heads and data $Y$
+records the number of Heads observed in a series of $n$ coin flips. Or
+$\pi$ might be the proportion of adults that use social media and we
+learn about $\pi$ by sampling $n$ adults and recording the number $Y$
+that use social media.
+
+:::::: my-theorem
+:::: my-theorem-header
+::: {#thm-003-calculation-beta-binomial-model}
+: Calculation of the Beta-Binomial model / the posterior Beta model
+:::
+::::
+
+::: my-theorem-container
+No matter the setting, upon observing $Y = y$ successes in $n$ trials,
+the posterior of $\pi$ can be described by a $\text{Beta}$ model which
+reveals the influence of the prior (through $\alpha$ and $beta$) and
+data (through $y$ and $n$):
+
+$$
+\begin{align*}
+\pi \mid (Y = y) \sim \text{Beta}(\alpha + y, \beta + n − y)
+\end{align*}
+$$ {#eq-003-beta-binomial-formula}
+
+Measures of posterior central tendency and variability follow from
+@eq-003-beta-mean-mode and @eq-003-beta-variance:
+
+$$
+\begin{align*}
+E(\pi \mid Y = y) &=  \frac{\alpha + y}{\alpha + \beta + n}  \\
+Mode(\pi \mid Y = y) &=  \frac{\alpha + y − 1}{\alpha + \beta + n − 2}  \\
+Var(\pi \mid Y = y) &=  \frac{(\alpha + y)(\beta + n − y)}{(\alpha + \beta + n)^2(\alpha + \beta + n + 1)}
+\end{align*}
+$$ {#eq-003-beta-binomial-mean-mode-variance}
+:::
+::::::
+
+Importantly, notice that the posterior follows a different
+parameterization of the same probability model as the prior – both the
+prior and posterior are Beta models with different tunings. In this
+case, we say that the $\text{Beta}(\alpha, \beta)$ model is a
+`r glossary("conjugate prior")` for the corresponding
+$\text{Bin}(n, \pi)$ data model. Our work below will highlight that
+conjugacy simplifies the construction of the posterior, and thus can be
+a desirable property in Bayesian modeling.
+
+::: {#imp-003-conjugate-prior .callout-important}
+###### Conjugate Prior
+
+We say that $f (\pi)$ is a conjugate prior for $L(\pi \mid y)$ if the
+posterior, $f (\pi \mid y) \propto f (\pi)L(\pi \mid y)$, is from the
+same model family as the prior.
+:::
+
+The posterior construction for the general Beta-Binomial model is very
+similar to that of the election-specific model. First, the Beta prior
+pdf $f (\pi)$ is defined by (3.1) and the likelihood function
+$L(\pi \mid y)$ by (2.7), the conditional pmf of the
+$\text{Bin}(n, \pi)$ model upon observing data $Y = y$. For
+$\pi \in [0, 1]$,
+
+$$
+f (π) =  \frac{Γ(α + β)}{Γ(α)Γ(β)}\pi^{\alpha−1}(1 − \pi)^{\beta−1} \text{ and } L(\pi \mid y) = \binom{n}{y} \pi^y(1 − \pi)^{n−y}
+$$ {eq-003-beta-binomial-posterior-construction}
+
+Putting these two pieces together, the posterior pdf follows from Bayes’
+Rule:
+
+$$
+\begin{align*}
+f (\pi \mid y) &\propto f (\pi)L(\pi \mid y) \\
+&=  \frac{\Gamma(α + β)}{\Gamma(α)Γ(β)} \pi^{\alpha−1}(1 − π)^{β−1} ⋅ \binom{n}{y} \pi^y(1 − \pi)^{n−y} \\
+&\propto \pi^{(\alpha+y)−1}(1 − \pi)^{(\beta+n−y)−1}
+\end{align*}
+$$
+
+Again, we’ve dropped normalizing constants which don’t depend upon $\pi$
+and are left with the *unnormalized* posterior pdf. Note that this
+shares the same structure as the normalized
+$\text{Beta}(\alpha + y, \beta + n − y)$ pdf,
+
+$$
+f (\pi \mid y) =  \frac{\Gamma(\alpha + \beta + n)}{\Gamma(\alpha + y)\Gamma(\beta + n − y)}  \pi^{(\alpha+y)−1}(1 − \pi)^{(\beta+n−y)−1}
+$$
+
+## Simulating the Beta-Binomial
+
+Using @sec-002-posterior-simulation-fake-news as a guide, let’s simulate
+the posterior model of Michelle’s support $\pi$.
+
+(1) We begin by simulating 10,000 values of $\pi$ from the
+    $\text{Beta}(45,55)$ prior using `stats::rbeta()` and, subsequently,
+    a potential $\text{Bin}(50,\pi)$ poll result $Y$ from each $\pi$
+    using `stats::rbinom()`.
+(2) The resulting 10,000 pairs of $\pi$ and $y$ values are shown in
+    @fig-003-simulate-beta-binomial-scatterplot-michelle. In general,
+    the greater Michelle’s support, the better her poll results tend to
+    be. Further, the highlighted pairs illustrate that the eventual
+    observed poll result, $Y = 30$ of $50$ polled voters supported
+    Michelle, would most likely arise if her underlying support $\pi$
+    were somewhere in the range from $0.4$ to $0.6$.
+
+:::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-003-simulate-beta-binomial-scatterplot-michelle}
+: Scatterplot of 10,000 simulated pairs of the Beta-Binomial
+:::
+::::
+
+::: my-r-code-container
+```{r}
+#| label: fig-003-simulate-beta-binomial-scatterplot-michelle
+#| fig-cap: Scatterplot of 10,000 simulated pairs of Michelle’s support $\pi$ and polling outcome $y$
+#| lst-label: lst-003-simulate-beta-binomial-scatterplot-michelle
+#| lst-cap: Scatterplot of 10,000 simulated pairs of the Beta-Binomial
+
+base::set.seed(84735)
+michelle_sim <- tibble::tibble(pi = stats::rbeta(10000, 45, 55)) |> 
+  dplyr::mutate(y = stats::rbinom(10000, size = 50, prob = pi))
+  
+ggplot2::ggplot(michelle_sim, ggplot2::aes(x = pi, y = y)) + 
+  ggplot2::geom_point(ggplot2::aes(color = (y == 30)), size = 0.1)
+
+```
+:::
+::::::
+
+When we zoom in closer on just those pairs that match our $Y = 30$ poll
+results, the behavior across the remaining set of $\pi$ values well
+approximates the $\text{Beta}(75,75)$ posterior model of $\pi$:
+
+:::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-003-simulate-beta-binomial-density-michelle}
+: Density plot of simulated $\pi$ values
+:::
+::::
+
+::: my-r-code-container
+```{r}
+#| label: fig-003-simulate-beta-binomial-density-michelle
+#| fig-cap: A density plot of simulated $\pi$ values that produced polling outcomes in which $Y = 30$ voters supported Michelle.
+#| lst-label: lst-003-simulate-beta-binomial-density-michelle
+#| lst-cap: Density plot of simulated $\pi$ values
+
+# Keep only the simulated pairs that match our data
+michelle_posterior <- michelle_sim  |>  
+  dplyr::filter(y == 30)
+  
+# Plot the remaining pi values
+ggplot2::ggplot(michelle_posterior, ggplot2::aes(x = pi)) + 
+  ggplot2::geom_density()
+```
+:::
+::::::
+
+As such, we can also use our simulated sample to *approximate* posterior
+features, such as the mean and standard deviation in Michelle’s support.
+
+:::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-003-summarize-posterior-features-michelle}
+: Posterior mean and standard deviation in Michelle’s support with
+10.000 simulated pairs
+:::
+::::
+
+::: my-r-code-container
+```{r}
+#| label: tbl-003-summarize-posterior-features-michelle
+#| tbl-cap: Posterior mean and standard deviation in Michelle’s support with 10.000 simulated pairs
+#| lst-label: lst-003-summarize-posterior-features-michelle
+#| lst-cap: Posterior mean and standard deviation with 10.000 simulated pairs
+
+
+michelle_posterior |> 
+  dplyr::summarize(Mean = base::mean(pi), SD = stats::sd(pi)) |> 
+  knitr::kable()
+
+```
+:::
+::::::
+
+As such, we can also use our simulated sample to approximate posterior
+features, such as the mean and standard deviation in Michelle’s support.
+The results are quite similar to the theoretical values calculated
+above, $E(\pi \mid Y = 30) = 0.5$ and $SD(\pi \mid Y = 30) = 0.0407$.
+
+In interpreting these simulation results, “approximate” is a key word.
+Since only `base::nrow(michelle_posterior)` =
+`r base::nrow(michelle_posterior)` of our 10,000 simulations matched our
+observed $Y = 30$ data, this approximation might be improved by upping
+our original simulations from 10,000 to, say, 50,000:
+
+:::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-003-compare-simulate-10000-50000-beta-binomial-michelle}
+: Compare posterior mean and standard deviation in Michelle’s support
+with 10,000 and 50,000 simulated pairs
+:::
+::::
+
+::: my-r-code-container
+```{r}
+#| label: tbl-003-simulate-beta-binomial-50000-michelle
+#| tbl-cap: Compare approximation of posterior mean and standard deviation between 10,000 and 50,000 simulated pairs
+#| lst-label: lst-003-simulate-beta-binomial-50000-michelle
+#| lst-cap: Compare approximation of posterior mean and standard deviation with different numbers of simulated pairs
+
+## Simulate 50,000 pairs
+base::set.seed(84735)
+michelle_sim2 <- tibble::tibble(pi = stats::rbeta(50000, 45, 55)) |> 
+  dplyr::mutate(y = stats::rbinom(50000, size = 50, prob = pi))
+  
+# Keep only the simulated pairs that match our data
+michelle_posterior2 <- michelle_sim2  |>  
+  dplyr::filter(y == 30) 
+
+# Create table to compare the approximation of different simulations
+compare_michelle_simuation <- tibble::tibble(
+  n = c("Theory", "10,000", "50,000"),
+  Mean = c(0.5, 
+        michelle_posterior |> dplyr::summarize(base::mean(pi)), 
+        michelle_posterior2 |> dplyr::summarize(base::mean(pi))
+        ),
+  Mead_Diff = c(0.0000,
+                0.5 - michelle_posterior |> dplyr::summarize(base::mean(pi)),
+                0.5 - michelle_posterior2 |> dplyr::summarize(base::mean(pi))
+                ),
+  SD = c(0.04068942,
+        michelle_posterior |> dplyr::summarize(stats::sd(pi)), 
+        michelle_posterior2 |> dplyr::summarize(stats::sd(pi))),
+  SD_Diff = c(0.0000,
+                0.04068942 - michelle_posterior |> dplyr::summarize(stats::sd(pi)),
+                0.04068942 - michelle_posterior2 |> dplyr::summarize(stats::sd(pi))
+                )
+  ) 
+
+compare_michelle_simuation |> 
+  knitr::kable()
+```
+:::
+::::::
+
+Instead of `base::nrow(michelle_posterior)` =
+**`r base::nrow(michelle_posterior)`** of our 10,000 simulations we have
+now **`r base::nrow(michelle_posterior2)`** rows that match our observed
+data $Y = 30$ with the result that the approximation has improved quite
+extensively.
+
+## Example: Milgram’s behavioral study of obedience
+
+In a 1963 issue of The *Journal of Abnormal and Social Psychology*,
+Stanley Milgram described a study in which he investigated the
+propensity of people to obey orders from authority figures, even when
+those orders may harm other people [@milgram-1963]. In the paper,
+Milgram describes the study as:
+
+> consist\[ing\] of ordering a naive subject to administer electric
+> shock to a victim. A simulated shock generator is used, with 30
+> clearly marked voltage levels that range from IS to 450 volts. The
+> instrument bears verbal designations that range from *Slight Shock* to
+> *Danger: Severe Shock*. The responses of the victim, who is a trained
+> confederate of the experimenter, are standardized. The orders to
+> administer shocks are given to the naive subject in the context of a
+> ‘learning experiment’ ostensibly set up to study the effects of
+> punishment on memory. As the experiment proceeds the naive subject is
+> commanded to administer increasingly more intense shocks to the
+> victim, even to the point of reaching the level marked *Danger: Severe
+> Shock*.
+
+In other words, study participants were given the task of testing
+another participant (who was in truth a trained actor) on their ability
+to memorize facts. If the actor *didn’t* remember a fact, the
+participant was ordered to administer a shock on the actor and to
+increase the shock level with every subsequent failure. Unbeknownst to
+the participant, the shocks were fake and the actor was only
+*pretending* to register pain from the shock.
+
+### A Bayesian analysis
+
+We can translate Milgram’s study into the Beta-Binomial framework. The
+parameter of interest here is $\pi$, the chance that a person would obey
+authority (in this case, administering the most severe shock), even if
+it meant bringing harm to others. Since Milgram passed away in 1984, we
+don’t have the opportunity to ask him about his understanding of $\pi$
+prior to conducting the study. Thus, we’ll diverge from the actual study
+here, and suppose that another psychologist helped carry out this work.
+Prior to collecting data, they indicated that a $\text{Beta}(1,10)$
+model accurately reflected their understanding about $\pi$, developed
+through previous work.
+
+:::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-003-milgram-beta-prior}
+: A $\text{Beta}(1,10)$ prior model of $\pi$
+:::
+::::
+
+::: my-r-code-container
+```{r}
+#| label: fig-003-milgram-beta-prior
+#| fig-cap: Assuming a $\text{Beta}(1,10)$ prior model of $\pi$
+#| fig-height: 3
+#| fig-width: 5
+
+# Beta(1,10) prior 
+bayesrules::plot_beta(alpha = 1, beta = 10)
+```
+:::
+::::::
+
+Next, let Y be the number of the 40 study participants that would
+inflict the most severe shock. Assuming that each participant behaves
+independently of the others, we can model the dependence of $Y$ on $\pi$
+using the Binomial. In summary, we have the following Beta-Binomial
+Bayesian model:
+
+$$
+\begin{align*}
+Y \mid \pi &∼ \text{Bin}(40, \pi)\\  
+\pi &∼ \text{Beta}(1, 10)
+\end{align*}
+$$ {#eq-cross-ref-ID}
+
+:::::: my-assessment
+:::: my-assessment-header
+::: {#cor-003-milgram-beta-prior}
+: Examine the psychologist’s prior model for the Milgram experiment
+:::
+::::
+
+::: my-assessment-container
+What does the $\text{Beta}(1,10)$ prior model in
+@fig-003-milgram-beta-prior reveal about the psychologist’s prior
+understanding of $\pi$?
+
+```{r}
+#| label: quiz-milgram-prior
+#| echo: false
+
+opts_milgram_prior <- c(
+   "They don’t have an informed opinion.",
+   "They’re fairly certain that a large proportion of people will do what authority tells them.",
+   answer = "They’re fairly certain that only a small proportion of people will do what authority tells them."
+)
+```
+
+`r longmcq(opts_milgram_prior)`
+:::
+::::::
+
+The psychologist’s prior is that $\pi$ typically takes on values near 0
+with low variability. Thus, the psychologist is fairly certain that very
+few people will just do whatever authority tells them. Of course, the
+psychologist’s understanding will evolve upon seeing the results of
+Milgram’s study.
+
+:::::: my-assessment
+:::: my-assessment-header
+::: {#cor-003-quiz-posterior-beta-milgram}
+: Calculate the posterior beta model for the Milgram experiment
+:::
+::::
+
+::: my-assessment-container
+In the end, 26 of the 40 study participants inflicted what they
+understood to be the maximum shock. In light of this data, what’s the
+psychologist’s posterior model of $\pi$:
+`r mcq(c("Beta(26, 10)", "Beta(26, 27)", answer =  "Beta(27, 24)", "Beta(27, 10)"))`
+
+$$\pi \mid (Y = 26) \sim \text{Beta}(???, ???)$$
+:::
+::::::
+
+Plugging the prior `r glossary("hyperparameter", "hyperparameters")`
+($\alpha = 1, \beta = 10$) and data ($y = 26, n = 40$) into
+@eq-003-beta-binomial-formula establishes the psychologist’s posterior
+model of $\pi$:
+
+$$
+\begin{align*}
+\pi \mid (Y = y) &\sim \text{Beta}(\alpha + y, \beta + n − y) \\
+\pi \mid (Y = 26) &\sim \text{Beta}(1 + 26, 10 + 40 − 26) \\
+\pi \mid (Y = 26) &\sim \text{Beta}(27, 24)
+\end{align*}
+$$ {#eq-calculate-posterior-beta-milgram}
+
+This posterior is summarized and plotted below, contrasted with the
+prior pdf and scaled likelihood function. Note that the psychologist’s
+understanding evolved quite a bit from their prior to their posterior.
+Though they started out with an understanding that fewer than \~25% of
+people would inflict the most severe shock, given the strong
+counterevidence in the study data, they now understand this figure to be
+somewhere between \~30% and \~70%.
+
+:::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-003-summarize-beta-binomial-milgram}
+: Summarize the Beta-Binomial of the Milgram experiment
+:::
+::::
+
+::: my-r-code-container
+```{r}
+#| label: tbl-003-summarize-beta-binomial-milgram
+#| tbl-cap: Summary of the Beta-Binomial model for the Milgram experiment
+#| lst-label: lst-003-summarize-beta-binomial-milgram
+#| lst-cap: Summarie Milgram’s Beta-Binomial model
+
+bayesrules::summarize_beta_binomial(alpha = 1, beta = 10, y = 26, n = 40) |> 
+  knitr::kable(digits = 5)
+```
+:::
+::::::
+
+:::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-003-result-beta-binomial-milgram}
+: Result of the Bayesian analys of the Milgram experiment
+:::
+::::
+
+::: my-r-code-container
+```{r}
+#| label: fig-003-result-beta-binomial-milgram
+#| fig-cap: The Beta prior pdf, scaled Binomial likelihood function, and Beta posterior pdf for $\pi$, the proportion of subjects that would follow the given instructions.
+#| lst-label: lst-003-result-beta-binomial-milgram
+#| lst-cap: Bayesian result of the Milgram experiment
+
+bayesrules::plot_beta_binomial(alpha = 1, beta = 10, y = 26, n = 40)
+```
+:::
+::::::
+
+### The role of ethics in statistics and data science
+
+In working through the previous example, we hope you were a bit
+distracted by your inner voice – this experiment seems ethically
+dubious. You wouldn’t be alone in this thinking. Stanley Milgram is a
+controversial historical figure.
+
+Every data collection, visualization, analysis, and communication
+engenders both harms and benefits to individuals and groups, both direct
+and indirect. As statisticians and data scientists, it is critical to
+always consider these harms and benefits. We encourage you to ask
+yourself the following questions each time you work with data:
+
+::::::: num-check
+::::: num-check-header
+::: num-check-icon
+:::
+
+::: {#tdo-003-ethical-issues}
+:::
+
+: Ask yourself the following questions each time you work with data
+:::::
+
+::: num-check-body
+-   [ ] What are the study’s potential **benefits** to society? To
+    participants?
+-   [ ] What are the study’s potential **risks** to society? To
+    participants?
+-   [ ] What **ethical issues** might arise when generalizing
+    observations on the study participants to a larger population?
+-   [ ] Who is **included** and **excluded** in this study? What are the
+    corresponding risks and benefits? Are individuals in groups that
+    have been historically (and currently) marginalized put at greater
+    risk?
+-   [ ] Were the people who might be affected by your study **involved**
+    in the study? If not, you may not be qualified to evaluate these
+    questions.
+-   [ ] What’s the personal story or **experience** of each subject
+    represented by a row of data?
+:::
+:::::::
+
+The importance of considering the context and implications for your
+statistical and data science work cannot be overstated. As statisticians
+and data scientists, we are responsible for considering these issues so
+as not to harm individuals and communities of people. Fortunately, there
+are many resources available to learn more.
+
+:::::: my-resource
+:::: my-resource-header
+::: {#lem-003-ethical-issuesin-data-science}
+: Books and articles on ethical issues in data science
+:::
+::::
+
+::: my-resource-container
+-   📰 Integrating Data Science Ethics into an Undergraduate Major:
+    [@baumer-2018]
+-   📖 Data Feminism: [@dignazio-2023]
+-   📖 Counting Feminicide: Data Feminism in Action: [@dignazio-2024]
+-   📰 Automating Bias: [@eubanks-2018]
+-   📖 Automating Inequality: How High-Tech Tools Profile, Police, and
+    Punish the Poor: [@eubanks-2019]
+-   📰 Datasheets for Datasets: [@gebru-2021]
+-   📰 Model Cards for Model Reporting: [@mitchell-2019]
+-   📖 Algorithms of Oppression: How Search Engines Reinforce Racism:
+    [@noble-2018]
+-   📰 Closing the AI Accountability Gap: Defining an End-to-End
+    Framework for Internal Algorithmic Auditing: [@raji-2020]
+:::
+::::::
+
+## Summary
+
+In this chapter, we built the foundational
+`r glossary("Beta-Binomial-Model", "Beta-Binomial model")` for $\pi$, an
+unknown **proportion** that can take any value between $0$ and $1$:
+
+:::::: my-theorem
+:::: my-theorem-header
+::: {#thm-003-beta-binomial-model-summary}
+: Beta-Binomial model
+:::
+::::
+
+::: my-theorem-container
+$$
+\begin{align*}
+Y \mid \pi \sim \text{Bin}(n, \pi)& \\
+&⇒ π∣(Y = y) ∼ Beta(α + y, β + n − y) \\
+\pi \sim \text{Beta}(\alpha, \beta)&
+\end{align*}
+$$ {#eq-003-beta-binomial-model-summary}
+
+Compare with @eq-003-beta-binomial-model.
+:::
+::::::
+
+In constructing this model we followed the four pieces common to every
+Bayesian analysis (compare with my personal summary in
+@prp-002-bayesian-analysis-steps):
+
+:::::: my-procedure
+:::: my-procedure-header
+::: {#prp-003-beta-binomial-bayesian-analysis-steps}
+: Steps of the Beta-Binomial model analysis
+:::
+::::
+
+::: my-procedure-container
+**1. Prior model**
+
+The `r glossary("Beta Probability Model", "Beta prior model")` for $\pi$
+can be tuned to reflect the relative prior plausibility of each
+$\pi \in [0, 1]$.
+
+$$
+f (\pi) =  \frac{\Gamma(\alpha + \beta)}{\Gamma(\alpha)\Gamma(\beta)}\pi^{\alpha-1}(1-\pi)^{\beta-1}
+$$ {#eq-003-beta-prior-model-summary}
+
+**2. Data model**
+
+To learn about $\pi$, we collect data $Y$ , the number of successes in
+$n$ independent trials, each having probability of success $\pi$. The
+dependence of $Y$ on $\pi$ is summarized by the
+`r glossary("Binomial model")` $\text{Bin}(n, \pi)$.
+
+**3. Likelihood function**
+
+Upon observing data $Y = y$ where $y \in \{0, 1, . . . , n\}$, the
+`r glossary("Likelihood-Function", "likelihood function")` of $\pi$,
+obtained by plugging $y$ into the Binomial `r glossary("pmfx", "pmf")`,
+provides a mechanism by which to compare the compatibility of the data
+with different $\pi$:
+
+$$
+L(\pi \mid y) = \binom{n}{y}\pi^{y}(1 − \pi)^{n−y} \text{ for } \pi \in [0, 1]
+$$ {#eq-003-binomial-likelihood-function-summary}
+
+**4. Posterior model**
+
+Via `r glossary("Bayes’ Theorem", "Bayes’ Rule")`, the
+`r glossary("conjugate")` Beta prior combined with the Binomial data
+model produce a Beta posterior model for $\pi$. The updated Beta
+posterior parameters $(\alpha + y, \beta + n − y)$ reflect the influence
+of the prior (via $\alpha$ and $\beta$) and the observed data (via $y$
+and $n$).
+
+$$
+f (\pi \mid y) \propto f (\pi)L(\pi \mid y) \propto \pi^{(\alpha+y)−1}(1 − \pi)^{(\beta+n−y)−1}
+$$
+:::
+::::::
+
+## Exercises
+
+::: {#wrn-003-exercises .callout-warning}
+###### Take my solutions with caution!
+
+Keep in mind, that I am not an expert but a learner. This means that the
+presented solutions may have errors or are completely wrong.
+
+**"With a Little Help from My Friends"[^003-beta-binomial-5] `r glossary("Claude Haiku")` and `r glossary("Claude Sonnet 4.5")`**
+
+[^003-beta-binomial-5]: Song by The Beatles, written by John Lennon and Paul McCartney 1967; transformed by Joe Cocker 1968. 
+
+For some of the exercises I have used `r glossary("LLMs")`, mostly the free Claude Haiku:
+
+- @exr-003-calculus-challenge for confirming formulae
+- @exr-003-summary-beta-binomial-1 and @exr-003-summary-beta-binomial-2 for recovering the data from the results of `bayesrules::summary_beta_binomial()`
+- @exr-003-plot-beta-binomial-1 (Part c) to get the code for reproducing the plot with `bayesrules::plot_beta_binomial()` and
+- @exr-003-plot-beta-binomial-2 (Part c) for the more detailed answer.
+
+If you find errors please report to me at the [GitHub
+repo](https://github.com/petzi53/bayes-rules) of this website.
+:::
+
+### Practice: Beta prior models
+
+I am going to use the [Shiny
+app](https://ajohns24.github.io/454_Fall_21/the-beta-binomial-model.html#shiny-apps)
+with the addition to show a 95% `r glossary("credible interval")` (CI).
+
+In each situation below, tune a $\text{Beta}(\alpha, \beta)$ model that
+accurately reflects the given prior information. In many cases, there’s
+no single “right” answer, but rather multiple “reasonable” answers.
+
+#### Tune Beta prior: Take I
+
+::::::: my-exercise
+:::: my-exercise-header
+::: {#exr-003-tune-beta-prior-1}
+: Tune your Beta prior: Take I
+:::
+::::
+
+:::: my-exercise-container
+::: panel-tabset
+###### (a)
+
+Your friend applied to a job and tells you: “I think I have a 40% chance
+of getting the job, but I’m pretty unsure.” When pressed further, they
+put their chances between 20% and 60%.
+
+------------------------------------------------------------------------
+
+**My Solution**
+
+$$\text{Beta}(9, 13)$$ with a mode of 0.400 and a 95% CI of \[0.2182,
+0.6156\].
+
+```{r}
+#| fig-height: 2
+#| fig-width: 3
+bayesrules::plot_beta(9, 13)
+```
+
+###### (b)
+
+A scientist has created a new test for a rare disease. They expect that
+the test is accurate 80% of the time with a variance of 0.05.
+
+------------------------------------------------------------------------
+
+**My Solution**
+
+$$\text{Beta}(25, 7)$$ with a mode of 0.800 and a variance of 0.0052. It
+has a 95 CI of \[0.6253, 0.9041\].
+
+```{r}
+#| fig-height: 2
+#| fig-width: 3
+bayesrules::plot_beta(25, 7)
+```
+
+###### (c)
+
+Your Aunt Jo is a successful mushroom hunter. She boasts: “I expect to
+find enough mushrooms to feed myself and my co-workers at the
+auto-repair shop 90% of the time, but if I had to give you a likely
+range it would be between 85% and 100% of the time.”
+
+------------------------------------------------------------------------
+
+**My Solution**
+
+$$\text{Beta}(21, 3)$$ with a mode of 0.9091 and a 95% CI of \[0.7196,
+0.9722\]. This is a left skewed distribution as it has to be. But it is
+not very near the desired interval \[0.85, 1.00\]. I could'nt do it
+better. In different combinations with the left side of the CI nearer to
+0.8 the mode goes 1.
+
+```{r}
+#| fig-height: 2
+#| fig-width: 3
+bayesrules::plot_beta(21, 3)
+```
+
+###### (d)
+
+Sal (who is a touch hyperbolic) just interviewed for a job, and doesn’t
+know how to describe their chances of getting an offer. They say, “I
+couldn’t read my interviewer’s expression! I either really impressed
+them and they are absolutely going to hire me, or I made a terrible
+impression and they are burning my resumé as we speak.”
+
+------------------------------------------------------------------------
+
+**My Solution**
+
+$$\text{Beta}(1, 1)$$
+
+$\text{Beta}(1, 1)$ is also known as the uniform distribution on \[0,
+1\], often denoted as $\text{Uniform}(0, 1)$.
+
+```{r}
+#| fig-height: 2
+#| fig-width: 3
+bayesrules::plot_beta(1, 1)
+```
+
+This distribution is flat because it assigns equal probability density
+to all values of the parameter between 0 and 1, reflecting a lack of
+prior preference for any specific value. It is also referred to as a
+noninformative prior or flat prior in Bayesian statistics.
+:::
+::::
+:::::::
+
+#### Tune Beta prior: Take II
+
+As in @exr-003-tune-beta-prior-1, tune an appropriate
+$\text{Beta}(\alpha, \beta)$ prior model for each situation below.
+
+::::::: my-exercise
+:::: my-exercise-header
+::: {#exr-003-tune-beta-prior-2}
+: Tune your Beta prior: Take II
+:::
+::::
+
+:::: my-exercise-container
+::: panel-tabset
+###### (a)
+
+Your friend tells you “I think that I have a 80% chance of getting a
+full night of sleep tonight, and I am pretty certain.” When pressed
+further, they put their chances between 70% and 90%.
+
+------------------------------------------------------------------------
+
+**My Solution**
+
+$$\text{Beta}(38, 9)$$ with a mode of 0.8222and a 95% CI of \[0.6858,
+0.9064\].
+
+```{r}
+#| fig-height: 2
+#| fig-width: 3
+bayesrules::plot_beta(38, 9)
+```
+
+###### (b)
+
+A scientist has created a new test for a rare disease. They expect that
+it’s accurate 90% of the time with a variance of 0.08.
+
+------------------------------------------------------------------------
+
+**My Solution**
+
+$$\text{Beta}(97, 11)$$ with a mode of 0.9057 and a variance of 0.0008.
+It has a 95 CI of \[0.8348, 0.9476\]
+
+```{r}
+#| fig-height: 2
+#| fig-width: 3
+bayesrules::plot_beta(97, 11)
+```
+
+###### (c)
+
+Max loves to play the video game *Animal Crossing*. They tell you: “The
+probability that I play *Animal Crossing* in the morning is somewhere
+between 75% and 95%, but most likely around 85%.”
+
+------------------------------------------------------------------------
+
+**My Solution**
+
+$$\text{Beta}(56, 8)$$ with a mode of 0.8871 and a 95% CI of \[0.7844,
+0.9435\].
+
+```{r}
+#| fig-height: 2
+#| fig-width: 3
+bayesrules::plot_beta(56, 8)
+```
+
+###### (d)
+
+The bakery in Easthampton, Massachusetts often runs out of croissants on
+Sundays. Ben guesses that by 10 a.m., there is a 30% chance they have
+run out, but is pretty unsure about that guess.
+
+------------------------------------------------------------------------
+
+**My Solution**
+
+$$\text{Beta}(8, 18)$$
+
+with a mode of 0.2917 and a 95% CI of \[0.1495, 0.4939\].
+
+```{r}
+#| fig-height: 2
+#| fig-width: 3
+bayesrules::plot_beta(8, 18)
+```
+:::
+::::
+:::::::
+
+#### Specify a non-informative Beta prior
+
+You want to specify a Beta prior for a situation in which you have no
+idea about some parameter $\pi$. You think $\pi$ is equally likely to be
+anywhere between 0 and 1.
+
+::::::: my-exercise
+:::: my-exercise-header
+::: {#exr-003-beta-prior-between-0-1}
+: Specify a Beta prior for a situation in which you have no idea
+:::
+::::
+
+:::: my-exercise-container
+::: panel-tabset
+###### (a)
+
+Plot a Beta prior for a situation in which you have no idea.
+
+**My Solution**
+
+$$\text{Beta}(1, 1)$$
+
+```{r}
+#| fig-height: 2
+#| fig-width: 3
+bayesrules::plot_beta(1, 1)
+```
+
+###### (b)
+
+What is the mean of the Beta prior that you specified? Explain why that
+does or does not align with having no clue.
+
+------------------------------------------------------------------------
+
+**My Solution**
+
+The mean is 0.5.
+
+------------------------------------------------------------------------
+
+The following explanation comes from the Brave AI, using Claude Haiku:
+
+The mean is 0.5 because of the symmetry of the Beta(1,1) distribution.
+
+The mean of a Beta distribution is given by
+$\frac{\alpha}{\alpha + \beta}$. For $\alpha = 1$ and $\beta = 1$, the
+mean is $\frac{1}{1 + 1} = 0.5$.
+
+But here's the deeper reason: When $\alpha = \beta$, the Beta
+distribution is perfectly symmetric around 0.5. This means the
+probability density is mirrored on both sides of 0.5—the likelihood of
+getting a value at 0.3 is the same as getting 0.7, for example.
+
+Because the distribution is balanced symmetrically around the midpoint
+of the interval (0,1), the mean naturally falls at that midpoint: 0.5.
+
+So the flat prior doesn't just reflect "no preference"—the symmetry of
+equal parameters ($\alpha = \beta = 1$) ensures that preference is
+centered exactly at 0.5, making it the average value of the
+distribution.
+
+###### (c)
+
+What is the standard deviation of the Beta prior that you specified?
+
+------------------------------------------------------------------------
+
+**My Solution**
+
+Compare with @eq-003-beta-variance.
+
+From the Shiny app:
+
+The `r glossary("standard deviation")` (SD): $\sigma = 0.2887$ taken
+
+From the AI `r glossary("Claude Haiku")`:
+
+The standard deviation of the Beta(1,1) distribution is **√(1/12) ≈
+0.289**.
+
+Here's how it's calculated:
+
+The `r glossary("variance var", "variance")` of a Beta distribution is
+given by:
+
+$$\text{Variance} = \frac{(\alpha \cdot \beta)}{ ((\alpha + \beta)^2 \cdot (\alpha + \beta + 1))}$$
+
+For Beta(1,1):
+
+$$
+\begin{align*}
+\text{Variance} &= \frac{(1 \cdot 1)}{ ((1 + 1)^2 \cdot (1 + 1 + 1))} \\
+&= \frac{1}{4 · 3} = \frac{1}{12} \approx 0.0833
+\end{align*}
+$$
+
+The standard deviation is the square root of variance:
+
+$$SD = \sqrt{\frac{1}{12}} \approx 0.289$$
+
+This relatively high standard deviation (compared to the mean of 0.5)
+reflects the fact that \$\text{Beta}(1,1) is a **uniform
+distribution**—all values between 0 and 1 are equally likely, so there's
+substantial spread across the entire interval. This is why it's called a
+"flat" or "vague" prior—it expresses genuine uncertainty about the
+parameter across the full range.
+
+###### (d)
+
+Specify and plot an example of a Beta prior that has a smaller standard
+deviation than the one you specified.
+
+------------------------------------------------------------------------
+
+**My Solution**
+
+There are countless solution. I have chosen a solution with the same
+mean (.5) and a very vage prior:
+
+$$\text{Beta}(2, 2)$$
+
+It has a (slightly) smaller standard deviation of 0.2236 instead of
+0.2887.
+
+```{r}
+#| fig-height: 2
+#| fig-width: 3
+bayesrules::plot_beta(2, 2)
+```
+
+###### (e)
+
+Specify and plot an example of a Beta prior that has a larger standard
+deviation than the one you specified.
+
+------------------------------------------------------------------------
+
+**My Solution**
+
+$$\text{Beta}(0.5, 0.5)$$
+
+A good example is
+
+$$\text{Beta}(0.5, 0.5)$$
+
+It has a standard deviation of approximately **0.354** (compared to
+Beta(1,1)'s 0.289).
+
+Here's why:
+
+For Beta(0.5, 0.5):
+
+$$
+\begin{align*}
+\text{Variance} &= \frac{(0.5 \cdot 0.5)}{ ((0.5 + 0.5)^2 \cdot (0.5 + 0.5 + 1))}  = \frac{0.25}{1 \cdot 2} = \frac{1}{12} = 0.125 \\
+\text{SD} &= \sqrt{0.125} \approx 0.354
+\end{align*}
+$$
+
+```{r}
+#| fig-height: 2
+#| fig-width: 3
+bayesrules::plot_beta(0.5, 0.5)
+```
+
+With the help of `r glossary("LLMs", "LLM")`
+`r glossary("Claude Haiku")`
+
+While $\text{Beta}(1,1)$ is uniform (flat), $\text{Beta}(0.5, 0.5)$ is
+**U-shaped**. It assigns higher probability density to extreme values
+(near 0 and near 1) and *lower* probability density to middle values
+like 0.5. This creates more variability—the distribution is more spread
+out toward the extremes.
+
+This is a "super-vague" prior that expresses even stronger uncertainty,
+reflecting a belief that the true parameter is likely to be extreme
+rather than moderate. It's useful in situations where you want to be
+maximally non-committal about where the parameter lies.
+:::
+::::
+:::::::
+
+#### Which Beta? Take I
+
+:::::: my-exercise
+:::: my-exercise-header
+::: {#exr-003-which-beta-1}
+: Which Beta? Take I
+:::
+::::
+
+::: my-exercise-container
+Six Beta pdfs are plotted below. Match each to one of the following
+models: Beta(0.5,0.5), Beta(1,1), Beta(2,2), Beta(6,6), Beta(6,2),
+Beta(0.5,6).
+
+![6 different Beta
+models](img/which-beta-1.png){#fig-003-which-beta-1
+fig-alt="6 different beta models: a = u-shape, b = arc (open below), c = left-skewed, d = horizontal line, e = L-shaped, f = symmetrical bell curve"
+fig-align="center" width="70%"}
+
+-   
+
+    (a) $\text{Beta}(0.5, 0.5)$
+
+-   
+
+    (b) $\text{Beta}(2, 2)$
+
+-   
+
+    (c) $\text{Beta}(6, 2)$
+
+-   
+
+    (d) $\text{Beta}(1, 1)$
+
+-   
+
+    (e) $\text{Beta}(0.5, 6)$
+
+-   
+
+    (f) $\text{Beta}(6, 6)$
+:::
+::::::
+
+#### Which Beta? Take II
+
+:::::: my-exercise
+:::: my-exercise-header
+::: {#exr-003-which-beta-2}
+: Which Beta? Take II
+:::
+::::
+
+::: my-exercise-container
+Six Beta pdfs are plotted below. Match each to one of the following
+models: Beta(1,0.3), Beta(2,1), Beta(3,3), Beta(6,3), Beta(4,2),
+Beta(5,6).
+
+![Another 6 different Beta
+models](img/which-beta-2.png){#fig-003-which-beta-2
+fig-alt="6 different beta models: a = j-shape, b = symmetrical bell-curve, c = left-skewed with big tail, d = 45 degree line, e = very lightly left-skewed, f = left-skewed with small tail"
+fig-align="center" width="70%"}
+
+(a) $\text{Beta}(1, 0.3)$
+(b) $\text{Beta}(3, 3)$
+(c) $\text{Beta}(4, 2)$
+(d) $\text{Beta}(2, 1)$
+(e) $\text{Beta}(5, 6)$
+(f) $\text{Beta}(6, 3)$
+:::
+::::::
+
+#### Beta properties
+
+::::::: my-exercise
+:::: my-exercise-header
+::: {#exr-003-beta-properties}
+: Examine the properties of the Beta models in @fig-003-which-beta-1
+:::
+::::
+
+:::: my-exercise-container
+::: panel-tabset
+###### Summary
+
+The following table is a summary of all the different requested values
+taken from the a slightly modifies Shiny app as presented in [STAT 454:
+Bayesian Statistics in section
+3.3](https://ajohns24.github.io/454_Fall_21/the-beta-binomial-model.html#shiny-apps)
+
+| \#  | Model          |   Mean |    Mode |   SD   |
+|-----|:---------------|-------:|--------:|:------:|
+| a   | Beta(0.5, 0.5) |    0.5 | 0 and 1 | 0.3536 |
+| b   | Beta(2, 2)     |    0.5 |     0.5 | 0.2236 |
+| c   | Beta(6, 2)     |   0.75 |  0.8333 | 0.1443 |
+| d   | Beta(1, 1)     |    0.5 |  ?????? | 0.2887 |
+| e   | Beta(0.5, 6)   | 0.0769 |       0 | 0.0973 |
+| f   | Beta(6, 6)     |    0.5 |     0.5 | 0.1387 |
+
+: Summary table of model properties {#tbl-003-exercise-model-summary}
+{.striped}
+
+| Statistic | Formula | $\alpha = \beta = 0.5$ | $\alpha = \beta = 1$ | $\alpha < 1$ and $\beta > 1$ | $\alpha > 1$ and $\beta < 1$ |
+|-----------|:---------:|:-----------------:|:---------:|:---------:|:---------:|
+| **Mean** | $\frac{\alpha}{\alpha + \beta}$ | **0.5** | **0.5** | **value dependent** | **value dependent** |
+| **Mode** | $\frac{\alpha - 1}{\alpha + \beta - 2}$ (only if $\alpha > 1, \beta > 1$) | **undefined**<br>(bimodal at 0 and 1) | **undefined**<br>(every point is a mode) | **0** | **1** |
+| **SD** | $\sqrt{ \frac{\alpha \beta}{(\alpha + \beta)^2 (\alpha + \beta + 1)} }$ | **\~0.3536** | **\~0.2887** | **value dependent** | **value dependent** |
+
+###### (a) Mean
+
+-   Which Beta model has the *smallest* mean? Beta(0.5, 6) = 0.0769.
+-   Which Beta model has the *biggest* mean? Beta(6, 2) = 0.75.
+
+**Provide visual evidence:**
+
+```{r}
+#| label: fig-003-exercise-beta-means
+#| echo: fenced
+#| fig-height: 2.5
+#| fig-width: 3.5
+#| fig-cap: "Beta models with the smallest and biggest mean"
+#| fig-subcap: 
+#|    - "Smallest mean: Beta(0.5, 6)"
+#|    - "Biggest mean: Beta(6, 2)"
+#| layout-ncol: 2
+
+
+my_plot_beta(0.5, 6, TRUE)
+my_plot_beta(6, 2, TRUE)
+
+```
+
+**Calculate the corresponding means:**
+
+To calculate it manually use $\frac{\alpha}{\alpha + \beta}$. Confer
+with the formula in @eq-003-beta-mean-mode. To calculate it with R you
+can apply the above formula or (more convenient) use the
+`bayesrules::summarize_beta()` function:
+
+-   The mean of $\text{Beta}(0.5, 6)$ is
+    `bayesrules::summarize_beta(0.5, 6)$mean` =
+    `r bayesrules::summarize_beta(0.5, 6)$mean`.
+-   The mean of $\text{Beta}(6, 2)$ is
+    `bayesrules::summarize_beta(6, 2)$mean` =
+    `r bayesrules::summarize_beta(6, 2)$mean`.
+
+###### (b) Mode
+
+-   Which Beta model has the *smallest* mode? $\text{Beta}(0.5, 0.5)$ is
+    a `r glossary("Bimodality", "bimodal distribution")` and has modes
+    at 0 and 1. Another model with mode of 0 is $\text{Beta}(0.5, 6)$.
+-   Which Beta model has the *biggest* mode? This is (again)
+    $\text{Beta}(0.5, 0.5)$, because it second mode = 1.
+
+**Provide visual evidence:**
+
+```{r}
+#| label: fig-003-exercise-beta-modes
+#| echo: fenced
+#| fig-height: 2.5
+#| fig-width: 3.5
+#| fig-cap: "Beta models with the smallest and biggest mode."
+#| fig-subcap: 
+#|    - "Smallest mode: Beta(0.5, 6). Mode = 0, line therefore not visible."
+#|    - "Biggest mode: Beta(0.5, 0.5). Two modes with 1, line not drawn."
+#| layout-ncol: 2
+
+
+my_plot_beta(0.5, 6, FALSE, TRUE)
+my_plot_beta(0.5, 0.5, FALSE, TRUE)
+
+```
+
+**Calculate the corresponding mode:**
+
+The mode for Beta models where $\alpha$ and/or $\beta$ \< 1 is not
+covered by the formula in @eq-003-beta-mean-mode.
+
+The mode depends on the values of $\alpha$ and $\beta$:
+
+If $\alpha > 1$ and $\beta > 1$:
+
+$$\text{Mode for Beta models} = \frac{α+β−2}{α−1}$$
+
+If $\alpha \leq 1$ or $\beta \leq 1$, the mode is not unique or lies at
+the boundary:
+
+-   If $\alpha < 1$ and $\beta > 1$: mode = 0
+-   If $\alpha > 1$ and $\beta < 1$: mode = 1
+-   If $\alpha = \beta = 1$: `r glossary("uniform distribution")`, the
+    mode is undefined (every point is a mode).
+-   If $\alpha = \beta = 0.5$: the distribution is U-shaped (arcsine
+    distribution), and the mode is not unique—it peaks at both ends (0
+    and 1), but the density is infinite at the boundaries. The mode is
+    not defined in the interior; the density tends to infinity at
+    $x = 0$ and $x = 1$, so the distribution has bimodal behavior at the
+    endpoints.
+
+To calculate the mode manually if $\alpha \text{ and } \beta > 1$ use
+@eq-003-beta-mean-mode and @eq-003-beta-sd.
+
+To calculate it with R you can apply the above formula or (more
+convenient) use the `bayesrules::summarize_beta()` function, which has
+the advantage that you can also use values below 1 for
+$\alpha \text{ or/and } \beta$.
+
+-   The mode of $\text{Beta}(0.5, 6)$ is
+    `bayesrules::summarize_beta(0.5, 6)$mode` =
+    `r bayesrules::summarize_beta(0.5, 6)$mode`.
+-   The mode of $\text{Beta}(0.5, 0.5)$ is
+    `bayesrules::summarize_beta(0.5, 0.5)$mode` =
+    `r bayesrules::summarize_beta(0.5, 0.5)$mode`.
+
+###### (c) SD
+
+-   Which Beta model has the *smallest* standard deviation? SD of
+    $\text{Beta}(0.5, 6) \approx 0.0973$.
+-   Which Beta model has the *biggest* standard deviation? SD of
+    $\text{Beta}(0.5, 0.5) \approx 0.3536$
+
+**Provide visual evidence:**
+
+```{r}
+#| label: fig-003-exercise-beta-standard-deviations
+#| echo: fenced
+#| fig-height: 2.5
+#| fig-width: 3.5
+#| fig-cap: "Beta models with the smallest and biggest standard deviations"
+#| fig-subcap: 
+#|    - "Smallest SD: Beta(0.5, 6)."
+#|    - "Biggest SD: Beta(0.5, 0.5)."
+#| layout-ncol: 2
+
+
+my_plot_beta(0.5, 6)
+my_plot_beta(0.5, 0.5)
+
+```
+
+The width and height of the curves visually reflect the standard
+deviation — wider curves indicate greater spread.
+
+**Calculate the corresponding standard deviation (SD):**
+
+To calculate it manually use @eq-003-beta-variance and @eq-003-beta-sd.
+
+To calculate it with R you can apply the above formula or (more
+convenient) use the `bayesrules::summarize_beta()` function:
+
+-   The standard deviation of $\text{Beta}(0.5, 6)$ is
+    `bayesrules::summarize_beta(0.5, 6)$sd` =
+    `r bayesrules::summarize_beta(0.5, 6)$sd`.
+-   The standard deviation of $\text{Beta}(0.5, 0.5)$ is
+    `bayesrules::summarize_beta(0.5, 0.5)$sd` =
+    `r bayesrules::summarize_beta(0.5, 0.5)$sd`.
+
+Note that the Beta models for smallest and largest mode and SD are the
+same!
+:::
+::::
+:::::::
+
+#### Using R for Beta
+
+:::::: my-exercise
+:::: my-exercise-header
+::: {#exr-003-using-r-for-beta}
+: Using R for Beta
+:::
+::::
+
+::: my-exercise-container
+a)  Use `bayesrules::plot_beta()` to plot the six Beta models in
+    @fig-003-which-beta-1.
+
+```{r}
+#| label: fig-003-plot-six-beta-models
+#| fig-cap: "Six Beta models replicated from @fig-003-which-beta-1"
+#| lst-label: lst-003-plot-six-beta-models
+#| lst-cap: "Plot six Beta models"
+
+p1 <- bayesrules::plot_beta(0.5, 0.5)
+p2 <- bayesrules::plot_beta(2, 2)
+p3 <- bayesrules::plot_beta(6, 2)
+p4 <- bayesrules::plot_beta(1, 1)
+p5 <- bayesrules::plot_beta(0.5, 6)
+p6 <- bayesrules::plot_beta(6, 6)
+
+library(patchwork)
+
+p1 + p2 + p3 + p4 + p5 + p6 + plot_layout(ncol = 3)
+
+```
+
+------------------------------------------------------------------------
+
+b)  Use `bayesrules::summarize_beta()` to confirm your answers to
+    @exr-003-beta-properties.
+
+```{r}
+#| label: tbl-003-summarize-six-beta-models
+#| tbl-cap: "Summary of six Beta models to confirm answers from @exr-003-beta-properties"
+#| lst-label: lst-003-summarize-six-beta-models
+#| lst-cap: "Summarize six Beta models"
+
+df1 <- bayesrules::summarize_beta(0.5, 0.5)
+df2 <- bayesrules::summarize_beta(2, 2) |> 
+  dplyr::mutate(mode = as.character(mode))
+df3 <- bayesrules::summarize_beta(6, 2) |> 
+  dplyr::mutate(mode = stringr::str_trunc(
+    base::as.character(mode), 6, ellipsis = ''))
+df4 <- bayesrules::summarize_beta(1, 1) |> 
+  dplyr::mutate(mode = as.character(mode))
+df5 <- bayesrules::summarize_beta(0.5, 6) |> 
+  dplyr::mutate(mode = as.character(mode))
+df6 <- bayesrules::summarize_beta(6, 6) |> 
+  dplyr::mutate(mode = as.character(mode))
+
+df_combined <- dplyr::full_join(df1, df2,
+  by = dplyr::join_by(mean, mode, var, sd)
+  ) |> 
+  dplyr::full_join(df3, by = dplyr::join_by(mean, mode, var, sd)) |> 
+  dplyr::full_join(df4, by = dplyr::join_by(mean, mode, var, sd)) |> 
+  dplyr::full_join(df5, by = dplyr::join_by(mean, mode, var, sd)) |> 
+  dplyr::full_join(df6, by = dplyr::join_by(mean, mode, var, sd))
+
+model = c("Beta(0.5, 0.5)",
+          "Beta(2, 2)",
+          "Beta(6, 2)",
+          "Beta(1, 1)",
+          "Beta(0.5, 6)",
+          "Beta(6, 6)"
+          )
+
+df_combined <- tibble::tibble(model) |>
+  dplyr::bind_cols(df_combined) |> 
+  knitr::kable(digits = 4)
+
+df_combined
+
+
+```
+:::
+::::::
+
+#### Confirm formulas for Beta models
+
+::::::::::::: my-exercise
+:::: my-exercise-header
+::: {#exr-003-calculus-challenge}
+: Confirm formulas for Beta models
+:::
+::::
+
+:::::::::: my-exercise-container
+Confirm the mean, mode, and variance formulas for a
+$\text{Beta}(\alpha, \alpha)$ distribution by applying the definitions
+directly to the Beta pdf.
+
+Let $\pi$ follow a $\text{Beta}(\alpha, \beta)$ model. Formulas for the
+mean, mode, and variance of $\pi$ are given by @eq-003-beta-mean-mode
+and @eq-003-beta-variance. Confirm these properties by applying the
+following definitions of mean, mode, and variance directly to the Beta
+pdf f ($\pi$), @eq-003-beta-model:
+
+$$
+\begin{align*}
+E(\pi) &= \int \pi (\pi)\partial\pi  \\
+\text{Mode}(\pi) &= \text{argmax}_{\pi}f (\pi)  \\
+\text{Var}(\pi) &= E [(\pi − E(\pi))^2] = E(\pi^2) − [E(\pi)]^2
+\end{align*}
+$$
+
+------------------------------------------------------------------------
+
+------------------------------------------------------------------------
+
+I have not much experience with calculus. I prepared the solution with
+`r glossary("Claude Haiku")`.
+
+The Beta pdf is:
+$$f(\pi) = \frac{\Gamma(\alpha + \beta)}{\Gamma(\alpha)\Gamma(\beta)} \pi^{\alpha - 1} (1 - \pi)^{\beta - 1}, \quad \pi \in [0, 1]$$
+
+------------------------------------------------------------------------
+
+::: {style="font-size: 150%"}
+**1. Mean**
+:::
+
+$$E(\pi) = \int_0^1 \pi f(\pi) \, d\pi$$
+
+$$E(\pi) = \int_0^1 \pi \cdot \frac{\Gamma(\alpha + \beta)}{\Gamma(\alpha)\Gamma(\beta)} \pi^{\alpha - 1} (1 - \pi)^{\beta - 1} \, d\pi$$
+
+$$= \frac{\Gamma(\alpha + \beta)}{\Gamma(\alpha)\Gamma(\beta)} \int_0^1 \pi^{\alpha} (1 - \pi)^{\beta - 1} \, d\pi$$
+
+The integral equals the Beta function:
+$$B(\alpha + 1, \beta) = \frac{\Gamma(\alpha + 1)\Gamma(\beta)}{\Gamma(\alpha + \beta + 1)}$$
+
+Using the property $\Gamma(\alpha + 1) = \alpha\Gamma(\alpha)$ and
+$\Gamma(\alpha + \beta + 1) = (\alpha + \beta)\Gamma(\alpha + \beta)$:
+
+$$E(\pi) = \frac{\Gamma(\alpha + \beta)}{\Gamma(\alpha)\Gamma(\beta)} \cdot \frac{\alpha\Gamma(\alpha)\Gamma(\beta)}{(\alpha + \beta)\Gamma(\alpha + \beta)}$$
+
+$$= \frac{\alpha\Gamma(\alpha + \beta)}{(\alpha + \beta)\Gamma(\alpha + \beta)} = \frac{\alpha}{\alpha + \beta}$$
+
+✅ **Confirmed**: $E(\pi) = \frac{\alpha}{\alpha + \beta}$
+
+------------------------------------------------------------------------
+
+::: {style="font-size: 150%"}
+**2. Mode**
+:::
+
+$$\text{Mode}(\pi) = \arg\max_{\pi} f(\pi)$$
+
+To find the maximum, take the derivative of $\log f(\pi)$ and set it
+equal to zero:
+
+$$\log f(\pi) = \log\Gamma(\alpha + \beta) - \log\Gamma(\alpha) - \log\Gamma(\beta) + (\alpha - 1)\log \pi + (\beta - 1)\log(1 - \pi)$$
+
+$$\frac{d}{d\pi} \log f(\pi) = \frac{\alpha - 1}{\pi} - \frac{\beta - 1}{1 - \pi}$$
+
+Setting equal to zero:
+$$\frac{\alpha - 1}{\pi} = \frac{\beta - 1}{1 - \pi}$$
+
+$$(\alpha - 1)(1 - \pi) = (\beta - 1)\pi$$
+
+$$\alpha - 1 - (\alpha - 1)\pi = (\beta - 1)\pi$$
+
+$$\alpha - 1 = (\alpha + \beta - 2)\pi$$
+
+$$\pi = \frac{\alpha - 1}{\alpha + \beta - 2} \quad \text{(for } \alpha > 1, \beta > 1\text{)}$$
+
+✅ **Confirmed**:
+$\text{Mode}(\pi) = \frac{\alpha - 1}{\alpha + \beta - 2}$
+
+------------------------------------------------------------------------
+
+::: {style="font-size: 150%"}
+**3. Variance**
+:::
+
+$$\text{Var}(\pi) = E(\pi^2) - [E(\pi)]^2$$
+
+::: {style="font-size: 120%"}
+**Step 1: Compute** $E(\pi^2)$
+:::
+
+$$E(\pi^2) = \int_0^1 \pi^2 \cdot \frac{\Gamma(\alpha + \beta)}{\Gamma(\alpha)\Gamma(\beta)} \pi^{\alpha - 1} (1 - \pi)^{\beta - 1} \, d\pi$$
+
+$$= \frac{\Gamma(\alpha + \beta)}{\Gamma(\alpha)\Gamma(\beta)} \int_0^1 \pi^{\alpha + 1} (1 - \pi)^{\beta - 1} \, d\pi$$
+
+The integral is the Beta function $B(\alpha + 2, \beta)$:
+
+$$B(\alpha + 2, \beta) = \frac{\Gamma(\alpha + 2)\Gamma(\beta)}{\Gamma(\alpha + \beta + 2)}$$
+
+Therefore:
+
+$$E(\pi^2) = \frac{\Gamma(\alpha + \beta)}{\Gamma(\alpha)\Gamma(\beta)} \cdot \frac{\Gamma(\alpha + 2)\Gamma(\beta)}{\Gamma(\alpha + \beta + 2)}$$
+
+Using the property $\Gamma(z + 1) = z\Gamma(z)$: -
+$\Gamma(\alpha + 2) = (\alpha + 1)\alpha\Gamma(\alpha)$ -
+$\Gamma(\alpha + \beta + 2) = (\alpha + \beta + 1)(\alpha + \beta)\Gamma(\alpha + \beta)$
+
+Substituting:
+
+$$E(\pi^2) = \frac{\Gamma(\alpha + \beta)}{\Gamma(\alpha)\Gamma(\beta)} \cdot \frac{(\alpha + 1)\alpha\Gamma(\alpha)\Gamma(\beta)}{(\alpha + \beta + 1)(\alpha + \beta)\Gamma(\alpha + \beta)}$$
+
+$$= \frac{(\alpha + 1)\alpha}{(\alpha + \beta + 1)(\alpha + \beta)}$$
+
+------------------------------------------------------------------------
+
+::: {style="font-size: 120%"}
+**Step 2: Compute** $[E(\pi)]^2$
+:::
+
+From the previous confirmation:
+
+$$[E(\pi)]^2 = \left(\frac{\alpha}{\alpha + \beta}\right)^2 = \frac{\alpha^2}{(\alpha + \beta)^2}$$
+
+------------------------------------------------------------------------
+
+::: {style="font-size: 120%"}
+**Step 3: Calculate** $\text{Var}(\pi) = E(\pi^2) - [E(\pi)]^2$
+:::
+
+$$\text{Var}(\pi) = \frac{\alpha(\alpha + 1)}{(\alpha + \beta)(\alpha + \beta + 1)} - \frac{\alpha^2}{(\alpha + \beta)^2}$$
+
+Find a common denominator: $(\alpha + \beta)^2(\alpha + \beta + 1)$
+
+$$\text{Var}(\pi) = \frac{\alpha(\alpha + 1)(\alpha + \beta) - \alpha^2(\alpha + \beta + 1)}{(\alpha + \beta)^2(\alpha + \beta + 1)}$$
+
+Expand the numerator:
+
+$$\alpha(\alpha + 1)(\alpha + \beta) = \alpha^2(\alpha + \beta) + \alpha(\alpha + \beta) = \alpha^3 + \alpha^2\beta + \alpha^2 + \alpha\beta$$
+
+$$\alpha^2(\alpha + \beta + 1) = \alpha^3 + \alpha^2\beta + \alpha^2$$
+
+Subtract:
+
+$$\alpha^3 + \alpha^2\beta + \alpha^2 + \alpha\beta - (\alpha^3 + \alpha^2\beta + \alpha^2) = \alpha\beta$$
+
+Therefore:
+
+$$\text{Var}(\pi) = \frac{\alpha\beta}{(\alpha + \beta)^2(\alpha + \beta + 1)}$$
+
+✅ **Confirmed**:
+$$\text{Var}(\pi) = \frac{\alpha\beta}{(\alpha + \beta)^2(\alpha + \beta + 1)}$$
+
+------------------------------------------------------------------------
+
+::: {style="font-size: 150%"}
+**Final Results**
+:::
+
+-   **Mean**: $E(\pi) = \frac{\alpha}{\alpha + \beta}$
+-   **Mode**: $\text{Mode}(\pi) = \frac{\alpha - 1}{\alpha + \beta - 2}$
+    (for $\alpha > 1, \beta > 1$)
+-   **Variance**:
+    $\text{Var}(\pi) = \frac{\alpha \beta}{(\alpha + \beta)^2 (\alpha + \beta + 1)}$
+
+These match the standard formulas for the Beta distribution.
+
+✅ **All formulas confirmed**.
+::::::::::
+:::::::::::::
+
+#### Interpreting prior
+
+:::::: my-exercise
+:::: my-exercise-header
+::: {#exr-003-interpreting-priors}
+: Interpreting priors
+:::
+::::
+
+::: my-exercise-container
+What do you call a sweet carbonated drink: pop, soda, coke, or something
+else? Let $\pi$ be the proportion of U.S. residents that prefer the term
+“pop.” Two different beverage salespeople from different regions of the
+country have different priors for $\pi$. The first salesperson works in
+North Dakota and specifies a $\text{Beta}(8,2)$ prior. The second works
+in Louisiana and specifies a $\text{Beta}(1,20)$ prior.
+
+**a) Calculate the prior mean, mode, standard deviation of** $\pi$ for
+both salespeople
+
+```{r}
+#| label: tbl-003-summarizing-salespeople
+#| tbl-cap: Prior mean, mode, standard deviation of $\pi$ for both salespeople.
+
+sales_person1 <- bayesrules::summarize_beta(8, 2)
+sales_person2 <- bayesrules::summarize_beta(1, 20)
+
+combined <- dplyr::full_join(
+  sales_person1, 
+  sales_person2,
+  by = dplyr::join_by(mean, mode, var, sd)
+  ) 
+
+model = c("Beta(8, 2)",
+          "Beta(1, 20)"
+          )
+
+
+df_combined <- tibble::tibble(model) |>
+  dplyr::bind_cols(combined) |> 
+  knitr::kable(digits = 4)
+
+df_combined
+
+
+
+```
+
+**b) Plot the prior pdfs for both salespeople**
+
+```{r}
+#| label: fig-plot-priors-salespeople
+#| fig-cap: Prior for both salespeople
+#| fig-height: 3
+
+p1 <- bayesrules::plot_beta(8, 2)
+p2 <- bayesrules::plot_beta(1, 20)
+
+library(patchwork)
+p1 + p2 + plot_layout(ncol = 2)
+```
+
+**c) Compare, in words, the salespeople’s prior understandings about the
+proportion of U.S. residents that say “pop”**
+
+-   The salesperson from North Dakota is convinced that about 80% or
+    more of all people prefer the term "pop". But he agrees that there
+    is a tiny chance that he is wrong and the proportion of people using
+    "pop" is only 25%. His assumption reflects his regional familiarity
+    with the term.
+-   In contrast the salesperson from Louisiana believes that no or very
+    few persons (about only 5%) uses the term "pop". He is secure that
+    not even 25% of the population uses ""pop". This believe aligns with
+    the Southern preference for "soda" or "coke."
+
+The two different priors reflect the regional linguistic preferences and
+the salespeople's confidence in their local terminology.
+:::
+::::::
+
+### Practice: Beta-Binomial models
+
+#### Different priors, different posteriors
+
+Continuing @exr-003-interpreting-priors, we poll 50 U.S. residents and
+12 (24%) prefer the term “pop.”
+
+:::::::::::: my-exercise
+:::: my-exercise-header
+::: {#exr-003-diferent-priors-different-posteriors}
+: Different priors, different posteriors
+:::
+::::
+
+::::::::: my-exercise-container
+::: {style="font-size: 150%"}
+a)  Specify the unique posterior model of $\pi$ for both salespeople
+:::
+
+(We encourage you to construct these posteriors from scratch.)
+
+I am going to use the formula from @eq-003-beta-binomial-formula. For my
+understanding in @nte-003-calculate-posterior-mean-sd-beta-michelle I
+have already calculated an example in two versions. One from scratch,
+taking the beta-binomial-formula, the other one starting with the
+calculation of Beta posterior from the Beta prior and then constructing
+the Beta-Binomial from there.
+
+::: {style="font-size: 130%"}
+**Version 1**
+:::
+
+At first I have to calculate the Beta-Binomial model using
+@eq-003-beta-binomial-formula to get the value for the posterior Beta.
+
+**Salesperson from North Dakota**
+
+$$
+\begin{align*}
+\pi \mid (Y = y) &\sim \text{Beta}(\alpha + y, \beta + n − y) \\
+&\sim \text{Beta}(8 + 12, 2 + 50 − 12) \\
+&\sim \bf{\text{Beta}(20, 40)}
+\end{align*}
+$$
+
+Then I can calculate with the posterior Beta the measures for the
+central tendency using @eq-003-beta-mean-mode, @eq-003-beta-variance and
+@eq-003-beta-sd:
+
+$$
+\begin{align*}
+\text{E}(\pi) &= \frac{\alpha}{\alpha + \beta} = \frac{20}{20+40} = \frac{20}{60} \approx \bf{0.3333} \\
+\text{Mode} &= \frac{\alpha - 1}{\alpha + \beta - 2} = \frac{20 - 1}{20 + 40 - 2} = \frac{19}{58} = \bf{0.3275862}
+\end{align*}
+$$
+
+$$
+\begin{align*}
+\text{SD}(\pi) &= \sqrt{\frac{\alpha\beta}{(\alpha + \beta)^2 \cdot (α + β + 1)}} 
+=  \sqrt{\frac{20 \cdot 40}{(20 + 40)^2 \cdot (20 + 40 + 1)}} \\
+&= \sqrt{\frac{800}{(60)^2 \cdot (61)}} 
+= \sqrt{\frac{800}{3600 \cdot 61}}
+= \sqrt{\frac{800}{219600}} \\
+&= \sqrt{0.003642987} = \bf{0.06035716} \\
+\end{align*}
+$$
+
+**Salesperson from Luisiana**
+
+$$
+\begin{align*}
+\pi \mid (Y = y) &\sim \text{Beta}(\alpha + y, \beta + n − y) \\
+&\sim \text{Beta}(1 + 12, 20 + 50 − 12) \\
+&\sim \bf{\text{Beta}(13, 58)}
+\end{align*}
+$$
+
+Then I can calculate with the posterior Beta the measures for the
+central tendency using @eq-003-beta-mean-mode, @eq-003-beta-variance and
+@eq-003-beta-sd:
+
+$$
+\begin{align*}
+\text{E}(\pi) &= \frac{\alpha}{\alpha + \beta} = \frac{13}{13+58} = \frac{13}{71} \approx \bf{0.1831} \\
+\text{Mode} &= \frac{\alpha - 1}{\alpha + \beta - 2} = \frac{13 - 1}{13 + 58 - 2} = \frac{12}{69} = \bf{0.173913}
+\end{align*}
+$$
+
+$$
+\begin{align*}
+SD(\pi) &= \sqrt{\frac{\alpha\beta}{(\alpha + \beta)^2 \cdot (α + β + 1)}} 
+=  \sqrt{\frac{13 \cdot 58}{(13 + 58)^2 \cdot (13 + 58 + 1)}} \\
+&= \sqrt{\frac{754}{(71)^2 \cdot (72)}} 
+= \sqrt{\frac{754}{5041 \cdot 72}}
+= \sqrt{\frac{754}{362952}} \\
+&= \sqrt{0.00207741} = \bf{0.04557861} \\
+\end{align*}
+$$
+
+::: {style="font-size: 130%"}
+**Version 2**
+:::
+
+Using the integrated formulae @eq-003-beta-binomial-mean-mode-variance
+for the Beta-Binomial model which are specified in
+@sec-003-beta-binomial-model.
+
+**Salesperson from North Dakota**
+
+$$
+\begin{align*}
+\text{E}(\pi \mid Y = y) &=  \frac{\alpha + y}{\alpha + \beta + n} = \frac{8 + 12}{8 + 2 + 50} = \frac{20}{60} \approx \bf{0.3333} \\
+\text{Mode}(\pi \mid Y = y) &=  \frac{\alpha + y − 1}{\alpha + \beta + n − 2} = \frac{8 + 12 -1}{8 + 2+ 50 - 2} = \frac{19}{58} = \bf{0.3275862}
+\end{align*}
+$$
+
+$$
+\begin{align*}
+\text{SD}(\pi \mid Y = y) &=  \sqrt{\frac{(\alpha + y)(\beta + n − y)}{(\alpha + \beta + n)^2(\alpha + \beta + n + 1)}} \\
+&= \sqrt{\frac{(8 + 12)(2 + 50 − 12)}{(8 + 2 + 50)^2(8 + 2 + 50 + 1)}} \\
+&= \sqrt{\frac{20 \cdot 40}{3600 \cdot 61}} = \sqrt{\frac{800}{219600}} = \sqrt{0.003642987} \\
+&= \bf{0.06035716}
+\end{align*}
+$$
+
+**Salesperson from Luisiana**
+
+$$
+\begin{align*}
+\text{E}(\pi \mid Y = y) &=  \frac{\alpha + y}{\alpha + \beta + n} = \frac{1 + 12}{1 + 20 + 50} = \frac{13}{71} = \bf{0.1830986} \\
+&=   \\
+\text{Mode}(\pi \mid Y = y) &=  \frac{\alpha + y − 1}{\alpha + \beta + n − 2} = \frac{1 + 12 - 1}{1 + 20 + 50 − 2} = \frac{12}{69} = \bf{0.173913}
+\end{align*}
+$$
+
+$$
+\begin{align*}
+\text{SD}(\pi \mid Y = y) &=  \sqrt{\frac{(\alpha + y)(\beta + n − y)}{(\alpha + \beta + n)^2(\alpha + \beta + n + 1)}} \\
+&=  \sqrt{\frac{(1 + 12)(20 + 50 − 12)}{(1 + 20 + 50)^2(1 + 20 + 50 + 1)}} \\
+&=  \sqrt{\frac{13 \cdot 58}{(71)^2(72)}} = \sqrt{\frac{754}{5041 \cdot 72}} = \sqrt{\frac{754}{362952}} \\
+&= \sqrt{0.00207741} = \bf{0.04557861}
+\end{align*}
+$$
+
+::: {style="font-size: 130%"}
+**Version 3**
+:::
+
+Using the `bayesrules::summarize_beta_binomial()` function:
+
+**Salesperson from North Dakota**
+
+```{r}
+#| label: tbl-003-exercise-beta-binomial-north-dakota
+#| tbl-cap: Prior and posterior model for salesperson from North Dakota
+#| lst-label: lst-003-exercise-beta-binomial-north-dakota
+#| lst-cap: Prior and posterior model (North Dakota)
+
+bayesrules::summarize_beta_binomial(
+  alpha = 8, 
+  beta = 2, 
+  y = 12, 
+  n = 50) |> 
+  knitr::kable(digits = 4)
+```
+
+**Salesperson from Luisiana**
+
+```{r}
+#| label: tbl-003-exercise-beta-binomial-luisiana
+#| tbl-cap: Prior and posterior model for salesperson from Luisiana
+#| lst-label: lst-003-exercise-beta-binomial-luisiana
+#| lst-cap: Prior and posterior model (Luisiana)
+
+bayesrules::summarize_beta_binomial(
+  alpha = 1, 
+  beta = 20, 
+  y = 12, 
+  n = 50) |> 
+  knitr::kable(digits = 4)
+```
+
+::: {style="font-size: 150%"}
+b)  Plot the prior pdf, likelihood function, and posterior pdf for both
+    salespeople
+:::
+
+```{r}
+#| label: fig-003-exercise-dakota-luisiana
+#| fig-cap: Prior pdf, likelihood function, and posterior pdf for both salespeople
+#| fig-subcap: 
+#|    - "Salesperson from North Dakota"
+#|    - "Salesperson from Luisiana"
+#| layout-ncol: 2
+
+bayesrules::plot_beta_binomial(
+  alpha = 8,
+  beta = 2,
+  y = 12,
+  n = 50
+)
+
+bayesrules::plot_beta_binomial(
+  alpha = 1,
+  beta = 20,
+  y = 12,
+  n = 50
+)
+
+```
+
+::: {style="font-size: 150%"}
+c)  Compare the salespeople’s posterior understanding of $\pi$
+:::
+
+The assumptions of the salesperson from North Dakota has to decrease
+from previously 80% to 33% whereas the salesperson from Luisiana has to
+increase it from 5% to about 18%. This has an converging effect as their
+widely separated believes are now much closer than before the data came
+in.
+:::::::::
+::::::::::::
+
+#### Regular bike ridership
+
+:::::::::::: my-exercise
+:::: my-exercise-header
+::: {#exr-003-regular-bike-ridership}
+: Regular bike ridership
+:::
+::::
+
+::::::::: my-exercise-container
+A university wants to know what proportion of students are regular bike
+riders, $\pi$, so that they can install an appropriate number of bike
+racks. Since the university is in sunny Southern California, staff think
+that $\pi$ has a mean of 1 in 4 students, and a mode of 5/22.
+
+**a) Specify and plot a Beta model that reflects the staff’s prior ideas
+about** $\pi$
+
+$$
+\text{Beta}(6, 18)
+$$
+
+::::: columns
+::: {.column width="40%"}
+```{r}
+#| label: tbl-003-exercise-3-11-a
+#| tbl-cap: Summary of $\text{Beta}(6, 18)$
+
+bayesrules::summarize_beta(6, 18) |> 
+  knitr::kable(digits = 4)
+```
+:::
+
+::: {.column width="60%"}
+```{r}
+#| label: fig-003-exercise-3-11-a
+#| fig-cap: Density plot for $\text{Beta}(6, 18)$
+
+bayesrules::plot_beta(6,18)
+```
+:::
+:::::
+
+**b) Among 50 surveyed students, 15 are regular bike riders. What is the
+posterior model for** $\pi$?
+
+$$
+\begin{align*}
+\alpha = 6 \\ 
+\beta = 18\\ 
+y = 15 \\ 
+n = 50
+\end{align*}
+$$ 
+
+Using @eq-003-beta-binomial-formula
+
+$$
+\begin{align*}
+\pi \mid (Y = y) &\sim \text{Beta}(\alpha + y, \beta + n − y) \\
+&\sim \text{Beta}(6 + 15, 18 + 50 − 15) \\
+&\sim \text{Beta}(21, 53)
+\end{align*}
+$$
+
+**c) What is the mean, mode, and standard deviation of the posterior
+model?**
+
+```{r}
+#| label: tbl-003-exercise-3-11-c
+#| tbl-cap: mean, mode, and standard deviation of posterior model $\text{Beta}(21, 53)$
+
+bayesrules::summarize_beta(21, 53) |> 
+  knitr::kable(digits = 4)
+```
+
+**d) Does the posterior model more closely reflect the prior information
+or the data? Explain your reasoning.**
+
+::::: columns
+::: {.column width="50%"}
+```{r}
+#| label: tbl-003-exercise-3-11-d
+#| tbl-cap: Summary of the Beta-Binomial model for $\alpha = 6, \beta = 18, y = 15, n = 50)$
+
+bayesrules::summarize_beta_binomial(6, 18, y = 15, n = 50) |> 
+  knitr::kable(digits = 4)
+```
+:::
+
+::: {.column width="50%"}
+```{r}
+#| label: fig-003-exercise-3-11-d
+#| fig-cap: Density plot for the Beta-Binomial model for $\alpha = 6, \beta = 18, y = 15, n = 50)$
+
+bayesrules::plot_beta_binomial(6, 18, y = 15, n = 50)
+```
+:::
+:::::
+
+Seen from @fig-003-exercise-3-11-d the posterior curve is more in line
+with the data (scaled likelihood curve) than with the prior curve.
+
+The prior assumption was that one of 4 students are regular bikers (=
+25%). But the data has shown that 15 of 50 students use their bike
+regularly (= 30%) . Inspecting @tbl-003-exercise-3-11-d shows that the
+mean has changed from 0.25 to 0.2838 and it is therefore nearer to the
+data proportion of regular riders. (The middle mean between prior and
+beta would be 0.275.)
+:::::::::
+::::::::::::
+
+#### Same-sex marriage
+
+:::::: my-exercise
+:::: my-exercise-header
+::: {#exr-003-same-sex-marriage}
+: Same sex marriage
+:::
+::::
+
+::: my-exercise-container
+A 2017 Gallup[^003-beta-binomial-2] survey found that 10.2% of LGBT
+adults in the U.S. were married to a same-sex spouse [@jones2022]. Now it’s the
+2020s, and Bayard guesses that $\pi$, the percent of LGBT adults in the U.S.
+who are married to a same-sex spouse, has most likely increased to about
+15% but could reasonably range from 10% to 25%.
+
+[^003-beta-binomial-2]: and not a Pew Research survey, as stated in the
+    book
+
+::: {.callout-note #nte-003-same-sex-marriage}
+
+###### New data show that same-sex marriage has declined
+
+A as matter of fact, a 2025 Gallup survey reports that same-sex marriage has decreased to about 8%. Only "[o]ne in 12 LGBTQ+ Adults Married to Same-Sex Spouse" [@jones2025] ($\approx 8.33\%$). Read more about the reasons of this decline and other details in [@sears-2025][^003-beta-binomial-3].
+
+[^003-beta-binomial-3]: Keep in mind that the figure of 59 of this report refers to the share of *cohabiting* same-sex couples who are married — that is, among LGBTQ+ individuals already in a same-sex relationship and living together, 59% are married. In contrast the "one in 12" (~8.3%) figure refers to the share of *all LGBTQ+ adults* who are married to a same-sex spouse — this includes all LGBTQ+ individuals, including those who are single, in opposite-sex relationships, or not cohabiting. Many LGBTQ+ adults are in opposite-sex relationships (22.8%) or single (51.1%), which dilutes the overall percentage married to a same-sex spouse across the entire LGBTQ+ population.
+
+:::
+
+
+**a) Identify and plot a Beta model that reflects Bayard’s prior ideas about $\pi$**
+
+I experimented with the Shiny app. The nearest I found was 
+
+$$\text{Beta}(18 / 99)$$
+
+It has a `r glossary("credible interval", "CI")` of [0.0946, 0.2242] with a mean of `bayesrules::summarize_beta(18, 99)$mean` = `r bayesrules::summarize_beta(18, 99)$mean` and a mode of `bayesrules::summarize_beta(18, 99)$mode` = `r bayesrules::summarize_beta(18, 99)$mode`.
+
+```{r}
+#| label: fig-003-exercise-12a
+#| fig-cap: Beta(18, 99)
+#| out-width: 50%
+
+bayesrules::plot_beta(18, 99)
+```
+
+
+**b) Bayard wants to update his prior, so he randomly selects 90 US LGBT adults and 30 of them are married to a same-sex partner. What is the posterior model for $\pi$?**
+
+Using again @eq-003-beta-binomial-formula
+
+$$
+\begin{align*}
+\pi \mid (Y = y) &\sim \text{Beta}(\alpha + y, \beta + n − y) \\
+&\sim \text{Beta}(18 + 30, 99 + 90 − 30) \\
+&\sim \text{Beta}(48, 159)
+\end{align*}
+$$
+
+**c) Calculate the posterior mean, mode, and standard deviation of $\pi$**
+
+```{r}
+#| label: tbl-003-exercise-13c
+#| tbl-cap: Properties of $\text{Beta-Binomial}{18, 99, 30, 90}
+
+bayesrules::summarize_beta_binomial(18, 99, 30, 90) |> 
+  knitr::kable(digits = 4)
+```
+
+
+
+
+**d) Does the posterior model more closely reflect the prior information or the data? Explain your reasoning.**
+
+The posterior model reflects approximately the prior information and data fifty-fifty. The prior assumed 15% and the data showed that in fact there were 33,3% LBGT-people married to the same sex. The mean of the posterior model lies with a mean of 23% roughly in the middle, perhaps a tiny bit more to prior side. This could be confirmed with the 
+
+
+```{r}
+#| label: fig-003-exercise-13d
+#| fig-cap: Prior, scaled likelihood and posterior model of $\text{Beta-Binomial}(18, 99, 30, 90)$
+#| fig-height: 3
+#| figh-width: 3
+bayesrules::plot_beta_binomial(18, 99, 30, 90)
+```
+
+
+::: {.callout-note #nte-003-exercise-new-gallup-research}
+
+I am interested to know how the new Gallup research changes Bayard’s prior. Gallup interviews a minimum of 1,000 U.S. adults aged 18. So we have at least $n = 1000$ and $y = 83$.
+
+```{r}
+#| label: fig-003-exercise-13d-2
+#| fig-cap: Prior, scaled likelihood and posterior model of $\text{Beta-Binomial}(18, 99, 83, 1000)$, including the newest Gallup research [@jones2025]
+
+#| fig-height: 3
+#| figh-width: 3
+bayesrules::plot_beta_binomial(18, 99, 83, 1000)
+```
+
+```{r}
+#| label: tbl-003-exercise-13c-2
+#| tbl-cap: Properties of $\text{Beta-Binomial}{18, 99, 83, 1000}
+
+bayesrules::summarize_beta_binomial(18, 99, 83, 1000) |> 
+  knitr::kable(digits = 4)
+```
+
+
+
+The high number of respondents results in a very small CI, e.g., we can be pretty sure that the proportion of LGBT adults in the U.S. married to a same-sex spouse is around 9%. Bayard’s optimistic prior has practically no effect. He has to face the fact the the proportion of LGBT adults in the U.S. married to a same-sex spouse not increased but decreased slightly.
+:::
+
+:::
+::::::
+
+
+#### Knowing someone who is transgender
+
+:::::{.my-exercise}
+:::{.my-exercise-header}
+:::::: {#exr-003-knowing-transgender}
+: Knowing someone who is transgender
+::::::
+:::
+::::{.my-exercise-container}
+A September 2016 Pew Research survey found that 30% of U.S. adults are aware that they know someone who is transgender [@mitchell2016][^003-beta-binomial-4] It is now the 2020s, and Sylvia believes that the current percent of people who know someone who is transgender, $\pi$, has increased to somewhere between 35% and 60%.
+
+a) Identify and plot a Beta model that reflects Sylvia’s prior ideas about $\pi$. b) Sylvia wants to update her prior, so she randomly selects 200 US adults and 80 of them are aware that they know someone who is transgender. Specify and plot the posterior model for $\pi$.
+c) What is the mean, mode, and standard deviation of the posterior model? 
+d) Describe how the prior and posterior Beta models compare.
+
+
+::: {.callout-note #nte-003-exercise-3-13}
+###### I skip this exercise because it is very similar to @exr-003-regular-bike-ridership and @exr-003-same-sex-marriage.
+:::
+
+
+
+[^003-beta-binomial-4]: The URL in the book is not valid.
+
+::::
+:::::
+
+#### Summarizing the Beta-Binomial: Take I
+
+:::::{.my-exercise}
+:::{.my-exercise-header}
+:::::: {#exr-003-summary-beta-binomial-1}
+: Summarizing the Beta-Binomial: Take I
+::::::
+:::
+::::{.my-exercise-container}
+
+Write the corresponding input code for the `bayesrules::summarize_beta_binomial()` output below.
+
+![Reconstruct code for this table](img/003-exr-14.png){#fig-exr-003-14 
+fig-alt="Reconstruct code for this table" fig-align="center" 
+width="70%"}
+
+***
+
+**Beta-Binomial Model Posterior Update**  
+Given a **Beta(2, 3)** prior and a **Beta(11, 24)** posterior in a binomial model, the observed data can be recovered using the conjugate updating rule:
+
+$$
+\pi \mid Y = y \sim \text{Beta}(\alpha + y, \beta + n - y)
+$$
+
+From the prior:  
+- $\alpha = 2$  
+- $\beta = 3$
+
+From the posterior:  
+- $\alpha + y = 11$ → $y = 11 - 2 = 9$  
+- $\beta + n - y = 24$ → $3 + n - 9 = 24$ → $n = 24 + 6 = 30$
+
+Thus:  
+- **$y = 9$**  
+- **$n = 30$**
+
+```{r}
+#| label: tbl-003-summary-beta-binomial-1
+#| tbl-cap: Solution for Exercise 14
+
+
+bayesrules::summarize_beta_binomial(2, 3, 9, 30) |> 
+  knitr::kable(digits = 4)
+```
+
+
+
+::::
+:::::
+
+#### Summarizing the Beta-Binomial: Take II
+
+:::::{.my-exercise}
+:::{.my-exercise-header}
+:::::: {#exr-003-summary-beta-binomial-2}
+: Summarizing the Beta-Binomial: Take II
+::::::
+:::
+::::{.my-exercise-container}
+
+Write the corresponding input code for the `bayesrules::summarize_beta_binomial()` output below.
+
+![Reconstruct code for this table](img/003-exr-15.png){#fig-exr-003-15 
+fig-alt="Reconstruct code for this table" fig-align="center" 
+width="70%"}
+
+***
+
+**Beta-Binomial Model Posterior Update**  
+Given a **Beta(1, 2)** prior and a **Beta(100, 3)** posterior in a binomial model, the observed data can be recovered using the conjugate updating rule:
+
+$$
+\pi \mid Y = y \sim \text{Beta}(\alpha + y, \beta + n - y)
+$$
+
+From the prior:  
+- $\alpha = 1$  
+- $\beta = 2$
+
+From the posterior:  
+- $\alpha + y = 100$ → $y = 100 - 1 = 99$  
+- $\beta + n - y = 3$ → $2 + n - 99 = 3$ → $n = 3 + 99 -2 = 100$
+
+Thus:  
+- **$y = 99$**  
+- **$n = 100$**
+
+```{r}
+#| label: tbl-003-summary-beta-binomial-2
+#| tbl-cap: Solution for Exercise 15
+
+bayesrules::summarize_beta_binomial(1, 2, 99, 100) |> 
+  knitr::kable(digits = 4)
+```
+
+
+
+::::
+:::::
+
+#### Plotting the Beta-Binomial: Take I
+
+:::::{.my-exercise}
+:::{.my-exercise-header}
+:::::: {#exr-003-plot-beta-binomial-1}
+: Plotting the Beta-Binomial: Take I
+::::::
+:::
+::::{.my-exercise-container}
+Below is output from `bayesrules::plot_beta_binomial()` function.
+
+![Beta-Binomial model to explain and reconstruct](img/003-exr-16.png){#fig-003-exr-16 
+fig-alt="Density Beta-Binomial plot with a prior mode at 1, a scaled likelihood at around 0.22 and a posterior of 0.75" fig-align="center" 
+width="70%"}
+
+***
+
+**a) Describe and compare both the prior model and likelihood function in words** 
+
+The prior reflects a very optimistic assumption, practically believing that every trial shows the event we are looking for. The data that came in, corrected this very informative prior and settled the mean and mode at about 0.22. 
+
+**b) Describe the posterior model in words. Does it more closely agree with the data (as reflected by the likelihood function) or the prior?** 
+
+The posterior model is still pretty positive with a mean and mode about 0.75. It is much nearer to the prior than to the data, indicating that not much data came in.
+
+**c) Provide the specific `bayesrules::plot_beta_binomial()` code you would use to produce a similar plot.**
+
+::: {#big-text-step-1 style="font-size: 150%"}
+**Step 1: Prior mode = 1** 
+:::
+
+
+The mode of a Beta(α, β) distribution is:
+
+$$\text{Mode} = \frac{\alpha - 1}{\alpha + \beta - 2} \quad (\text{for } \alpha > 1, \beta > 1)$$
+
+Set mode = 1:
+
+$$\frac{\alpha - 1}{\alpha + \beta - 2} = 1$$
+
+$$\alpha - 1 = \alpha + \beta - 2$$
+
+$$\alpha - 1 - \alpha + 2 = \beta$$
+
+$$\beta = 1$$
+
+So we have $\bf{\beta = 1 \text{ and } \alpha > 1}$ (to be determined).
+
+::: {#big-text style="font-size: 150%"}
+**Step 2: Likelihood peak = 0.22** 
+:::
+
+
+The binomial likelihood peaks at the observed proportion:
+
+$$\text{Likelihood peak} = \frac{y}{n} = 0.22$$
+
+Choose integers that satisfy this ratio. For simplicity:
+
+$$y = 11, \quad n = 50 \quad \Rightarrow \quad \frac{11}{50} = 0.22 \checkmark$$
+
+::: {#big-text style="font-size: 150%"}
+**Step 3: Posterior mode = 0.75** 
+:::
+
+
+In the Beta-Binomial conjugate model, the posterior is:
+
+$$\text{Posterior} = \text{Beta}(\alpha + y, \beta + n - y)$$
+
+Substituting our values (with β = 1, y = 11, n = 50):
+
+$$\text{Posterior} = \text{Beta}(\alpha + 11, 1 + 50 - 11) = \text{Beta}(\alpha + 11, 40)$$
+
+The posterior mode is:
+
+$$\text{Mode}_{\text{posterior}} = \frac{(\alpha + 11) - 1}{(\alpha + 11) + 40 - 2} = \frac{\alpha + 10}{\alpha + 49}$$
+
+Set this equal to 0.75:
+
+$$\frac{\alpha + 10}{\alpha + 49} = 0.75$$
+
+
+::: {#big-text style="font-size: 110%"}
+**Solve for α** 
+:::
+
+$$\alpha + 10 = 0.75(\alpha + 49)$$
+
+$$\alpha + 10 = 0.75\alpha + 36.75$$
+
+$$0.25\alpha = 26.75$$
+
+$$\alpha = 107$$
+
+::: {#big-text style="font-size: 150%"}
+**Final Answer** 
+:::
+
+$\quad\Rightarrow$
+
+| Parameter | Value |
+|-----------|-------|
+| **Prior** | Beta(107, 1) |
+| **Data** | y = 11 successes, n = 50 trials |
+| **Posterior** | Beta(118, 40) |
+
+::: {style="font-size: 125%"}
+**Verification** 
+:::
+
+- Prior mode: $(107 - 1)/(107 + 1 - 2) = 106/106 = 1$ ✓
+- Likelihood peak: $11/50 = 0.22$ ✓
+- Posterior mode: $(118 - 1)/(118 + 40 - 2) = 117/156 = 0.75$ ✓
+
+::: {#big-text style="font-size: 125%"}
+**R code to visualize** 
+:::
+
+```{r}
+#| label: fig-003-plot-beta-binomial-1a
+#| fig-cap: Reconstructing @fig-003-exr-16 (First try)
+#| fig-height: 2
+#| fig-width: 5
+
+bayesrules::plot_beta_binomial(alpha = 107, beta = 1, y = 11, n = 50)
+```
+
+::: {.callout-note #nte-003-plot-beta-binomial-1}
+###### How about the differences in the y-axis?
+
+@fig-003-plot-beta-binomial-1a correctly shows the shapes and modes of @fig-003-exr-16. But I wonder about the differences in the y-axis. In the original figure the magnitude of the prior is smaller, whereas the peaks of the distributions (scaled likelihood and posterior) are higher than in my replication. 
+
+The heights of the prior, likelihood, and posterior are scaled for visualization and are not directly comparable in magnitude, e.g., they are not interpretable in absolute terms. And they can't be changed independently from the other parameters. To get similar heights of the peaks as in @fig-003-exr-16 I need to change my model parameters slightly. 
+
+After some trial and error it turned out that `bayesrules::plot_beta_binomial(alpha = 40, beta = 1, y = 3, n = 17)`is a better approximation to @fig-003-exr-16, but still not exactly the same.
+
+
+```{r}
+#| label: fig-003-plot-beta-binomial-1b
+#| fig-cap: Reconstructing @fig-003-exr-16 (Second try)
+#| fig-height: 2
+#| fig-width: 5
+
+bayesrules::plot_beta_binomial(alpha = 40, beta = 1, y = 3, n = 17)
+```
+
+Besides my time consuming trial and error: What is the rational to get the prior height much lower and the likelihood and posterior somewhat higher?  
+
+To systematically adjust the heights in your beta-binomial plot, you need to understand what controls the **density values** (y-axis heights) for each component:
+
+::: {#big-text style="font-size: 125%"}
+**Key Factors Affecting Heights** 
+:::
+
+**Prior height** (Beta distribution):
+- Controlled by `alpha` and `beta` parameters
+- Lower `alpha + beta` → flatter, lower peak
+- Higher `alpha + beta` → taller, sharper peak
+- Peak height ≈ proportional to `(alpha + beta)`
+
+**Likelihood height** (scaled):
+- The likelihood is scaled to integrate to 1 for visualization
+- Peak depends on `n` (sample size) and how concentrated the data is
+- Smaller `n` → lower, flatter likelihood
+- The actual peak location is at `y/n`
+
+**Posterior height** (Beta distribution):
+- Parameters are `alpha + y` and `beta + (n - y)`
+- Height follows same rules as prior: sum of parameters matters
+
+::: {#big-text style="font-size: 125%"}
+**Systematic approach** 
+:::
+
+To get **lower prior** and **higher likelihood/posterior**:
+
+1. **Reduce prior strength**: Lower `alpha + beta` while keeping the ratio `alpha/(alpha+beta)` similar to maintain the prior mean
+   - Your example: 107+1=108 → 40+1=41 (much weaker prior)
+
+2. **Adjust sample size**: Smaller `n` with proportionally smaller `y` keeps the same `y/n` ratio but changes relative heights
+   - Your example: 11/50=0.22 → 3/17≈0.18 (similar location)
+
+3. **Calculate the ratio**: If you want prior height to be X% of original, scale `alpha` and `beta` by approximately `sqrt(X)` while adjusting `y` and `n` proportionally
+
+**Formula approach**: If you want to maintain the same peak locations but adjust heights, keep these ratios constant:
+- Prior peak: `alpha/(alpha+beta)` 
+- Likelihood/posterior peak: `y/n`
+
+Then adjust the absolute values of `alpha+beta` and `n` to control heights.
+
+
+:::
+
+
+::::
+:::::
+
+
+#### Plotting the Beta-Binomial: Take II
+
+:::::{.my-exercise}
+:::{.my-exercise-header}
+:::::: {#exr-003-plot-beta-binomial-2}
+: Plotting the Beta-Binomial: Take 2
+::::::
+:::
+::::{.my-exercise-container}
+Below is output from `bayesrules::plot_beta_binomial()` function.
+
+![Beta-Binomial model to explain and reconstruct](img/003-exr-17.png){#fig-003-exr-17 
+fig-alt="Density Beta-Binomial plot with a prior mean at 1, a scaled likelihood at around 0.10 and a posterior of approximately 0.13" fig-align="center" 
+width="70%"}
+
+***
+
+**a) Describe and compare both the prior model and likelihood function in words** 
+
+The prior reflects a very vague assumption. It is represented by the well-known $\text{Beta}(2, 2)$ prior (cf. with @fig-003-which-beta-1). The likelihood has its mean/mode approximately at $\pi = 0.10$ and the CI is pretty small. 
+
+**b) Describe the posterior model in words. Does it more closely agree with the data (as reflected by the likelihood function) or the prior?** 
+
+Because of the uninformed prior the posterior model reflects mostly the data. It overlaps big parts of the likelihood curve.
+
+**c) Provide the specific `bayesrules::plot_beta_binomial()` code you would use to produce a similar plot.**
+
+I think the code for this example is much easier to specify: 
+
+- We know the prior (= $\text{Beta}(2, 2)$) 
+- We will choose for simplicity for the likelihood peak $\frac{y}{n} = 0.1 = \frac{1}{10}$
+- The posterior is 
+
+$$
+\begin{align*}
+\text{Posterior} &= \text{Beta}(\alpha + y, \beta + n - y) \\
+&= \text{Beta}(2 + 1, 2 + 10 - 1) = \text{Beta}(3, 11)
+\end{align*}
+$$ 
+
+
+```{r}
+#| label: fig-003-plot-beta-binomial-2a
+#| fig-cap: Reconstructing @fig-003-exr-17 (Version 1)
+#| fig-height: 2
+#| fig-width: 5
+
+bayesrules::plot_beta_binomial(2, 2, 1, 10)
+```
+
+
+If we compare with @fig-003-exr-17 we can see that our data and posterior distribution is right skewed. We need to increase $\alpha$ by incrementing the number of successes. So let's try with y = 3. To match the required peak at 0.1 we need 30 trials.
+
+
+```{r}
+#| label: fig-003-plot-beta-binomial-2b
+#| fig-cap: Reconstructing @fig-003-exr-17 (Version 2)
+#| fig-height: 2
+#| fig-width: 5
+
+bayesrules::plot_beta_binomial(2, 2, 3, 30)
+```
+This is exact the required configuration resp. R code.
+::::
+:::::
+
+#### More Beta-Binomial
+
+:::::{.my-exercise}
+:::{.my-exercise-header}
+:::::: {#exr-003-more-beta-binomial}
+: More Beta-Binomial
+::::::
+:::
+::::{.my-exercise-container}
+
+::: {#big-text style="font-size: 125%"}
+**a) Part 1 of the task**
+:::
+
+
+
+Patrick has a Beta(3,3) prior for $\pi$, the probability that someone in their town attended a protest in June 2020. In their survey of 40 residents, 30 attended a protest. Summarize Patrick’s analysis using `summarize_beta_binomial()` and `plot_beta_binomial()`.  
+
+::::: columns
+::: {.column width="50%"}
+```{r}
+#| label: tbl-003-exercise-3-18-a
+#| tbl-cap: Summary of the Beta-Binomial model for $\alpha = 3, \beta = 3, y = 30, n = 40)$
+
+bayesrules::summarize_beta_binomial(3, 3, y = 30, n = 40) |> 
+  knitr::kable(digits = 4)
+```
+:::
+
+::: {.column width="50%"}
+```{r}
+#| label: fig-003-exercise-3-18-a
+#| fig-cap: Density plot for the Beta-Binomial model for $\alpha = 3, \beta = 3, y = 30, n = 40)$
+
+bayesrules::plot_beta_binomial(3, 3, y = 30, n = 40)
+```
+:::
+:::::
+
+::: {#big-text style="font-size: 125%"}
+**b) Part 2 of the task**
+:::
+
+
+
+Harold has the same prior as Patrick, but lives in a different town. In their survey, 15 out of 20 people attended a protest. Summarize Harold’s analysis using `summarize_beta_binomial()` and `plot_beta_binomial()`.  
+
+
+
+::::: columns
+::: {.column width="50%"}
+```{r}
+#| label: tbl-003-exercise-3-18-b
+#| tbl-cap: Summary of the Beta-Binomial model for $\alpha = 18, \beta = 8, y = 15, n = 20)$
+
+bayesrules::summarize_beta_binomial(3, 3, y = 15, n = 20) |> 
+  knitr::kable(digits = 4)
+```
+:::
+
+::: {.column width="50%"}
+```{r}
+#| label: fig-003-exercise-3-18-b
+#| fig-cap: Density plot for the Beta-Binomial model for $\alpha = 18, \beta = 8, y = 15, n = 20)$
+
+bayesrules::plot_beta_binomial(3, 3, y = 15, n = 20)
+```
+:::
+:::::
+
+::: {#big-text style="font-size: 125%"}
+**c) Part 3 of the task: How do Patrick and Harold’s posterior models compare? Briefly explain what causes these similarities and differences.**
+:::
+
+
+
+Patrick and Harold do not only have the same prior ($\text{Beta}(3, 3)$) but also the same success rate of $\frac{y}{n} = 0.75 = \frac{30}{40} = \frac{15}{20}$. But in Harold’s analysis the data do not have as much weight as in Patrick’s. This is the reason that -- although both posteriors are centered around 0.75 --, the posterior from the larger sample (40 trials) is narrower and more peaked, reflecting greater certainty in the estimate.
+
+**A more detailed answer**
+
+Even though both have the same proportion (y/n = 0.75) and the same prior Beta(3,3), they produce different posterior distributions because **Bayesian updating depends on the amount of data, not just the proportion**.
+
+Here's why they differ:
+
+::: {#big-text style="font-size: 110%"}
+**Example 1:** 
+:::
+
+- Beta(3,3) + 30 successes in 40 trials
+- Posterior using @eq-003-beta-binomial-formula:
+
+
+$$
+\begin{align*}
+\pi \mid (Y = y) &\sim \text{Beta}(\alpha + y, \beta + n − y) \\
+&\sim \text{Beta}(3 + 30, 3 + 40 − 30) \\
+&\sim \text{Beta}(33, 13) \\
+\end{align*}
+$$ 
+
+
+
+::: {#big-text style="font-size: 110%"}
+**Example 2::** 
+:::
+
+- Beta(3,3) + 15 successes in 20 trials
+- Posterior using @eq-003-beta-binomial-formula:
+
+
+$$
+\begin{align*}
+\pi \mid (Y = y) &\sim \text{Beta}(\alpha + y, \beta + n − y) \\
+&\sim \text{Beta}(3 + 15, 3 + 20 − 15) \\
+&\sim \text{Beta}(18, 8) \\
+\end{align*}
+$$ 
+
+
+::: {#big-text style="font-size: 110%"}
+**Key differences:** 
+:::
+
+**More data = More certainty:** The first example has twice as much data (40 vs 20 trials), so the posterior is more concentrated around 0.75 with lower variance.
+
+**Effective sample size**: The $\text{Beta}(\alpha, \beta) = \text{Beta}(3,3)$ prior is mathematically equivalent to having observed $\alpha$ successes and $\beta$ failures in a binomial experiment. So a $\text{Beta}(3,3)$ prior is like having seen 3 successes and 3 failures in 6 hypothetical trials.
+
+In Bayesian analysis, this effective sample size represents the **weight of the prior information** relative to the actual data. 
+
+So when we have:
+- Example 1: 40 data points + prior equivalent to 6 observations
+- Example 2: 20 data points + prior equivalent to 6 observations
+
+The prior has a **larger relative influence** in Example 2 because 6 prior observations represent a larger proportion of the total information (6/26 ≈ 23%) compared to Example 1 (6/46 ≈ 13%). This is why the posterior in Example 2 is more influenced by the prior.
+
+In Example 1, the prior has less influence relative to 40 data points, so the posterior is pulled more strongly toward the observed 0.75. Beta(33,13) will have smaller variance than Beta(18,8), reflecting greater confidence with more observations.
+
+This illustrates a fundamental Bayesian principle: **the amount of evidence matters, not just the proportion!**
+::::
+:::::
+
+
+## Glossary Entries {.unnumbered}
+
+```{r}
+#| label: glossary-table
+#| echo: false
+
+glossary_table()
+```
+
+------------------------------------------------------------------------
+
+## Session Info {.unnumbered}
+
+::::: my-r-code
+::: my-r-code-header
+Session Info
+:::
+
+::: my-r-code-container
+```{r}
+#| label: session-info
+
+sessioninfo::session_info()
+```
+:::
+:::::
