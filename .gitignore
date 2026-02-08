@@ -62,10 +62,8 @@ rsconnect/
 /.posit/
 
 ### template files (for chapter and for file for citations)
-__my-templates
+/__my-templates/
 
 ### archive (temporary files, maybe for later use)
-__my-archive
+__my-archive/
 
-### don't know where this line comes from
-**/*.quarto_ipynb
