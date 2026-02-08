@@ -12,22 +12,318 @@ base::source(file = "R/helper.R")
 
 
 
-::::: {#obj-chapXXX}
+::::: {#obj-chap-004}
 :::: {.my-objectives}
 ::: {.my-objectives-header}
-Chapter section list
+Objectives
 :::
 
 ::: {.my-objectives-container}
 
+- **Explore the balanced influence of the prior and data on the posterior**. See how the choice of prior model, the features of the data, and the delicate balance between them can impact the posterior model. 
+- **Perform sequential Bayesian analysis**. Explore one of the coolest features of Bayesian analysis: how a posterior model evolves as it’s updated with new data.
 
 :::
 ::::
 :::::
 
+::: {.callout-caution #cau-004-incomplete-notes}
+###### Incomplete notes for this chapter
+
+After starting my notes I became aware that most of the material presented in this chapter is already familiar to me. So I will skip writing notes after some preliminary remarks until @sec-004-dont-be-stubborn.
+
+
+:::
+
+
+The chapter starts with the example of the `r glossary("Bechdel test")` [@bechdel-2008]. 
+
+Let $\pi$, a random value between 0 and 1, denote the unknown proportion of recent movies that pass the Bechdel test. Three friends – the feminist, the clueless, and the optimist have some prior ideas about $\pi$.
+
+- **The feminist** believes the majority of the films lack strong women characters.
+- **The clueless** doesn’t really recall the movies they’ve seen, and so are unsure whether passing the Bechdel test is common or uncommon.
+- **The optimist** assumes almost all movies pass the test.
+
+:::::{.my-assessment}
+:::{.my-assessment-header}
+:::::: {#cor-004-bechdel-test}
+: Who believes what?
+::::::
+:::
+::::{.my-assessment-container}
+
+![Three prior models for the proportion of films that pass the Bechdel test](img/004-quiz-bechdel-test.png){#fig-004-quiz-bechdel-test 
+fig-alt="The priors from left to right: (a) Beta(1,1), (b) Beta(5,11) (c) Beta(14, 1)" fig-align="center" 
+width="100%"}
+
+
+- "Feminist: `r mcq(c("a", answer = "b", "c"))`"
+- "Cueless: `r mcq(c(answer = "a", "b", "c"))`"
+- "Optimist: `r mcq(c("a", "b", answer = "c"))`"
+::::
+:::::
+
+The three analysts agree to review a sample of $n$ recent movies and record $Y$ , the number that pass the Bechdel test. Recognizing $Y$ as the number of “successes” in a fixed number of independent trials, they specify the dependence of $Y$ on $\pi$ using a Binomial model. Thus, each analyst has a unique `r glossary("Beta-Binomial-Model", "Beta-Binomial model")` of $\pi$ with differing prior `r glossary("hyperparameter", "hyperparameters")` $\alpha$ and $\beta$:  
+
+$$
+\begin{align*}
+Y \mid \pi &\sim Bin(n, \pi) \\
+\pi &\sim Beta(\alpha, \beta)
+\end{align*}
+$$ {#eq-cross-ref-ID}
+
+
+By our work in @sec-chap-003, it follows that each analyst has a *unique* posterior model of $\pi$ which depends upon their *unique* prior (through $\alpha$ and $\beta$) and the *common* observed data (through $y$ and $n$)
+
+$$
+\pi \mid (Y = y) \sim Beta(\alpha + y, \beta + n − y)
+$$ {#eq-004-beta-binomial-formula}
+
+
+## Different priors, different posteriors
+
+@fig-004-quiz-bechdel-test summarizes the prior models of $\pi$, the proportion of recent movies that pass the Bechdel test, tuned by the clueless, the feminist, and the optimist. Not only do the differing **prior means** reflect disagreement about whether $\pi$ is closer to 0 or 1, the differing levels of **prior variability** reflect the fact that the analysts have different degrees of certainty in their prior information. Loosely speaking, the more **certain** the prior information, the *smaller* the prior variability. The more **vague** the prior information, the *greater* the prior variability. 
+
+The priors of the optimist and the clueless represent these two extremes. 
+
+- The optimist is the most certain in their prior understanding of $\pi$. We refer to such believes as `r glossary("informative_prior", "informative priors")`.
+- The clueless is the least certain about $\pi$. This type of “shoulder shrug” prior model has an official name: it’s a `r glossary("vague prior")`, also called a `r glossary("non-informative prior")`.
+
+The next natural question to ask is: how will their different priors influence the posterior conclusions of the feminist, the clueless, and the optimist? 
+
+o answer this question, we need some data. Our analysts decide to review a random sample of $n = 20$ recent movies using data collected for the FiveThirtyEight article on the Bechdel test [^004-balance-sequentiality-1]. The {**bayesrules**} package includes a partial version of this dataset, named bechdel. A complete version is provided by the {**fivethirtyeight**} R package [@fivethirtyeight]. Along with the title and year of each movie in this dataset, the binary variable records whether the film passed or failed the Bechdel test:
+
+[^004-balance-sequentiality-1]: Unfortunately the award winning FiveThirtyEight website that focused on opinion poll analysis, politics, economics, and sports blogging in the United States was shut down by ABC News on March 5, 2025 and its staff were laid off. The books URL shows the unformated text of the old article, but all data are still available via <https://github.com/fivethirtyeight/data> and <https://data.fivethirtyeight.com/>. It turned out that besides the [data of the referenced article](https://github.com/fivethirtyeight/data/tree/master/bechdel) there is a newer test data file, called the [The Next Bechdel Test](https://github.com/fivethirtyeight/data/tree/master/next-bechdel). This newer test was not designed to replace the original, but to challenge the industry to move beyond minimal standards.  It emphasizes that passing a checklist is not enough—systemic change in hiring, storytelling, and crew diversity is essential.
+
+
+::: {.callout-note #nte-004-skipped-several-sections}
+###### I will skip to @sec-004-dont-be-stubborn 
+
+At this point, I realized that the coming information of the next few sections is not new for me. So I will skip writing notes until @sec-004-dont-be-stubborn.
+
+:::
+
+## Different data, different posteriors (skipped)
+
+## Striking a balance between the prior & data (skipped)
+
+## Sequential analysis: Evolving with data (skipped)
+
+## Proving data order invariance (skipped)
+
+## Don’t be stubborn {#sec-004-dont-be-stubborn}
+
+The previous sections of chapter 4 has highlighted three of the most compelling aspects of the Bayesian philosophy: 
+
+- The balance between prior and data 
+- `r glossary("Bayesian updating")` in a sequential analysis
+- Order and the splitting of the data are irrelevant
+
+One of the only ways to *lose* these Bayesian benefits is by starting with an *extremely* stubborn prior model. A model so stubborn that it assigns a prior probability of *zero* to certain parameter values. 
+
+Consider an example within the Milgram study setting where $\pi$ is the proportion of people that will obey authority even if it means bringing harm to others (cf. @sec-003-milgram-experiment). Suppose that a certain researcher has a stubborn belief in the good of humanity, insisting that $\pi$ is equally likely to be anywhere between 0 and 0.25, and surely doesn’t exceed 0.25. They express this prior understanding through a `r glossary("Uniform Distribution", "Uniform model")` on 0 to 0.25,
+
+$$\pi \sim \text{Unif}(0, 0.25)$$
+
+with pdf f ($\pi$) exhibited in Figure 4.7 and specified by  
+
+$$f (\pi) = 4 for \pi \in [0, 0.25]$$
+
+:::::{.my-assessment}
+:::{.my-assessment-header}
+:::::: {#cor-004-stubborn-researcher}
+: Which plot accurately depicts the researcher’s corresponding posterior?
+::::::
+:::
+::::{.my-assessment-container}
+
+Suppose this researcher was told that the first $Y = 8$ of $n = 10$ participants delivered the shock. This 80% figure runs counter to the stubborn researcher’s belief. Check your intuition about how the researcher will update their posterior in light of this data.
+
+![The stubborn researcher’s prior and likelihood, with three potential corresponding posterior models.](img/004-stubborn-researcher.png){#fig-004-stubborn-researcher
+fig-alt="alt-text" fig-align="center" 
+width="100%"}
+
+"Which posterior: `r mcq(c("a", "b", answer = "c"))`"
+
+::::
+:::::
+
+As odd as it might seem, the posterior model in plot (c) corresponds to the stubborn researcher’s updated understanding of $\pi$ in light of the observed data.
+
+**A posterior model is defined on the same values for which the prior model is defined.** 
+
+That is, the support of the posterior model is inherited from the support of the prior model. Since the psychologist’s prior model assigns zero probability to any value of $\pi$ past 0.25, their posterior model must *also* assign zero probability to any value in that range. 
+
+Mathematically, the posterior pdf $f (\pi \mid y = 8) = 0 \text{ for any } \pi \notin [0, 0.25] \text{ and, for any } \pi \in [0, 0.25]$,
+
+$$
+\begin{align*}
+f (\pi \mid y = 8) &\propto f (\pi)L(\pi \mid y = 8)  \\
+&= 4 \cdot \binom{10}{8} \pi^8(1 − π)^2  \\
+&∝ \pi^8(1 − \pi)^2
+\end{align*}
+$$ {#eq-004-explain-stubborn-calculation}
+
+::: {.callout-note #nte-004-explain-formula}
+
+###### Explain @eq-004-explain-stubborn-calculation
+
+I had difficulty to understand above formula. So I asked `r glossary("Claude Haiku")` 
+
+::: {#big-text style="font-size: 150%"}
+**Explain @eq-004-explain-stubborn-calculation** 
+:::
+
+This formula shows **Bayesian inference** for estimating a probability parameter. Here's what each part means:
+
+::: {#big-text style="font-size: 125%"}
+**Line 1: Bayes' Theorem**
+:::
+
+$$f(\pi \mid y = 8) \propto f(\pi)L(\pi \mid y = 8)$$
+
+- **$f(\pi \mid y = 8)$** = posterior distribution (what we want to find) — the probability of $\pi$ given we observed 8 successes
+- **$f(\pi)$** = prior distribution — our belief about $\pi$ *before* seeing data
+- **$L(\pi \mid y = 8)$** = likelihood — how likely the data (8 successes) is under different values of $\pi$
+- **$\propto$** = "proportional to" (ignoring constants that don't affect the shape)
+
+
+::: {#big-text style="font-size: 125%"}
+**Line 2: Expanding the components**
+:::
+
+$$4 \cdot \binom{10}{8} \pi^8(1 − π)^2$$
+
+- **$4$** = the prior (appears to be a uniform or flat prior scaled by 4)
+- **$\binom{10}{8}$** = binomial coefficient — the number of ways to get 8 successes in 10 trials
+- **$\pi^8(1 − \pi)^2$** = likelihood from a binomial distribution with 8 successes and 2 failures
+
+::: {#big-text style="font-size: 125%"}
+**Line 3: Simplifying**
+:::
+
+$$\pi^8(1 − \pi)^2$$
+
+The constant factors ($4$ and $\binom{10}{8}$) are dropped because they don't affect the *shape* of the distribution — only the scaling. This is the **kernel** of a **Beta distribution** with parameters $\alpha = 9$ and $\beta = 3$.
+
+**In short:** This shows how to combine prior beliefs with observed data (8 successes out of 10 trials) to get a posterior distribution for the unknown probability $\pi$.
+
+***
+
+::: {#big-text style="font-size: 150%"}
+**Why has the kernel of the Beta distribution the parameters $\alpha = 9$ and $\beta = 3$?** 
+:::
+
+::: {#big-text style="font-size: 125%"}
+**Beta Distribution Kernel**
+:::
+
+
+The Beta distribution has the general form:
+$$\text{Beta}(\alpha, \beta) \propto \pi^{\alpha-1}(1-\pi)^{\beta-1}$$
+
+Notice the exponents are $\alpha - 1$ and $\beta - 1$.
+
+::: {#big-text style="font-size: 125%"}
+**Matching Your Posterior**
+:::
+
+
+Your posterior kernel is:
+$$\pi^8(1 − \pi)^2$$
+
+To match this with the Beta form, we need:
+- $\alpha - 1 = 8$ → **$\alpha = 9$**
+- $\beta - 1 = 2$ → **$\beta = 3$**
+
+::: {#big-text style="font-size: 125%"}
+**Why This Makes Sense (Bayesian Conjugacy)**
+:::
+
+
+This is a beautiful result of **conjugate priors**:
+
+- You started with a **Beta prior** on $\pi$
+- You observed **8 successes and 2 failures** from a binomial distribution
+- Your posterior is *also* a **Beta distribution**
+
+The update rule is simple: if your prior is $\text{Beta}(\alpha_0, \beta_0)$ and you observe $s$ successes and $f$ failures, your posterior is:
+$$\text{Beta}(\alpha_0 + s, \beta_0 + f)$$
+
+In your case, the prior was $\text{Beta}(1, 1)$ (uniform), so:
+$$\text{Beta}(1 + 8, 1 + 2) = \text{Beta}(9, 3)$$
+
+This conjugacy property makes Beta-Binomial models very convenient for Bayesian analysis!
+:::
 
 
 
+The implications of this math are huge. No matter how much counterevidence the stubborn researcher collects, their posterior will *never* budge beyond the 0.25 cap, not even if they collect data on a billion subjects. Luckily, we have some good news for you: **this Bayesian bummer is completely preventable**.
+
+::: {.callout-tip #tip-dont-be-stubborn}
+###### Avoid a regrettable prior model  
+
+Let $\pi$ be *always* some parameter of interest. No matter how much prior information you think you have about $\pi$ or how informative you want to make your prior, be sure to assign non-0 plausibility to every *possible* value of $\pi$, even if this plausibility is *near* 0. For example, if $\pi$ is a *proportion* which can technically range from 0 to 1, then your prior model should also be defined across this continuum.
+:::
+
+
+## A note on subjectivity {#sec-004-subjectivity}
+
+In @sec-chap-001, we alluded to a common critique about Bayesian statistics – it’s too *subjective.* Specifically, some worry that “subjectively” tuning a prior model allows a Bayesian analyst to come to any conclusion that they want to. We can more rigorously push back against this critique in light of what we’ve learned in in this chapter.
+
+:::::{.my-assessment}
+:::{.my-assessment-header}
+:::::: {#cor-004-subjectivity}
+: About subjectivity
+::::::
+:::
+::::{.my-assessment-container}
+For each statement below, indicate whether the statement is true or false. Provide your reasoning. The reasoning is provided in the footnote[^004-balance-sequentiality-2].
+
+1. All prior choices are informative. `r torf(FALSE)`
+2. There may be good reasons for having an informative prior. `r torf(TRUE)`
+3. Any prior choice can be overcome by enough data. `r torf(FALSE)`
+4. The frequentist paradigm is totally objective. `r torf(FALSE)`
+
+
+[^004-balance-sequentiality-2]: **1. False**. Vague priors are typically uninformative. **2. True**. We might have ample previous data or expertise from which to build our prior. **3. False**. If you assign zero prior probability to a potential parameter value, no amount of data can change that! **4. False**. Subjectivity always creeps in to both frequentist.
+::::
+:::::
+
+Bayesian analysis can indeed build a prior based on “subjective” experience. Very seldom is this a bad thing, and quite often it’s a great thing! In the best-case scenarios, a subjective prior can reflect a wealth of past experiences that *should* be incorporated into our analysis – it would be unfortunate not to. Even if a subjective prior runs counter to actual observed evidence, its influence over the posterior fades away as this evidence piles up. We’ve seen one worst-case scenario exception. And it was *preventable.* If a subjective prior is stubborn enough to assign zero probability on a possible parameter value, no amount of counterevidence will be enough to budge it.  
+
+Finally, though we encourage you to be critical in your application of Bayesian methods, please don’t worry about them being any more subjective than frequentist methods. *No* human is capable of removing all subjectivity from an analysis. The life experiences and knowledge we carry with us inform everything from what research questions we ask to what data we collect. It’s important to consider the potential implications of this subjectivity in *both* Bayesian and frequentist analyses.
+
+
+## Chapter summary {#sec-004-summary}
+
+This chapter explored the balance that a posterior model strikes between a prior model and the data. In general, we saw the following trends:
+
+::: {#big-text style="font-size: 120%"}
+**Prior influence**
+:::
+
+The less vague and more informative the prior, i.e., the greater our prior certainty, the more influence the prior has over the posterior.
+
+::: {#big-text style="font-size: 120%"}
+**Data influence**
+:::
+
+The more data we have, the more influence the data has over the posterior. Thus, if they have ample data, two researchers with different priors will have similar posteriors.
+
+::: {#big-text style="font-size: 120%"}
+**Sequential Bayesian analysis**
+:::
+
+We saw that in a `r glossary("sequential Bayesian analysis")`, we incrementally update our posterior model as more and more data come in. 
+
+::: {#big-text style="font-size: 120%"}
+**Data order invariance**
+:::
+
+The final destination of the posterior is not impacted by the order in which we observe this data (i.e., the posterior is data order invariant) or whether we observe the data in one big dump or incrementally.
+
+## Exercises (skipped)
 
 ## Glossary Entries {.unnumbered}
 

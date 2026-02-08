@@ -24,6 +24,7 @@ book:
         - 002-bayes-rule.qmd
         - 003-beta-binomial.qmd
         - 004-balance-sequentiality.qmd
+        - 005-conjugate-families.qmd
   appendices:
       - 900-used-packages.qmd
       - 990-webexercises.qmd

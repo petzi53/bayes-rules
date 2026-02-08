@@ -67,3 +67,5 @@ rsconnect/
 ### archive (temporary files, maybe for later use)
 __my-archive/
 
+
+**/*.quarto_ipynb

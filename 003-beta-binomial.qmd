@@ -16,12 +16,12 @@ Objectives
 :::
 
 ::: my-objectives-container
--   Utilize and tune continuous priors. You will learn how to interpret
-    and tune a continuous Beta prior model to reflect your prior
+-   **Utilize and tune continuous priors.** Learn how to interpret
+    and tune a continuous Beta prior model to reflect the prior
     information about $\pi$.\
--   Interpret and communicate features of prior and posterior models
+-   **Interpret and communicate features of prior and posterior models**
     using properties such as mean, mode, and variance.\
--   Construct the fundamental Beta-Binomial model for proportion $\pi$.
+-   **Construct the fundamental Beta-Binomial model** for proportion $\pi$.
 :::
 :::::
 ::::::
@@ -1806,7 +1806,7 @@ now **`r base::nrow(michelle_posterior2)`** rows that match our observed
 data $Y = 30$ with the result that the approximation has improved quite
 extensively.
 
-## Example: Milgram’s behavioral study of obedience
+## Example: Milgram’s behavioral study of obedience {#sec-003-milgram-experiment}
 
 In a 1963 issue of The *Journal of Abnormal and Social Psychology*,
 Stanley Milgram described a study in which he investigated the
@@ -2573,7 +2573,7 @@ models: Beta(0.5,0.5), Beta(1,1), Beta(2,2), Beta(6,6), Beta(6,2),
 Beta(0.5,6).
 
 ![6 different Beta
-models](img/which-beta-1.png){#fig-003-which-beta-1
+models](img/003-which-beta-1.png){#fig-003-which-beta-1
 fig-alt="6 different beta models: a = u-shape, b = arc (open below), c = left-skewed, d = horizontal line, e = L-shaped, f = symmetrical bell curve"
 fig-align="center" width="70%"}
 
@@ -2618,7 +2618,7 @@ models: Beta(1,0.3), Beta(2,1), Beta(3,3), Beta(6,3), Beta(4,2),
 Beta(5,6).
 
 ![Another 6 different Beta
-models](img/which-beta-2.png){#fig-003-which-beta-2
+models](img/003-which-beta-2.png){#fig-003-which-beta-2
 fig-alt="6 different beta models: a = j-shape, b = symmetrical bell-curve, c = left-skewed with big tail, d = 45 degree line, e = very lightly left-skewed, f = left-skewed with small tail"
 fig-align="center" width="70%"}
 

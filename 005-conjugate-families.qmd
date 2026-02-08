@@ -1,0 +1,59 @@
+# Conjugate Families {#sec-chap-005}
+
+```{r}
+#| label: setup
+#| results: hold
+#| include: false
+
+base::source(file = "R/helper.R")
+ggplot2::theme_set(ggplot2::theme_bw())
+```
+
+
+
+::::: {#obj-chap-005}
+:::: {.my-objectives}
+::: {.my-objectives-header}
+Objectives
+:::
+
+::: {.my-objectives-container}
+
+- Practice building Bayesian models. Build Bayesian models by practicing how to recognize kernels and make use of proportionality. 
+- Familiarize yourself with conjugacy. Learn about what makes a prior conjugate and why this is a helpful property.
+
+:::
+::::
+:::::
+
+
+
+
+
+## Glossary Entries {.unnumbered}
+
+```{r}
+#| label: glossary-table
+#| echo: false
+
+glossary_table()
+```
+
+------------------------------------------------------------------------
+
+## Session Info {.unnumbered}
+
+::: my-r-code
+::: my-r-code-header
+Session Info
+:::
+
+::: my-r-code-container
+```{r}
+#| label: session-info
+
+sessioninfo::session_info()
+```
+:::
+:::
+

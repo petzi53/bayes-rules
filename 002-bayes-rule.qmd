@@ -19,10 +19,10 @@ Objectives
 :::
 
 ::: my-objectives-container
--   Explore foundational probability tools such as marginal, conditional, and joint probability models and the Binomial model.
--   Conduct your first formal Bayesian analysis! You will construct your first prior and data models and, from these, construct your first posterior models via Bayes’ Rule.
--   Practice your Bayesian grammar. You’ll practice the formal notation and terminology central to Bayesian grammar.
--   Simulate Bayesian models. Simulation is integral to building intuition for and supporting Bayesian analyses. You’ll conduct your first simulation, using the R statistical software.
+-   **Explore foundational probability tools** such as marginal, conditional, and joint probability models and the Binomial model.
+-   **Conduct your first formal Bayesian analysis!** Construct your first prior and data models and, from these, construct your first posterior models via Bayes’ Rule.
+-   **Practice your Bayesian grammar**. Practice the formal notation and terminology central to Bayesian grammar.
+-   **Simulate Bayesian models**. Conduct your first simulation, using the R statistical software. Simulation is integral to building intuition for and supporting Bayesian analyses.
 :::
 :::::
 ::::::
