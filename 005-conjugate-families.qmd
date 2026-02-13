@@ -9,25 +9,1023 @@ base::source(file = "R/helper.R")
 ggplot2::theme_set(ggplot2::theme_bw())
 ```
 
-
-
-::::: {#obj-chap-005}
-:::: {.my-objectives}
-::: {.my-objectives-header}
+:::::: {#obj-chap-005}
+::::: my-objectives
+::: my-objectives-header
 Objectives
 :::
 
-::: {.my-objectives-container}
+::: my-objectives-container
+-   **Practice building Bayesian models**. Build Bayesian models by
+    practicing how to recognize kernels and make use of proportionality.
+-   **Familiarize yourself with conjugacy**. Learn about what makes a
+    prior conjugate and why this is a helpful property.
+:::
+:::::
+::::::
 
-- Practice building Bayesian models. Build Bayesian models by practicing how to recognize kernels and make use of proportionality. 
-- Familiarize yourself with conjugacy. Learn about what makes a prior conjugate and why this is a helpful property.
+To prepare for this chapter, note that we’ll be using some new Greek
+letters throughout our analysis:
+
+-   $\lambda$ = lambda,
+-   $\mu$ = mu or “mew”,
+-   $\sigma$ = sigma,
+-   $\tau$ = tau, and
+-   $\theta$ = theta.
+
+## Revisiting choice of prior
+
+In @sec-chap-003 and @sec-chap-004 we used the *flexibility* of the Beta
+model to reflect our prior understanding of a proportion parameter
+$\pi \in [0, 1]$. There are other criteria to consider when choosing a
+prior model:
+
+-   **Computational ease**: Especially if we don’t have access to
+    computing power, it is helpful if the posterior model is easy to
+    build.
+-   **Interpretability**:: We’ve seen that posterior models are a
+    compromise between the data and the prior model. A posterior model
+    is interpretable, and thus more useful, when you can look at its
+    formulation and *identify* the contribution of the data relative to
+    that of the prior.
+
+The Beta-Binomial has both of these criteria covered. Its calculation is
+easy. Once we know the $\text{Beta}(\alpha, \beta)$ prior
+`r glossary("hyperparameter", "hyperparameters")` and the observed data
+$Y = y$ for the $\text{Bin}(n, \pi)$ model, the
+$\text{Beta}(\alpha + y, \beta + n − y)$ posterior model follows.
+
+This posterior reflects the influence of the data, through the values of
+$y$ and $n$, relative to the prior hyperparameters $\alpha$ and $\beta$.
+If $\alpha$ and $\beta$ are large relative to the sample size $n$, then
+the posterior will not budge that much from the prior. However, if the
+sample size $n$ is large relative to $\alpha$ and $\beta$, then the data
+will take over and be more influential in the posterior model. In fact,
+the `r glossary("Beta-Binomial-Model", "Beta-Binomial")` belongs to a
+larger class of prior-data combinations called **conjugate families**
+that enjoy both computational ease and interpretable posteriors. Recall
+a general definition similar to that from @def-003-conjugate-prior.
+
+:::::: my-experiment
+:::: my-experiment-header
+::: {#def-005-conjugate-prior}
+: Conjugate prior
+:::
+::::
+
+::: my-experiment-container
+Let the prior model for parameter $\theta$ have pdf f ($\theta$) and the
+model of data Y conditioned on $\theta$ have likelihood function
+$L(\theta \mid y)$. If the resulting posterior model with pdf f
+$(\theta \mid y) \propto f (\theta)L(\theta \mid y)$ is of the same
+model family as the prior, then we say this is a
+`r glossary("conjugate prior")`.
+:::
+::::::
+
+To emphasize the utility of conjugate priors, it can be helpful to
+consider a *non*-conjugate prior. Let parameter $\pi$ be a proportion
+between $0$ and $1$ and suppose we plan to collect data $Y$ where,
+conditional on $\pi$, $Y \mid \pi \sim \text{Bin}(n, \pi)$. Instead of
+our conjugate $\text{Beta}(\alpha, \beta)$ prior for $\pi$, let’s try
+out a non-conjugate prior with pdf f ($\pi$), plotted in Figure 5.1:
+
+$$
+\begin{align*}
+f (\pi) = e − e^π \text{ for } \pi \in [0, 1]
+\end{align*}
+$$ {#eq-005-non-conjugate-prior}
+
+Though *not* a Beta pdf, f ($\pi$) is indeed a *valid* pdf since f
+($\pi$) is non-negative on the support of $\pi$ and the area under the
+pdf is $1$, i.e.,$\int_{0}^{1} f (\pi) = 1$.
+
+```{r}
+#| label: fig-005-non-conjugate-prior
+#| fig-cap: A non-conjugate prior for $\pi$
+#| lst-label: lst-005-non-conjugate-prior
+#| lst-cap: Valid non-conjugate prior
+#| fig-width: 4
+#| fig-height: 3
+
+# Create a data frame with pi values and corresponding f(pi) values
+pi_values <- base::seq(0, 1, length.out = 1000)
+df <- tibble::tibble(
+  pi = pi_values,
+  f_pi = base::exp(1) - base::exp(pi_values)
+)
+
+# Create the plot
+ggplot2::ggplot(df, ggplot2::aes(x = pi, y = f_pi)) +
+  ggplot2::geom_line(color = "black", linewidth = 1) +
+  ggplot2::labs(
+    title = base::expression(f(pi) == e - e^pi),
+    x = base::expression(pi),
+    y = base::expression(f(pi))
+  ) +
+  ggplot2::theme_minimal()
+```
+
+Next, suppose we observe $Y = 10$ successes from $n = 50$ independent
+trials, all having the same probability of success $\pi$. The resulting
+Binomial likelihood function of $\pi$ is:
+
+$$L(\pi \mid y = 10) = \binom{50}{10}\pi^{10}(1 − \pi)^{40} \text{ for } \pi \in [0, 1]$$
+
+Recall from @sec-chap-003 that, when we put the
+`r glossary("priorx", "prior")` and the
+`r glossary("likelihood_x", "likelihood")` together, we are already on
+our path to finding the
+`r glossary("posterior_model", "posterior model")` with
+`r glossary("pdf")`
+
+$$f (\pi \mid y = 10) \propto f (\pi)L(\pi \mid y = 10) = (e − e^π) \cdot \binom{50}{10}\pi^{10}(1 − \pi)^{40}$$
+
+As we did in @sec-chap-003, we will drop all constants that do not
+depend on $\pi$ since we are only specifying $f (\pi \mid y)$ up to a
+proportionality constant:
+
+$$f (\pi \mid y) \propto (e − e^\pi)\pi^{10}(1 − \pi)^{40}$$
+
+Notice here that our non-Beta prior didn’t produce a neat and clean
+answer for the exact posterior model (fully specified and not up to a
+proportionality constant). We cannot squeeze this posterior pdf kernel
+into a Beta box or any other familiar model for that matter. That is, we
+*cannot* rewrite $(e − e^\pi)\pi^{10}(1 − \pi)^{40}$ so that it shares
+the same structure as a Beta kernel, $\pi^{∎−1}(1 − \pi)^{∎−1}$. Instead
+we will need to integrate this kernel in order to complete the
+normalizing constant, and hence posterior specification:
+
+$$
+\begin{align*}
+f (\pi \mid y = 10) =  \frac{(e − e^{\pi})\pi^{10}(1 − \pi)^{40}}{\int_{0}^{1}(e − e^{\pi})\pi^{10}(1 − \pi)^{40}dx}
+\end{align*}
+$$ {#eq-non-conjugate-posterior-specification}
+
+This is where we really start to feel the pain of not having a conjugate
+prior! Since this is a particularly unpleasant integral to evaluate, and
+we’ve been trying to avoid doing any integration altogether, we will
+leave ourselves with @eq-non-conjugate-posterior-specification as the
+final posterior. Yikes, what a mess. This *is* a valid posterior pdf –
+it’s non-negative and integrates to $1$ across $\pi \in [0, 1]$. But it
+doesn’t have much else going for it. Consider a few characteristics
+about the posterior model that result from this particular non-conjugate
+prior in @eq-005-non-conjugate-prior:
+
+-   The calculation for this posterior was messy and unpleasant.
+-   It is difficult to derive any intuition about the balance between
+    the prior information and the data we observed from this posterior
+    model.
+-   It would be difficult to specify features such as the posterior
+    mean, mode, and standard deviation, a process which would require
+    even more integration.
+
+This leaves us with the question: could we use the conjugate Beta prior
+and still capture the broader information of the messy non-conjugate
+prior in @eq-005-non-conjugate-prior? If so, then we solve the problems
+of messy calculations and indecipherable posterior models.
+
+:::::: my-assessment
+:::: my-assessment-header
+::: {#cor-005-which-beta-for-non-jugate-prior}
+: Which Beta model?
+:::
+::::
+
+::: my-assessment-container
+Which Beta model would most closely approximate the non-conjugate prior
+for $\pi$ in @fig-005-non-conjugate-prior?
+`r mcq(c("Beta(3,1)", "Beta(1,3)", "Beta(2,1)", answer = "Beta(1,2)"))`
+:::
+::::::
+
+One way to find the answer is by comparing the non-conjugate prior in
+@fig-005-non-conjugate-prior with plots of the possible Beta prior
+models. For example, the non-conjugate prior information is pretty well
+captured by the $\text{Beta}(1, 2)$
+
+:::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-005-beta-1-2}
+: A conjugate $\text{Beta}(1, 2)$ prior model for $\pi$.
+:::
+::::
+
+::: my-r-code-container
+```{r}
+#| label: fig-005-beta-1-2
+#| fig-cap: A conjugate $\text{Beta}(1, 2)$ prior model for $\pi$
+#| fig-width: 4
+#| fig-height: 3
+
+bayesrules::plot_beta(1, 2)
+```
+:::
+::::::
+
+## Gamma-Poisson conjugate family
+
+Last year, one of this book’s authors got fed up with the number of
+fraud risk phone calls they were receiving. They set out with a goal of
+modeling *rate* $\lambda$, the typical number of fraud risk calls
+received per day. **Prior** to collecting any data, the author’s guess
+was that this rate was most likely around $5$ calls per day, but could
+also reasonably range between $2$ and $7$ calls per day. To learn more,
+they planned to record the number of fraud risk phone calls on each of
+$n$ sampled days, $(Y1, Y2, . . . , Yn)$.
+
+In moving forward with our investigation of $\lambda$, it’s important to
+recognize that it will *not* fit into the familiar Beta-Binomial
+framework.
+
+-   First, $\lambda$ is *not* a proportion limited to be between $0$ and
+    $1$, but rather a rate parameter that can take on any *positive*
+    value (e.g., we can’t receive -7 calls per day). Thus, a Beta prior
+    for $\lambda$ won’t work.
+-   Further, each data point $Y_{i}$ is a *count* that can technically
+    take on any non-negative integer in ${0, 1, 2, . . .}$, and thus is
+    *not* limited by some number of trials $n$ as is true for the
+    Binomial. Not to fret. Our study of $\lambda$ will introduce us to a
+    *new* conjugate family, the
+    `r glossary("Gamma-Poisson model", "Gamma-Poisson")`.
+
+### The Poisson data model
+
+The *spirit* of our analysis starts with a prior understanding of
+$\lambda$, the daily rate of fraud risk phone calls. Yet before choosing
+a prior model structure and tuning this to match our prior
+understanding, it’s beneficial to identify a model for the dependence of
+our daily phone call *count* data $Y_i$ on the typical daily *rate* of
+such calls $\lambda$. Upon identifying a reasonable data model, we can
+identify a prior model which can be tuned to match our prior
+understanding while *also* mathematically complementing the data model’s
+corresponding likelihood function. Keeping in mind that each data point
+$Y_i$ is a *random count* that can go from $0$ to a really big number,
+$Y \in \{0, 1, 2, . . .\}$, the
+`r glossary("Poisson-model", "Poisson model")`, described in its general
+form below, makes a reasonable candidate for modeling this data.
+
+:::::: my-theorem
+:::: my-theorem-header
+::: {#thm-005-poisson-model}
+: Poisson model
+:::
+::::
+
+::: my-theorem-container
+Let discrete random variable $Y$ be the number of independent events
+that occur in a fixed amount of time or space, where $\lambda > 0$ is
+the rate at which these events occur. Then the dependence of $Y$ on
+`r glossary("parameter_x", "parameter")` $\lambda$ can be modeled by the
+Poisson. In mathematical notation:
+
+$$Y \mid \lambda \sim Pois(\lambda)$$
+
+Correspondingly, the Poisson model is specified by pmf
+
+$$
+f (y \mid \lambda) =  \frac{\lambda^y e^{−\lambda}}{y!} \text{ for } y \in \{0, 1, 2, . . .\}
+$$ {#eq-005-poisson-model}
+
+where $f (y \mid \lambda)$ sums to one across
+$y, \sum_{y=0}^{\infty} f (y \mid \lambda) = 1$. Further, a Poisson
+random variable $Y$ has equal mean and variance,
+
+$$
+E(Y \mid \lambda) = Var(Y \mid \lambda) = \lambda
+$$ {#eq-005-poisson-equal-mean-variance}
+:::
+::::::
+
+Figure 5.3 illustrates the Poisson pmf @eq-005-poisson-model under
+different rate parameters $\lambda$. In general, as the rate of events
+$\lambda$ increases, the typical number of events increases, the
+variability increases, and the skew decreases. For example, when events
+occur at a rate of $\lambda = 1$, the model is heavily skewed toward
+observing a small number of events – we’re most likely to observe $0$ or
+$1$ events, and rarely more than 3. In contrast, when events occur at a
+higher rate of $\lambda = 5$, the model is roughly symmetric and more
+variable – we’re most likely to observe $4$ or $5$ events, though have a
+reasonable chance of observing anywhere between $1$ and $10$ events.
+
+```{r}
+#| label: fig-005-plot-poisson-models
+#| fig-cap: Poisson pmfs with different rate parameters.
+#| fig-height: 3
+
+# Create data frame with all combinations
+data <- base::expand.grid(
+  x = 0:12,  # number of events
+  lambda = c(1, 3, 5) # rate of events
+) |> 
+  dplyr::mutate(
+    probability = stats::dpois(x = x, lambda = lambda),
+    prob_label = base::paste0("Pois(", lambda, ")")
+  )
+
+# Create lollipop chart with facets
+ggplot2::ggplot(data, ggplot2::aes(x = x, y = probability)) +
+  ggplot2::geom_linerange(
+    ggplot2::aes(
+      x = x, 
+      ymin = 0, 
+      ymax = probability, 
+      color = "black"), 
+    linewidth = 0.8) +
+  ggplot2::geom_point(ggplot2::aes(color = "black"), size = 1) +
+  ggplot2::scale_color_identity() +
+  ggplot2::facet_wrap(~ prob_label, ncol = 3) +
+  ggplot2::scale_x_continuous(breaks = base::seq(0, 12, by = 2)) +
+  # ggplot2::scale_y_continuous(breaks = base::seq(0, 0.20, by = 0.05)) +
+  ggplot2::labs(
+    x = "y",
+    y = base::expression("f (y)")
+  ) +
+  ggplot2::theme_minimal() +
+    ggplot2::theme(
+    panel.spacing = grid::unit(1.5, "lines"),
+    strip.background = ggplot2::element_rect(fill = "gray90", color = "gray50"),
+    strip.text = ggplot2::element_text(face = "bold", size = 11)
+  )
+```
+
+Let $(Y_1, Y_2, . . . , Y_n)$ denote the number of fraud risk calls we
+observed on each of the n days in our data collection period. We assume
+that the daily number of calls might differ from day to day and can be
+independently modeled by the Poisson. Thus, on each day $i$,
+
+$$Y \mid \lambda \sim Pois(\lambda)$$
+
+with unique pmf
+
+$$
+f (y \mid \lambda) =  \frac{\lambda^y e^{−\lambda}}{y!} \text{ for } y \in \{0, 1, 2, . . .\}
+$$
+
+Yet in weighing the evidence of the phone call data, we won’t want to
+analyze each *individual* day. Rather, we’ll need to process the
+*collective* or *joint* information in our *n* data points. This
+information is captured by the
+`r glossary("Joint_Probability_Mass_Function", "joint probability mass function")`.
+
+:::::: my-theorem
+:::: my-theorem-header
+::: {#thm-005-joint-pmf}
+: Joint probability mass function
+:::
+::::
+
+::: my-theorem-container
+Let $(Y_1, Y_2, . . . , Y_n)$ be an independent sample of random
+variables and $\overrightarrow{\rm y} = (y_1, y_2, . . . , y_n)$ be the
+corresponding vector of observed values. Further, let
+$f (y_i \mid \lambda)$ denote the pmf of an individual observed data
+point $Y_i = y_i$. Then by the assumption of independence, the following
+**joint pmf** specifies the randomness in and plausibility of the
+collective sample:
+
+$$
+\begin{align*}
+f (\overrightarrow{\rm y} \mid \lambda) = \prod_{i = 1}^n f (y_i \mid \lambda) = f (y_1 \mid \lambda) \cdot f (y_2 \mid \lambda) \cdot \cdots \cdot f (y_n \mid \lambda)
+\end{align*}
+$$ {#eq-005-joint-pmf}
+
+**Connecting concepts**
+
+This product is analogous to the joint probability of independent events
+being the product of the
+`r glossary("Marginal_Probability", "marginal probabilities")`,
+$P (A \cap B) = P (A)P (B)$.
+:::
+::::::
+
+The joint pmf for our fraud risk call sample follows by applying the
+general definition in @eq-005-joint-pmf to our Poisson pmfs. Letting the
+number of calls on each day $i$ be $y_i \in \{0, 1, 2, . . .\}$,
+
+$$
+f (\overrightarrow{\rm y} \mid \lambda) = \prod_{i = 1}^n f (y_i \mid \lambda) = \prod_{i = 1}^n \frac{\lambda^{y_i} e^{−λ}}{y_i!}
+$$ {#eq-005-joint-pfm-fraud-calls}
+
+This looks like a mess, but it can be simplified. In this
+simplification, it’s important to recognize that we have $n$ unique data
+points $y_i$, not $n$ copies of the same data point $y$. Thus, we need
+to pay careful attention to the $i$ subscripts. It follows that
+
+$$
+\begin{align*}
+f (\overrightarrow{\rm y} \mid \lambda) &= \frac{\lambda^{y_1} e^{−λ}}{y_1!} \cdot \frac{\lambda^{y_2} e^{−λ}}{y_2!} \cdots \frac{\lambda^{y_n} e^{−λ}}{y_n!} \\
+&= \frac{[\lambda^{y_1} \lambda^{y_2} \cdots \lambda^{y_n}][e^{-\lambda} e^{-\lambda} \cdots e^{-\lambda}]}{y_1! y_2! \cdots y_n!} \\
+&= \frac{\lambda^{\sum y_i }e^{-n\lambda}}{\prod_{i = 1}^n y_i!}
+\end{align*}
+$$ where we’ve simplified the products in the final line by appealing to
+the properties below.
+
+:::::: my-theorem
+:::: my-theorem-header
+::: {#thm-005-simplifying-products}
+: Simplifying products
+:::
+::::
+
+::: my-theorem-container
+Let $(x, y, a, b)$ be a set of constants. Then we can utilize the
+following facts when simplifying products involving exponents:
+
+$$
+\begin{align*}
+x^ax^b = x^{a+b} \text{ and } x^ay^a = (xy)^a
+\end{align*}
+$$ {#eq-005-simplfiying-products}
+:::
+::::::
+
+Once we observe actual sample data, we can flip this joint pmf on its
+head to define the
+`r glossary("likelihood-function", "likelihood function")` of $\lambda$.
+The Poisson likelihood function is equivalent in formula to the joint
+pmf $f (\overrightarrow{\rm y} \mid \lambda)$, yet is a function of
+$\lambda$ which helps us assess the compatibility of different possible
+$\lambda$ values with our observed *collection* of sample data
+$\overrightarrow{\rm y}$:
+
+$$
+L (\overrightarrow{\rm y} \mid \lambda) = \frac{\lambda^{\sum y_i }e^{-n\lambda}}{\prod_{i = 1}^n y_i!} \propto \lambda^{\sum y_i }e^{-n\lambda} \text { for } \lambda > 0
+$$ {#eq-005-poisson-likelihood-function}
+
+It is convenient to represent the likelihood function up to a
+proportionality constant here, especially since $\prod y_i!$ will be
+cumbersome to calculate when $n$ is large, and what we really care about
+in the likelihood is $\lambda$. And when we express the likelihood up to
+a proportionality constant, note that the sum of the data points
+($\sum y_i$) and the number of data points ($n$) is all the information
+that is required from the data. We don’t need to know the value of each
+individual data point $y_i$. Taking this for a spin with real data
+points later in our analysis will provide some clarity.
+
+### Potential priors
+
+The Poisson data model provides one of two key pieces for our Bayesian
+analysis of $\lambda$, the daily rate of fraud risk calls. The other key
+piece is a prior model for $\lambda$. Our original guess was that this
+rate is most likely around 5 calls per day, but could also reasonably
+range between 2 and 7 calls per day. In order to tune a prior to match
+these ideas about $\lambda$, we first have to identify a reasonable
+probability model structure. Remember here that $\lambda$ is a positive
+and continuous rate, meaning that $\lambda$ does not have to be a whole
+number. Accordingly, a reasonable prior probability model will also have
+continuous and positive support, i.e., be defined on $\lambda > 0$.
+There are several named and studied probability models with this
+property, including the `r glossary("F-Distribution-Model", "F")` ,
+`r glossary("Weibull model", "Weibull")`, and
+`r glossary("Gamma model", "Gamma")`. We don’t dig into all of these in
+this book. Rather, to make the $\lambda$ posterior model construction
+more straightforward and convenient, we’ll focus on identifying a
+`r glossary("conjugate prior")` model.
+
+:::::: my-assessment
+:::: my-assessment-header
+::: {#cor-005-conjugate-prior}
+: Choose the correct conjugate prior
+:::
+::::
+
+::: my-assessment-container
+Suppose we have a random sample of Poisson random variables
+$(Y_1, Y_2, . . . , Y_n)$ with likelihood function
+$L (\overrightarrow{\rm y} \mid \lambda) = \propto \lambda^{\sum y_i }e^{-n\lambda} \text { for } \lambda > 0$
+
+-   
+
+    a.  A “Gamma” model with pdf
+        $f (\lambda) \propto \lambda^{s−1}e^{−r\lambda}$\
+
+-   
+
+    b.  A “Weibull” model with pdf
+        $f (\lambda) \propto \lambda^{s−1}e^{(−r\lambda)^s}$
+
+-   
+
+    c.  A special case of the “F” model with pdf
+        $f (\lambda) \propto \lambda^{ \frac{s}{2}-1} (1 + \lambda)^{−s}$
+
+What do you *think* would provide a convenient *conjugate* prior model
+for $\lambda$?: `r mcq(c( answer = "a", "b", "c"))`
+
+Why?
+:::
+::::::
+
+The Gamma model will provide a conjugate prior for $\gamma$ when our
+data has a Poisson model. You might have guessed this from the section
+title (clever). You might also have guessed this from the shared
+features of the Poisson likelihood function
+$L (\overrightarrow{\rm y} \mid \lambda)$ in
+@eq-005-poisson-likelihood-function and the Gamma pdf $f (\lambda)$. Both
+are proportional to
+
+$$\lambda^∎e^{−∎\lambda}$$\
+with differing ∎. In fact, we’ll prove that *combining* the prior and
+likelihood produces a posterior pdf with this same structure. That is,
+the posterior will be of the same Gamma model family as the prior.
+First, let’s learn more about the Gamma model.
+
+### Gamma prior
+
+:::::: my-theorem
+:::: my-theorem-header
+::: {#thm-005-gamma-prior}
+: Gamma and Exponential models
+:::
+::::
+
+::: my-theorem-container
+Let $\lambda$ be a continuous random variable which can take any
+positive value, i.e., $\lambda > 0$. Then the variability in $\lambda$
+might be well modeled by a Gamma model with
+`r glossary("Shape-Parameter", "shape hyperparameter")` $s > 0$ and
+`r glossary("Rate-Parameter", "rate hyperparameter")` $r > 0$:
+
+$$\lambda \sim \text{Gamma}(s, r)$$\
+The Gamma model is specified by continuous pdf
+
+$$
+f (\lambda) =  \frac{r^s}{\tau(s)}  \lambda^{s−1}e^{−r\lambda} \text{ for } \lambda > 0
+$$ {#eq-005-gamma-model}
+
+Further, the central tendency and variability in $\lambda$ are measured
+by:
+
+$$
+\begin{align*}
+E(\lambda) &=  \frac{s}{r} \\
+Mode(\lambda) &=  \frac{s−1}{r} \text{ for } s ≥ 1 \\
+Var(\lambda) &=  \frac{s}{r^2}
+\end{align*}
+$$ {#eq-005-gamma-central-measures}
+
+The `r glossary("Exponential-model", "Exponential model")` is a special
+case of the Gamma with shape $s = 1, \text{Gamma}(1, r)$:
+
+$$
+\lambda \sim \text{Exp}(r)
+$$
+:::
+::::::
+
+Notice that the Gamma model depends upon two hyperparameters, `r` and
+`s`. Assess your understanding of how these hyperparameters impact the
+Gamma model properties in the following quiz.
+
+::::::::: my-assessment
+:::: my-assessment-header
+::: {#cor-005-r-and-s-effects}
+: Impact of hyperparameters `r` and `s` in Gamma models
+:::
+::::
+
+:::::: my-assessment-container
+```{r}
+#| label: fig-005-different-gamma-models
+#| fig-cap: Gamma models with different hyperparameters. The dashed and solid vertical lines represent the modes and means, respectively.
+#| lst-label: lst-005-different-gamma-models
+#| lst-cap: Different Gamma models
+
+# Create data for all parameter combinations
+params <- tibble::tribble(
+  ~shape, ~rate,
+  1, 1,
+  2, 1,
+  4, 1,
+  1, 2,
+  2, 2,
+  4, 2
+) |>
+  dplyr::mutate(label = stringr::str_glue("Gamma({shape},{rate})"))
+
+# Generate data for each combination
+plot_data <- params |>
+  dplyr::rowwise() |>
+  dplyr::reframe(
+    tibble::tibble(
+      x = base::seq(0, 8, length.out = 200),
+      y = stats::dgamma(x, shape = shape, rate = rate),
+      label = label,
+      shape = shape,
+      rate = rate
+    )
+  )
+
+# Generate segment data for mean and mode
+segments_data <- params |>
+  dplyr::rowwise() |>
+  dplyr::reframe(
+    mean_val = shape / rate,
+    mode_val = (shape - 1) / rate,
+    tibble::tibble(
+      x = c(mean_val, mode_val),
+      xend = c(mean_val, mode_val),
+      y = 0,
+      yend = c(
+        stats::dgamma(mean_val, shape, rate),
+        stats::dgamma(mode_val, shape, rate)
+      ),
+      line_type = c("mean", "mode"),
+      label = label,
+      rate = rate
+    )
+  )
+
+# Create faceted plot
+plot_data |>
+  dplyr::arrange(rate) |>
+  dplyr::mutate(label = forcats::fct_inorder(label)) |>
+  ggplot2::ggplot(ggplot2::aes(x = x, y = y)) +
+  ggplot2::geom_line() +
+  ggplot2::geom_segment(
+    data = segments_data |> 
+      dplyr::arrange(rate) |>
+      dplyr::mutate(label = forcats::fct_inorder(label)),
+    ggplot2::aes(x = x, y = y, xend = xend, yend = yend, linetype = line_type),
+    color = "darkblue"
+  ) +
+  ggplot2::facet_wrap(~ label, ncol = 3) +
+  ggplot2::scale_x_continuous(breaks = base::seq(0, 8, 1), limits = c(0, 8)) +
+  ggplot2::scale_y_continuous(breaks = base::seq(0, 2, 0.5), limits = c(0, 2)) +
+  ggplot2::scale_linetype_manual(
+    values = c(mean = "solid", mode = "dashed"),
+    name = NULL
+  ) +
+  ggplot2::labs(
+    x = base::expression(lambda),
+    y = base::expression(paste("f(", lambda, ")"))
+  ) +
+  ggplot2::theme_minimal() +
+  ggplot2::theme(
+    legend.position = "bottom",
+    panel.spacing = grid::unit(1.5, "lines"),
+    strip.background = ggplot2::element_rect(fill = "gray90", color = "gray50"),
+    strip.text = ggplot2::element_text(face = "bold", size = 11)
+  )
+```
+
+@fig-005-different-gamma-models illustrates how different shape and rate
+hyperparameters impact the Gamma pdf in @eq-005-gamma-model. Based on
+these plots:
+
+1.  How would you describe the typical behavior of a
+    $\text{Gamma}(s, r)$ variable $\lambda$ when $s > r$ (e.g.,
+    $\text{Gamma}(2,1)$)?
+    `r mcq(c(answer = "Right-skewed with a mean greater than 1", "Right-skewed with a mean less than 1", "Symmetric with a mean around 1"))`
+2.  how would you describe the typical behavior of a
+    $\text{Gamma}(s, r)$ variable $\lambda$ when $s < r$ (e.g.,
+    $\text{Gamma}(1,2)$)?
+    `r mcq(c("Right-skewed with a mean greater than 1", answer =  "Right-skewed with a mean less than 1", "Symmetric with a mean around 1"))`
+
+::::: columns
+::: {.column width="50%"}
+```{r}
+#| label: fig-005-gamma-20-20
+#| fig-cap: $\text{Gamma}(20,20)$
+#| fig-height: 3
+#| code-fold: false
+
+my_plot_gamma(20, 20)
+```
+:::
+
+::: {.column width="50%"}
+```{r}
+#| label: fig-005-gamma-20-100
+#| fig-cap: $\text{Gamma}(20,100)$
+#| fig-height: 3
+#| code-fold: false
+
+my_plot_gamma(20, 100)
+```
+:::
+:::::
+
+3.  For which model is there greater variability in the plausible values
+    of $\lambda$, $\text{Gamma}(20,20)$ or $\text{Gamma}(20,100)$?
+    `r mcq(c( answer = "Gamma(20, 20)", "Gamma(20, 100)"))`
+::::::
+:::::::::
+
+::::: {#nte-005-shape-rate-hyperparameter .callout-note}
+###### Shape and Rate Hyperparameters
+
+::: {#big-text style="font-size: 150%"}
+**Shape Parameter**
+:::
+
+The shape parameter in the context of the gamma distribution is a key
+`r glossary("hyperparameter")` that controls the form or shape of the
+distribution. It is often denoted as $\alpha$ (alpha).
+
+-   A **higher shape** parameter ($\alpha$) results in a more **peaked
+    and right-skewed distribution**, indicating that events are **more
+    concentrated** around a specific value.
+-   A **lower shape** parameter leads to a **flatter, more spread-out
+    distribution**.
+
+In practical applications like modeling waiting times or right-skewed
+data (e.g., insurance claims, rainfall), **the shape parameter helps
+determine how the data is distributed**. For instance, in the gamma
+shape model, covariates influence the distribution through the shape
+parameter, allowing the variance to be directly proportional to the
+mean—making it useful for modeling data with increasing variability.
+
+::: {style="font-size: 150%"}
+**Rate Parameter**
+:::
+
+The rate hyperparameter in the gamma distribution, typically denoted as
+$\beta$ (beta), controls the scale of the distribution and is the
+**inverse of the scale parameter** (i.e., rate = 1/scale).
+
+-   A **higher rate** means events occur more frequently, leading to a
+    **narrower** and more **concentrated** distribution.
+-   A **lower rate** implies less frequent events, resulting in a
+    **broader** distribution.
+
+In applications like reliability analysis or queuing theory, **the rate
+parameter reflects the average occurrence rate of events per unit
+time**. For example, if modeling time between customer arrivals, a rate
+of $beta = 2$ means, on average, two customers arrive per time unit, and
+the expected waiting time follows a gamma distribution with this rate.
+:::::
+
+In general, @fig-005-different-gamma-models illustrates that
+$\lambda \sim \text{Gamma}(s, r)$ variables are positive and right
+skewed. Further, the general shape and rate of decrease in the skew are
+controlled by hyperparameters `s` and `r`. The quantitative measures of
+central tendency and variability in @eq-005-gamma-central-measures
+provide some insight. For example, notice that the mean of
+$\lambda, E(\lambda) = s/r$, is greater than $1$ when $s > r$ and less
+than $1$ when $s < r$. Further, as `s` increases relative to `r`, the
+skew in $\lambda$ decreases and the variability,
+$\text{Var}(\lambda) = s/r^2$, increases.
+
+Now that we have some intuition for how the $\text{Gamma}(s, r)$ model
+works, we can tune it to reflect our prior information about the daily
+rate of fraud risk phone calls $\lambda$. Recall our earlier assumption
+that $\lambda$ is about $5$, and most likely somewhere between $2$ and
+$7$. Our $\text{Gamma}(s, r)$ prior should have similar patterns. For
+example, we want to pick `s` and `r` for which $\lambda$ tends to be
+around $5$,
+
+$$E(\lambda) =  \frac{s}{r} \approx 5$$
+
+This can be achieved by setting `s` to be $5$ times `r`, $s = 5r$. Next
+we want to make sure that most values of our $\text{Gamma}(s, r)$ prior
+are between $2$ and $7$. Through some trial and error within these
+constraints, and plotting various Gamma models using
+`bayesrules::plot_gamma()`, we find that the $\text{Gamma}(10,2)$
+features closely match the central tendency *and* variability in our prior
+understanding (@fig-005-plot-gamma-10-2). Thus, a *reasonable* prior model for the daily rate of fraud risk phone calls is
+
+$$\lambda \sim \text{Gamma}(10, 2)$$
+
+with **prior pdf** $f (\lambda)$ following from plugging $s = 10$ and
+$r = 2$ into
+
+$$
+\begin{align*}
+f (\lambda) &=  \frac{r^s}{\tau(s)}  \lambda^{s−1}e^{−r\lambda} \text{ for } \lambda > 0 \\
+&= \frac{2^{10}}{\tau(10)}  \lambda^{10−1}e^{−2\lambda} \text{ for } \lambda > 0
+\end{align*}
+$$
+
+:::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-005-plot-gamma-10-2}
+: Plot the $\text{Gamma}(10, 2)$ prior
+:::
+::::
+
+::: my-r-code-container
+```{r}
+#| label: fig-005-plot-gamma-10-2
+#| fig-cap: The pdf of a $\text{Gamma}(10, 2)$ prior for $\lambda$, the daily rate of fraud risk calls.
+#| fig-height: 3
+
+bayesrules::plot_gamma(10, 2)
+```
+:::
+::::::
+
+::: {.callout-note #nte-005-plot-gamma-11-2}
+At first it seemed to me that $\text{Gamma}(11, 2)$ would have been a slightly better choice: It has its mode at exactly $5$ and it is similar spread out with a slightly bigger chance to get more values above $10$.
+
+:::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-005-plot-gamma-11-2}
+: Plot the $\text{Gamma}(11, 2)$ prior
+:::
+::::
+
+::: my-r-code-container
+```{r}
+#| label: fig-005-plot-gamma-11-2
+#| fig-cap: The pdf of a $\text{Gamma}(11, 2)$ prior for $\lambda$, the daily rate of fraud risk calls.
+#| fig-height: 3
+
+bayesrules::plot_gamma(11, 2)
+```
+:::
+::::::
+
+But in that case the mean would change to 5.5 ($E = s/r = 11/2 = 5.5$). It is better to take the mean as central tendency in a heavily skewed distribution because it would be a better measure to catch the typical property of the distribution than the mode.
 
 :::
+
+
+### Gamma-Poisson conjugacy
+
+#### Bayesian model
+
+As we discussed at the start of this chapter, conjugate families can
+come in handy. Fortunately for us, using a Gamma prior for a rate
+parameter $\lambda$ and a Poisson model for corresponding count data $Y$
+is another example of a conjugate family. This means that, *spoiler*,
+the posterior model for $\lambda$ will also have a Gamma model with
+*updated* parameters. We’ll state and prove this in the general setting
+before applying the results to our phone call situation.
+
+:::::: my-theorem
+:::: my-theorem-header
+::: {#thm-005-gamma-poisson-model}
+: The Gamma-Poisson Bayesian model
+:::
+::::
+
+::: my-theorem-container
+Let $\lambda > 0$ be an unknown rate parameter and
+$(Y_1, Y_2, . . . , Y_n)$ be an independent $\text{Pois}(\lambda)$
+sample. The Gamma-Poisson Bayesian model complements the Poisson
+structure of data $Y$ with a Gamma prior on $\lambda$:
+
+$$
+\begin{align*}
+Y_i \mid &\lambda \overset{\text{ind}}{\sim} \text{Pois}(\lambda) \\
+&\lambda \sim \text{Gamma}(s, r)
+\end{align*}
+$$
+
+Upon observing data $\overrightarrow{\rm y} = (y_1, y_2, . . . , y_n)$,
+the posterior model of $\lambda$ is also a Gamma with updated
+parameters:
+
+$$
+\lambda \mid \overrightarrow{\rm y} \sim \text{Gamma}(s + \sum y_i, r + n)
+$$ {#eq-005-gamma-poisson-model}
+:::
+::::::
+
+#### Prove conjugacy
+
+Let’s prove this result. In general, recall that the posterior pdf of
+$\lambda$ is proportional to the product of the prior pdf and likelihood
+function defined by @eq-005-gamma-model and @eq-005-poisson-likelihood-function, respectively:
+
+$$
+f (\lambda \mid \overrightarrow{\rm y}) \propto f (\lambda)L(\lambda \mid \overrightarrow{\rm y}) =  \frac{r^s}{\Gamma(s)}\lambda^{s−1}e^{−rλ} \cdot  \frac{\lambda^{\sum y_i} e{−n\lambda}} {\prod yi!} \text{ for } \lambda > 0
+$$ 
+Next, remember that any non-$\lambda$ multiplicative constant in the above equation can be “proportional-ed” out. Thus, boiling the prior pdf and likelihood function down to their kernels, we get
+
+$$
+\begin{align*}
+f (\lambda \mid \overrightarrow{\rm y}) &\propto \lambda^{s−1}e^{−r\lambda} \cdot \lambda^{\sum y_i} e^{−n\lambda} \\
+&= \lambda^{s+\sum y_i-1}e^{-(r+n)\lambda}
+\end{align*}
+$$ 
+
+where the final line follows by combining like terms. What we’re left with here is the *kernel* of the posterior pdf. This particular kernel corresponds to the pdf of a Gamma model in @eq-005-gamma-model, with shape parameter $s + \sum y_i$ and rate parameter $r + n$. Thus, we’ve proven that
+
+$$
+\lambda \mid \overrightarrow{\rm y} \sim \text{Gamma}(s + \sum y_i, r + n)
+$$ 
+
+
+#### Likelihood
+
+Let’s apply this result to our fraud risk calls. There we have a $\text{Gamma}(10,2)$ prior for $\lambda$, the daily rate of calls. Further, on four separate days in the second week of August, we received $\overrightarrow{\rm y} = (y_1, y_2, y_3, y_4) = (6, 2, 2, 1)$ such calls. Thus, we have a sample of $n = 4$ data points with a total of $11$ fraud risk calls and an *average* of $2.75$ phone calls per day:
+
+$$
+\sum_{i=1}^{4}y_i = 6 + 2 + 2 + 1 = 11 \text{ and } \overline{\rm y} = \frac{\sum_{i=1}^{4} y_i}{4} = 2.75
+$$
+Plugging this data into @eq-005-poisson-likelihood-function, the resulting Poisson likelihood function of $\lambda$ is
+
+$$
+L(\lambda \mid \overrightarrow{\rm y}) =  \frac{\lambda^{11}e^{−4λ}}{  6! \times 2! \times 2! \times× 1!} \propto \lambda^{11}e^{−4λ} \text { for } \lambda > 0
+$$
+
+We visualize a portion of $L(\lambda \mid \overrightarrow{\rm y})$ for $\lambda$ between $0$ and $10$ using the `bayesrules::plot_poisson_likelihood()` function. Here, `y` is the vector of data values and `lambda_upper_bound` is the maximum value of $\lambda$ to view on the x-axis. (Why can’t we visualize the whole likelihood? Because $\lambda \in (0, \infty)$ and this book would be pretty expensive if we had infinite pages.)
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-005-plot-poisson-likelihood-fraud-calls}
+: Plot Poisson likelihood of fraud calls
+::::::
+:::
+::::{.my-r-code-container}
+```{r}
+#| label: fig-005-plot-poisson-likelihood-fraud-calls
+#| fig-cap: The likelihood function of $\lambda$, the daily rate of fraud risk calls, given a four-day sample of phone call data.
+#| fig-height: 3
+
+bayesrules::plot_poisson_likelihood(c(6, 2, 2, 1), lambda_upper_bound = 10)
+```
+
 ::::
 :::::
 
 
+The punchline is this: Underlying *rates* $\lambda$ of between one to five fraud risk calls per day are consistent with our phone call data. And across this spectrum, rates near $2.75$ are the *most* compatible with this data. This makes sense. The Poisson data model assumes that $\lambda$ is the underlying average daily phone call count, $E(Y_i \mid \lambda) = \lambda$. As such, we’re *most* likely to observe a sample with an average daily phone call rate of $\overline{y} = 2.75$ when the underlying rate $\lambda$ is also $2.75$.
 
+Combining these observations with our $\text{Gamma}(10,2)$ prior model of $\lambda$, it follows from @eq-005-gamma-poisson-model that the posterior model of $\lambda$ is a Gamma with an updated shape parameter of $21 (s + \sum y_i = 10 + 11)$ and rate parameter of $6 (r + n = 2 + 4)$:
+
+$$
+\begin{align*}
+\lambda \mid \overrightarrow{\rm y} &\sim \text{Gamma}(s + \sum y_i, r + n) = \\
+&\sim \text{Gamma}(10 + 11, 2 + 4) = \\
+&\sim \text{Gamma}(21, 6)
+\end{align*}
+$$
+We can visualize the `r glossary("Priorx", "prior")` pdf, scaled `r glossary("Likelihood-Function", "likelihood function")`, and `r glossary("posteriorx", "posterior")` pdf for $\lambda$ all in a single plot with the `bayesrules::plot_gamma_poisson()` function. How magical. For this function to work, we must specify a few things: 
+
+- the prior `shape` hyperparameter and
+- the `rate` hyperparameter as well as the information from our data, 
+- the observed total number of phone calls `sum_y` ($\sum y_i$) and the 
+- the sample size `n`:
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-005-gamma-poisson-fraud-calls}
+: Gamma-Poisson model of fraud risk calls,
+::::::
+:::
+::::{.my-r-code-container}
+```{r}
+#| label: fig-005-gamma-poisson-fraud-calls
+#| fig-cap: The Gamma-Poisson model of $\lambda$, the daily rate of fraud risk calls.
+#| fig-height: 3
+
+bayesrules::plot_gamma_poisson(shape = 10, rate = 2, sum_y = 11, n = 4)
+```
+
+::::
+:::::
+
+
+#### Posterior
+
+Our posterior notion about the daily rate of fraud calls is, of course, a *compromise* between our vague prior and the observed phone call data. Since our prior notion was quite variable in comparison to the strength in our sample data, the posterior model of $\lambda$ is more in sync with the data. Specifically, utilizing the properties of the $\text{Gamma}(10,2)$ prior and $\text{Gamma}(21,6)$ posterior as defined by @eq-005-gamma-central-measures, notice that our posterior understanding of the typical daily rate of phone calls dropped from $5$ to $3.5$ per day:
+
+$$
+\text{E}(\lambda) =  \frac{10}{2} = 5 \text{ and } \text{E}(\lambda \mid \overrightarrow{\rm y}) =  \frac{21}{6} = 3.5
+$$
+Though a compromise between the prior mean and data mean, this posterior mean is *closer* to the data mean of $\overline{y} = 2.75$ calls per day.
+
+::: {.callout-tip #tip-005-posterior-between-prior-and-data}
+###### Posterior has to be between prior mean and data mean
+
+The posterior mean will always be between the prior mean and the data mean. If your posterior mean falls outside that range, it indicates that you made an error and should retrace some steps.
+:::
+
+Further, with the additional information about $\lambda$ from the data, the variability in our understanding of $\lambda$ drops by more than half, from a standard deviation of $1.581$ to $0.764$ calls per day:
+
+$$
+\text{SD}(\lambda) =  \sqrt{\frac{10}{2^2}} \approx 1.581 \text{ and } \text{SD}(\lambda \mid \overrightarrow{\rm y}) =  \sqrt\frac{21}{6^2} \approx  0.764.
+$$
+The convenient `bayesrules::summarize_gamma_poisson()` function , which uses the same arguments as `bayesrules::plot_gamma_poisson()`, helps us contrast the prior and posterior models and confirms the results above:
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-005-summarize-gamma-poisson-fraud-calls}
+: Summarize Gamma-Poisson model for fraud risk calls
+::::::
+:::
+::::{.my-r-code-container}
+```{r}
+#| label: tbl-005-summarize-gamma-poisson-fraud-calls
+#| tbl-cap: Summarize Gamma-Poisson model for fraud risk calls
+
+bayesrules::summarize_gamma_poisson(
+  shape = 10, 
+  rate = 2, 
+  sum_y = 11, 
+  n = 4) |> 
+  knitr::kable(digits = 4)
+```
+
+::::
+:::::
+
+
+## Normal-normal conjugate family
 
 
 ## Glossary Entries {.unnumbered}
@@ -43,7 +1041,7 @@ glossary_table()
 
 ## Session Info {.unnumbered}
 
-::: my-r-code
+::::: my-r-code
 ::: my-r-code-header
 Session Info
 :::
@@ -55,5 +1053,4 @@ Session Info
 sessioninfo::session_info()
 ```
 :::
-:::
-
+:::::

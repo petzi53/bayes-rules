@@ -1602,13 +1602,19 @@ $\text{Bin}(n, \pi)$ data model. Our work below will highlight that
 conjugacy simplifies the construction of the posterior, and thus can be
 a desirable property in Bayesian modeling.
 
-::: {#imp-003-conjugate-prior .callout-important}
-###### Conjugate Prior
-
+:::::{.my-experiment}
+:::{.my-experiment-header}
+:::::: {#def-003-conjugate-prior}
+: Conjugate Prior
+::::::
+:::
+::::{.my-experiment-container}
 We say that $f (\pi)$ is a conjugate prior for $L(\pi \mid y)$ if the
 posterior, $f (\pi \mid y) \propto f (\pi)L(\pi \mid y)$, is from the
 same model family as the prior.
-:::
+::::
+:::::
+
 
 The posterior construction for the general Beta-Binomial model is very
 similar to that of the election-specific model. First, the Beta prior

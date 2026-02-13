@@ -137,8 +137,8 @@ bul-cap-location: bottom
 language:
    crossref-cnj-title: "R Code"             # replaces "Conjecture"  num-r-code
    crossref-cor-title: "Quiz Yourself!"     # replaces "Corollary    num-assessment
-   crossref-def-title: "Experiment"         # replaces "Definition"  num-experiment
-   crossref-exm-title: "Code Collection"    # replaces  "Example"    num-code-collection
+   crossref-def-title: "Definition"         # remains  "Definition"  num-experiment
+   crossref-exm-title: "Code Collection"    # replaces "Example"     num-code-collection
    crossref-exr-title: "Exercise"           # remains  "Exercise"    num-exercise
    crossref-fig-title: "Figure"             # remains  "Figure"      fig
    crossref-lem-title: "Resource"           # replaces "Lemma"       num-ressource

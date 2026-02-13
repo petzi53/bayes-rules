@@ -15,6 +15,7 @@
 ## - my_pkgs_dl: Get number of downloads from RStudio CRAN Mirror
 ## - my_as_tibble_sf: Convert sf class to sf and tbl_df / tbl class
 ## - my_plot_beta: Plot a Beta Model for pi
+## - my_plot_gamma: Plot a Gamma Model for lambda
 
 ## glossary #####################################################
 library(glossary)
@@ -453,5 +454,64 @@ my_plot_beta <- function(alpha, beta,
   p
 }
 
+
+
+my_plot_gamma <- function (shape, rate, show_mean = FALSE, show_mode = FALSE,
+          show_legend = FALSE,
+          mean_color = "darkblue",
+          mode_color = "darkblue",
+          mean_linetype = "solid",
+          mode_linetype = "dashed")
+{
+  x_min <- qgamma(1e-25, shape, rate)
+  x_max <- qgamma(0.99999, shape, rate)
+
+  # Add small buffer to x_min to prevent clipping at boundary
+  x_range <- x_max - x_min
+  x_min_plot <- x_min - 0.01 * x_range
+
+  p <- ggplot2::ggplot(data = data.frame(x = c(x_min, x_max)), ggplot2::aes(x)) +
+    ggplot2::stat_function(fun = dgamma, n = 101, args = list(shape = shape,
+                                                              rate = rate)) +
+    ggplot2::labs(x = expression(lambda), y = expression(paste("f(", lambda, ")")))
+
+  # Create dataframe for segments
+  segments_df <- data.frame()
+
+  # Add mean line if requested
+  if (show_mean == TRUE) {
+    mean_val <- shape/rate
+    segments_df <- rbind(segments_df,
+                         data.frame(x = mean_val, y = 0, xend = mean_val,
+                                    yend = dgamma(mean_val, shape, rate),
+                                    label = "mean", color = mean_color, linetype = mean_linetype))
+  }
+
+  # Add mode line if requested
+  if (show_mode == TRUE) {
+    if (shape < 1) {
+      stop("In order to plot the mode the shape parameter must be greater than\n           or equal to 1.")
+    }
+    mode_val <- (shape - 1)/rate
+    mode_yend <- dgamma(mode_val, shape, rate)
+
+    segments_df <- rbind(segments_df,
+                         data.frame(x = mode_val, y = 0, xend = mode_val,
+                                    yend = mode_yend,
+                                    label = "mode", color = mode_color, linetype = mode_linetype))
+  }
+
+  # Add segments if any exist
+  if (nrow(segments_df) > 0) {
+    p <- p + ggplot2::geom_segment(data = segments_df,
+                                   ggplot2::aes(x = x, y = y, xend = xend, yend = yend,
+                                                color = label, linetype = label),
+                                   show.legend = show_legend) +
+      ggplot2::scale_color_manual(values = setNames(segments_df$color, segments_df$label)) +
+      ggplot2::scale_linetype_manual(values = setNames(segments_df$linetype, segments_df$label))
+  }
+
+  p
+}
 ## END
 
