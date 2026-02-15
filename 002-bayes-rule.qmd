@@ -2038,10 +2038,8 @@ Specifically, our formal calculations below will verify that Kasparov’s chance
 #| lst-cap: The prior (left), likelihood (middle), and posterior (right) models of $\pi$.
 
 
-library(tidyverse)
-
 # Create data with pi (Kasparov's winning probability per game)
-chess_data <- tibble(
+chess_data <- tibble::tibble(
   pi = c(0.2, 0.5, 0.8),
   prior = c(0.10, 0.25, 0.65),
   likelihood = c(0.393216, 0.09375, 0.001536)
@@ -2051,7 +2049,7 @@ chess_data <- tibble(
 normalizing_constant <- 0.0637
 
 chess_posterior <- chess_data |>
-  mutate(
+  dplyr::mutate(
     # Joint probability = Prior × Likelihood
     joint = prior * likelihood,
     # Posterior = Joint / Normalizing Constant
@@ -2061,17 +2059,17 @@ chess_posterior <- chess_data |>
 
 # Create long format data for all three models
 chess_long <- chess_posterior |>
-  select(pi, prior, likelihood, posterior) |>
-  pivot_longer(cols = c(prior, likelihood, posterior), 
+  dplyr::select(pi, prior, likelihood, posterior) |>
+  tidyr::pivot_longer(cols = c(prior, likelihood, posterior), 
                names_to = "model", 
                values_to = "probability") |>
-  mutate(model = factor(model, levels = c("prior", "likelihood", "posterior")))
+  dplyr::mutate(model = factor(model, levels = c("prior", "likelihood", "posterior")))
 
 # Create three separate lollipop graphs side by side with same y-scale
-ggplot(chess_long, ggplot2::aes(x = factor(pi), y = probability, color = model)) +
-  geom_point(size = 4, shape = 21, fill = "white") +
-  geom_segment(ggplot2::aes(xend = factor(pi), yend = 0), color = "black", alpha = 0.7) +
-  geom_text(ggplot2::aes(label = scales::percent(probability, 1)), 
+ggplot2::ggplot(chess_long, ggplot2::aes(x = factor(pi), y = probability, color = model)) +
+  ggplot2::geom_point(size = 4, shape = 21, fill = "white") +
+  ggplot2::geom_segment(ggplot2::aes(xend = factor(pi), yend = 0), color = "black", alpha = 0.7) +
+  ggplot2::geom_text(ggplot2::aes(label = scales::percent(probability, 1)), 
             vjust = -0.5, color = "black", size = 4) +
   ggplot2::labs(
     title = "Bayesian Update: Kasparov's Winning Probability per Game",
