@@ -46,6 +46,12 @@ This is the companion package to this book text. I will therefore explain the mo
     - `plot_poisson_likelihood()`: Plots the Poisson likelihood function for variable $\lambda$ given a vector of Poisson counts `y`.
     -`plot_gamma_poisson()`: Given information on the prior (`shape` and `rate`) and data (the sample size `n` and `sum_y`), this function produces a plot of any combination of the corresponding prior pdf, scaled likelihood function, and posterior pdf. All three are included by default.
     - `summarize_gamma_poisson()`: Given information on the prior (`shape` and `rate`) and data (the sample size `n` and `sum_y`), this function summarizes the mean, mode, and variance of the prior and posterior Gamma models of $\lambda$.
+    - `plot_normal()`: Plots the probability density function (pdf) for a Normal(mean, $sd^2$) model of variable 
+    - `plot_normal_likelihood()`: Plots the Normal likelihood function for variable 
+$\mu$ given a vector of Normal data $y$.
+    - `plot_normal_normal()`: Given information on the prior (mean and sd) and data (the sample size n, mean y_bar, and standard deviation sigma), this function produces a plot of any combination of the corresponding prior pdf, scaled likelihood function, and posterior pdf.
+    - `summarize_normal_normal()`: Given information on the prior (`mean` and `sd`) and data (the sample size `n`, mean `y_bar`, and standard deviation `sigma`), this function summarizes the mean, mode, and variance of the prior and posterior Normal models of $\mu$.
+
 ::::
 ::::::
 
