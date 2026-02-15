@@ -232,7 +232,7 @@ received per day. **Prior** to collecting any data, the author’s guess
 was that this rate was most likely around $5$ calls per day, but could
 also reasonably range between $2$ and $7$ calls per day. To learn more,
 they planned to record the number of fraud risk phone calls on each of
-$n$ sampled days, $(Y1, Y2, . . . , Yn)$.
+$n$ sampled days, $(Y_1, Y_2, . . . , Y_n)$.
 
 In moving forward with our investigation of $\lambda$, it’s important to
 recognize that it will *not* fit into the familiar Beta-Binomial
@@ -243,13 +243,15 @@ framework.
     value (e.g., we can’t receive -7 calls per day). Thus, a Beta prior
     for $\lambda$ won’t work.
 -   Further, each data point $Y_{i}$ is a *count* that can technically
-    take on any non-negative integer in ${0, 1, 2, . . .}$, and thus is
-    *not* limited by some number of trials $n$ as is true for the
+    take on any non-negative integer in $\{0, 1, 2, . . .\}$, and thus
+    is *not* limited by some number of trials $n$ as is true for the
     Binomial. Not to fret. Our study of $\lambda$ will introduce us to a
     *new* conjugate family, the
     `r glossary("Gamma-Poisson model", "Gamma-Poisson")`.
 
 ### The Poisson data model
+
+#### Poisson formulas
 
 The *spirit* of our analysis starts with a prior understanding of
 $\lambda$, the daily rate of fraud risk phone calls. Yet before choosing
@@ -273,9 +275,9 @@ form below, makes a reasonable candidate for modeling this data.
 ::::
 
 ::: my-theorem-container
-Let discrete random variable $Y$ be the number of independent events
+Let discrete random variable $Y$ be the *number of independent events*
 that occur in a fixed amount of time or space, where $\lambda > 0$ is
-the rate at which these events occur. Then the dependence of $Y$ on
+the rate at which these events occur. Then the *dependence* of $Y$ on
 `r glossary("parameter_x", "parameter")` $\lambda$ can be modeled by the
 Poisson. In mathematical notation:
 
@@ -292,10 +294,12 @@ $y, \sum_{y=0}^{\infty} f (y \mid \lambda) = 1$. Further, a Poisson
 random variable $Y$ has equal mean and variance,
 
 $$
-E(Y \mid \lambda) = Var(Y \mid \lambda) = \lambda
+E(Y \mid \lambda) = \text{Var}(Y \mid \lambda) = \lambda
 $$ {#eq-005-poisson-equal-mean-variance}
 :::
 ::::::
+
+#### Poisson illustrations
 
 Figure 5.3 illustrates the Poisson pmf @eq-005-poisson-model under
 different rate parameters $\lambda$. In general, as the rate of events
@@ -350,9 +354,9 @@ ggplot2::ggplot(data, ggplot2::aes(x = x, y = probability)) +
 ```
 
 Let $(Y_1, Y_2, . . . , Y_n)$ denote the number of fraud risk calls we
-observed on each of the n days in our data collection period. We assume
-that the daily number of calls might differ from day to day and can be
-independently modeled by the Poisson. Thus, on each day $i$,
+observed on each of the $n$ days in our data collection period. We
+assume that the daily number of calls might differ from day to day and
+can be **independently modeled** by the Poisson. Thus, on each day $i$,
 
 $$Y \mid \lambda \sim Pois(\lambda)$$
 
@@ -361,6 +365,8 @@ with unique pmf
 $$
 f (y \mid \lambda) =  \frac{\lambda^y e^{−\lambda}}{y!} \text{ for } y \in \{0, 1, 2, . . .\}
 $$
+
+#### Joint pmf
 
 Yet in weighing the evidence of the phone call data, we won’t want to
 analyze each *individual* day. Rather, we’ll need to process the
@@ -418,7 +424,9 @@ f (\overrightarrow{\rm y} \mid \lambda) &= \frac{\lambda^{y_1} e^{−λ}}{y_1!} 
 &= \frac{[\lambda^{y_1} \lambda^{y_2} \cdots \lambda^{y_n}][e^{-\lambda} e^{-\lambda} \cdots e^{-\lambda}]}{y_1! y_2! \cdots y_n!} \\
 &= \frac{\lambda^{\sum y_i }e^{-n\lambda}}{\prod_{i = 1}^n y_i!}
 \end{align*}
-$$ where we’ve simplified the products in the final line by appealing to
+$$
+
+where we’ve simplified the products in the final line by appealing to
 the properties below.
 
 :::::: my-theorem
@@ -439,6 +447,8 @@ x^ax^b = x^{a+b} \text{ and } x^ay^a = (xy)^a
 $$ {#eq-005-simplfiying-products}
 :::
 ::::::
+
+#### Likelihood function
 
 Once we observe actual sample data, we can flip this joint pmf on its
 head to define the
@@ -478,7 +488,7 @@ continuous and positive support, i.e., be defined on $\lambda > 0$.
 There are several named and studied probability models with this
 property, including the `r glossary("F-Distribution-Model", "F")` ,
 `r glossary("Weibull model", "Weibull")`, and
-`r glossary("Gamma model", "Gamma")`. We don’t dig into all of these in
+`r glossary("Gamma-Model", "Gamma")`. We don’t dig into all of these in
 this book. Rather, to make the $\lambda$ posterior model construction
 more straightforward and convenient, we’ll focus on identifying a
 `r glossary("conjugate prior")` model.
@@ -522,8 +532,8 @@ data has a Poisson model. You might have guessed this from the section
 title (clever). You might also have guessed this from the shared
 features of the Poisson likelihood function
 $L (\overrightarrow{\rm y} \mid \lambda)$ in
-@eq-005-poisson-likelihood-function and the Gamma pdf $f (\lambda)$. Both
-are proportional to
+@eq-005-poisson-likelihood-function and the Gamma pdf $f (\lambda)$.
+Both are proportional to
 
 $$\lambda^∎e^{−∎\lambda}$$\
 with differing ∎. In fact, we’ll prove that *combining* the prior and
@@ -532,6 +542,8 @@ the posterior will be of the same Gamma model family as the prior.
 First, let’s learn more about the Gamma model.
 
 ### Gamma prior
+
+#### Gamma formulas
 
 :::::: my-theorem
 :::: my-theorem-header
@@ -575,22 +587,19 @@ $$
 ::::::
 
 Notice that the Gamma model depends upon two hyperparameters, `r` and
-`s`. Assess your understanding of how these hyperparameters impact the
-Gamma model properties in the following quiz.
+`s`.
 
-::::::::: my-assessment
-:::: my-assessment-header
-::: {#cor-005-r-and-s-effects}
+:::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-005-r-and-s-effects}
 : Impact of hyperparameters `r` and `s` in Gamma models
 :::
 ::::
 
-:::::: my-assessment-container
+::: my-r-code-container
 ```{r}
 #| label: fig-005-different-gamma-models
 #| fig-cap: Gamma models with different hyperparameters. The dashed and solid vertical lines represent the modes and means, respectively.
-#| lst-label: lst-005-different-gamma-models
-#| lst-cap: Different Gamma models
 
 # Create data for all parameter combinations
 params <- tibble::tribble(
@@ -669,7 +678,22 @@ plot_data |>
     strip.text = ggplot2::element_text(face = "bold", size = 11)
   )
 ```
+:::
+::::::
 
+#### Gamma illustrations
+
+Assess your understanding of how these hyperparameters impact the Gamma
+model properties in the following quiz.
+
+::::::::: my-assessment
+:::: my-assessment-header
+::: {#cor-005-r-and-s-effects}
+: Impact of hyperparameters `r` and `s` in Gamma models
+:::
+::::
+
+:::::: my-assessment-container
 @fig-005-different-gamma-models illustrates how different shape and rate
 hyperparameters impact the Gamma pdf in @eq-005-gamma-model. Based on
 these plots:
@@ -716,7 +740,7 @@ my_plot_gamma(20, 100)
 ::::: {#nte-005-shape-rate-hyperparameter .callout-note}
 ###### Shape and Rate Hyperparameters
 
-::: {#big-text style="font-size: 150%"}
+::: {#big-text style="font-size: 125%"}
 **Shape Parameter**
 :::
 
@@ -737,7 +761,7 @@ shape model, covariates influence the distribution through the shape
 parameter, allowing the variance to be directly proportional to the
 mean—making it useful for modeling data with increasing variability.
 
-::: {style="font-size: 150%"}
+::: {style="font-size: 125%"}
 **Rate Parameter**
 :::
 
@@ -768,6 +792,8 @@ than $1$ when $s < r$. Further, as `s` increases relative to `r`, the
 skew in $\lambda$ decreases and the variability,
 $\text{Var}(\lambda) = s/r^2$, increases.
 
+#### Tuning Gamma prior
+
 Now that we have some intuition for how the $\text{Gamma}(s, r)$ model
 works, we can tune it to reflect our prior information about the daily
 rate of fraud risk phone calls $\lambda$. Recall our earlier assumption
@@ -783,8 +809,9 @@ we want to make sure that most values of our $\text{Gamma}(s, r)$ prior
 are between $2$ and $7$. Through some trial and error within these
 constraints, and plotting various Gamma models using
 `bayesrules::plot_gamma()`, we find that the $\text{Gamma}(10,2)$
-features closely match the central tendency *and* variability in our prior
-understanding (@fig-005-plot-gamma-10-2). Thus, a *reasonable* prior model for the daily rate of fraud risk phone calls is
+features closely match the central tendency *and* variability in our
+prior understanding (@fig-005-plot-gamma-10-2). Thus, a *reasonable*
+prior model for the daily rate of fraud risk phone calls is
 
 $$\lambda \sim \text{Gamma}(10, 2)$$
 
@@ -816,8 +843,10 @@ bayesrules::plot_gamma(10, 2)
 :::
 ::::::
 
-::: {.callout-note #nte-005-plot-gamma-11-2}
-At first it seemed to me that $\text{Gamma}(11, 2)$ would have been a slightly better choice: It has its mode at exactly $5$ and it is similar spread out with a slightly bigger chance to get more values above $10$.
+::::::: {#nte-005-plot-gamma-11-2 .callout-note}
+At first it seemed to me that $\text{Gamma}(11, 2)$ would have been a
+slightly better choice: It has its mode at exactly $5$ and it is similar
+spread out with a slightly bigger chance to get more values above $10$.
 
 :::::: my-r-code
 :::: my-r-code-header
@@ -837,10 +866,11 @@ bayesrules::plot_gamma(11, 2)
 :::
 ::::::
 
-But in that case the mean would change to 5.5 ($E = s/r = 11/2 = 5.5$). It is better to take the mean as central tendency in a heavily skewed distribution because it would be a better measure to catch the typical property of the distribution than the mode.
-
-:::
-
+But in that case the mean would change to 5.5 ($E = s/r = 11/2 = 5.5$).
+It is better to take the mean as central tendency in a heavily skewed
+distribution because it would be a better measure to catch the typical
+property of the distribution than the mode.
+:::::::
 
 ### Gamma-Poisson conjugacy
 
@@ -888,49 +918,66 @@ $$ {#eq-005-gamma-poisson-model}
 
 Let’s prove this result. In general, recall that the posterior pdf of
 $\lambda$ is proportional to the product of the prior pdf and likelihood
-function defined by @eq-005-gamma-model and @eq-005-poisson-likelihood-function, respectively:
+function defined by @eq-005-gamma-model and
+@eq-005-poisson-likelihood-function, respectively:
 
 $$
 f (\lambda \mid \overrightarrow{\rm y}) \propto f (\lambda)L(\lambda \mid \overrightarrow{\rm y}) =  \frac{r^s}{\Gamma(s)}\lambda^{s−1}e^{−rλ} \cdot  \frac{\lambda^{\sum y_i} e{−n\lambda}} {\prod yi!} \text{ for } \lambda > 0
-$$ 
-Next, remember that any non-$\lambda$ multiplicative constant in the above equation can be “proportional-ed” out. Thus, boiling the prior pdf and likelihood function down to their kernels, we get
+$$ Next, remember that any non-$\lambda$ multiplicative constant in the
+above equation can be “proportional-ed” out. Thus, boiling the prior pdf
+and likelihood function down to their kernels, we get
 
 $$
 \begin{align*}
 f (\lambda \mid \overrightarrow{\rm y}) &\propto \lambda^{s−1}e^{−r\lambda} \cdot \lambda^{\sum y_i} e^{−n\lambda} \\
 &= \lambda^{s+\sum y_i-1}e^{-(r+n)\lambda}
 \end{align*}
-$$ 
+$$
 
-where the final line follows by combining like terms. What we’re left with here is the *kernel* of the posterior pdf. This particular kernel corresponds to the pdf of a Gamma model in @eq-005-gamma-model, with shape parameter $s + \sum y_i$ and rate parameter $r + n$. Thus, we’ve proven that
+where the final line follows by combining like terms. What we’re left
+with here is the *kernel* of the posterior pdf. This particular kernel
+corresponds to the pdf of a Gamma model in @eq-005-gamma-model, with
+shape parameter $s + \sum y_i$ and rate parameter $r + n$. Thus, we’ve
+proven that
 
 $$
 \lambda \mid \overrightarrow{\rm y} \sim \text{Gamma}(s + \sum y_i, r + n)
-$$ 
-
+$$
 
 #### Likelihood
 
-Let’s apply this result to our fraud risk calls. There we have a $\text{Gamma}(10,2)$ prior for $\lambda$, the daily rate of calls. Further, on four separate days in the second week of August, we received $\overrightarrow{\rm y} = (y_1, y_2, y_3, y_4) = (6, 2, 2, 1)$ such calls. Thus, we have a sample of $n = 4$ data points with a total of $11$ fraud risk calls and an *average* of $2.75$ phone calls per day:
+Let’s apply this result to our fraud risk calls. There we have a
+$\text{Gamma}(10,2)$ prior for $\lambda$, the daily rate of calls.
+Further, on four separate days in the second week of August, we received
+$\overrightarrow{\rm y} = (y_1, y_2, y_3, y_4) = (6, 2, 2, 1)$ such
+calls. Thus, we have a sample of $n = 4$ data points with a total of
+$11$ fraud risk calls and an *average* of $2.75$ phone calls per day:
 
 $$
 \sum_{i=1}^{4}y_i = 6 + 2 + 2 + 1 = 11 \text{ and } \overline{\rm y} = \frac{\sum_{i=1}^{4} y_i}{4} = 2.75
-$$
-Plugging this data into @eq-005-poisson-likelihood-function, the resulting Poisson likelihood function of $\lambda$ is
+$$ Plugging this data into @eq-005-poisson-likelihood-function, the
+resulting Poisson likelihood function of $\lambda$ is
 
 $$
 L(\lambda \mid \overrightarrow{\rm y}) =  \frac{\lambda^{11}e^{−4λ}}{  6! \times 2! \times 2! \times× 1!} \propto \lambda^{11}e^{−4λ} \text { for } \lambda > 0
 $$
 
-We visualize a portion of $L(\lambda \mid \overrightarrow{\rm y})$ for $\lambda$ between $0$ and $10$ using the `bayesrules::plot_poisson_likelihood()` function. Here, `y` is the vector of data values and `lambda_upper_bound` is the maximum value of $\lambda$ to view on the x-axis. (Why can’t we visualize the whole likelihood? Because $\lambda \in (0, \infty)$ and this book would be pretty expensive if we had infinite pages.)
+We visualize a portion of $L(\lambda \mid \overrightarrow{\rm y})$ for
+$\lambda$ between $0$ and $10$ using the
+`bayesrules::plot_poisson_likelihood()` function. Here, `y` is the
+vector of data values and `lambda_upper_bound` is the maximum value of
+$\lambda$ to view on the x-axis. (Why can’t we visualize the whole
+likelihood? Because $\lambda \in (0, \infty)$ and this book would be
+pretty expensive if we had infinite pages.)
 
-:::::{.my-r-code}
-:::{.my-r-code-header}
-:::::: {#cnj-005-plot-poisson-likelihood-fraud-calls}
+:::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-005-plot-poisson-likelihood-fraud-calls}
 : Plot Poisson likelihood of fraud calls
-::::::
 :::
-::::{.my-r-code-container}
+::::
+
+::: my-r-code-container
 ```{r}
 #| label: fig-005-plot-poisson-likelihood-fraud-calls
 #| fig-cap: The likelihood function of $\lambda$, the daily rate of fraud risk calls, given a four-day sample of phone call data.
@@ -938,14 +985,23 @@ We visualize a portion of $L(\lambda \mid \overrightarrow{\rm y})$ for $\lambda$
 
 bayesrules::plot_poisson_likelihood(c(6, 2, 2, 1), lambda_upper_bound = 10)
 ```
+:::
+::::::
 
-::::
-:::::
+The punchline is this: Underlying *rates* $\lambda$ of between one to
+five fraud risk calls per day are consistent with our phone call data.
+And across this spectrum, rates near $2.75$ are the *most* compatible
+with this data. This makes sense. The Poisson data model assumes that
+$\lambda$ is the underlying average daily phone call count,
+$E(Y_i \mid \lambda) = \lambda$. As such, we’re *most* likely to observe
+a sample with an average daily phone call rate of $\overline{y} = 2.75$
+when the underlying rate $\lambda$ is also $2.75$.
 
-
-The punchline is this: Underlying *rates* $\lambda$ of between one to five fraud risk calls per day are consistent with our phone call data. And across this spectrum, rates near $2.75$ are the *most* compatible with this data. This makes sense. The Poisson data model assumes that $\lambda$ is the underlying average daily phone call count, $E(Y_i \mid \lambda) = \lambda$. As such, we’re *most* likely to observe a sample with an average daily phone call rate of $\overline{y} = 2.75$ when the underlying rate $\lambda$ is also $2.75$.
-
-Combining these observations with our $\text{Gamma}(10,2)$ prior model of $\lambda$, it follows from @eq-005-gamma-poisson-model that the posterior model of $\lambda$ is a Gamma with an updated shape parameter of $21 (s + \sum y_i = 10 + 11)$ and rate parameter of $6 (r + n = 2 + 4)$:
+Combining these observations with our $\text{Gamma}(10,2)$ prior model
+of $\lambda$, it follows from @eq-005-gamma-poisson-model that the
+posterior model of $\lambda$ is a Gamma with an updated shape parameter
+of $21 (s + \sum y_i = 10 + 11)$ and rate parameter of
+$6 (r + n = 2 + 4)$:
 
 $$
 \begin{align*}
@@ -953,21 +1009,26 @@ $$
 &\sim \text{Gamma}(10 + 11, 2 + 4) = \\
 &\sim \text{Gamma}(21, 6)
 \end{align*}
-$$
-We can visualize the `r glossary("Priorx", "prior")` pdf, scaled `r glossary("Likelihood-Function", "likelihood function")`, and `r glossary("posteriorx", "posterior")` pdf for $\lambda$ all in a single plot with the `bayesrules::plot_gamma_poisson()` function. How magical. For this function to work, we must specify a few things: 
+$$ We can visualize the `r glossary("Priorx", "prior")` pdf, scaled
+`r glossary("Likelihood-Function", "likelihood function")`, and
+`r glossary("posteriorx", "posterior")` pdf for $\lambda$ all in a
+single plot with the `bayesrules::plot_gamma_poisson()` function. How
+magical. For this function to work, we must specify a few things:
 
-- the prior `shape` hyperparameter and
-- the `rate` hyperparameter as well as the information from our data, 
-- the observed total number of phone calls `sum_y` ($\sum y_i$) and the 
-- the sample size `n`:
+-   the prior `shape` hyperparameter and
+-   the `rate` hyperparameter as well as the information from our data,
+-   the observed total number of phone calls `sum_y` ($\sum y_i$) and
+    the
+-   the sample size `n`:
 
-:::::{.my-r-code}
-:::{.my-r-code-header}
-:::::: {#cnj-005-gamma-poisson-fraud-calls}
+:::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-005-gamma-poisson-fraud-calls}
 : Gamma-Poisson model of fraud risk calls,
-::::::
 :::
-::::{.my-r-code-container}
+::::
+
+::: my-r-code-container
 ```{r}
 #| label: fig-005-gamma-poisson-fraud-calls
 #| fig-cap: The Gamma-Poisson model of $\lambda$, the daily rate of fraud risk calls.
@@ -975,40 +1036,54 @@ We can visualize the `r glossary("Priorx", "prior")` pdf, scaled `r glossary("Li
 
 bayesrules::plot_gamma_poisson(shape = 10, rate = 2, sum_y = 11, n = 4)
 ```
-
-::::
-:::::
-
+:::
+::::::
 
 #### Posterior
 
-Our posterior notion about the daily rate of fraud calls is, of course, a *compromise* between our vague prior and the observed phone call data. Since our prior notion was quite variable in comparison to the strength in our sample data, the posterior model of $\lambda$ is more in sync with the data. Specifically, utilizing the properties of the $\text{Gamma}(10,2)$ prior and $\text{Gamma}(21,6)$ posterior as defined by @eq-005-gamma-central-measures, notice that our posterior understanding of the typical daily rate of phone calls dropped from $5$ to $3.5$ per day:
+Our posterior notion about the daily rate of fraud calls is, of course,
+a *compromise* between our vague prior and the observed phone call data.
+Since our prior notion was quite variable in comparison to the strength
+in our sample data, the posterior model of $\lambda$ is more in sync
+with the data. Specifically, utilizing the properties of the
+$\text{Gamma}(10,2)$ prior and $\text{Gamma}(21,6)$ posterior as defined
+by @eq-005-gamma-central-measures, notice that our posterior
+understanding of the typical daily rate of phone calls dropped from $5$
+to $3.5$ per day:
 
 $$
 \text{E}(\lambda) =  \frac{10}{2} = 5 \text{ and } \text{E}(\lambda \mid \overrightarrow{\rm y}) =  \frac{21}{6} = 3.5
-$$
-Though a compromise between the prior mean and data mean, this posterior mean is *closer* to the data mean of $\overline{y} = 2.75$ calls per day.
+$$ Though a compromise between the prior mean and data mean, this
+posterior mean is *closer* to the data mean of $\overline{y} = 2.75$
+calls per day.
 
-::: {.callout-tip #tip-005-posterior-between-prior-and-data}
+::: {#tip-005-posterior-between-prior-and-data .callout-tip}
 ###### Posterior has to be between prior mean and data mean
 
-The posterior mean will always be between the prior mean and the data mean. If your posterior mean falls outside that range, it indicates that you made an error and should retrace some steps.
+The posterior mean will always be between the prior mean and the data
+mean. If your posterior mean falls outside that range, it indicates that
+you made an error and should retrace some steps.
 :::
 
-Further, with the additional information about $\lambda$ from the data, the variability in our understanding of $\lambda$ drops by more than half, from a standard deviation of $1.581$ to $0.764$ calls per day:
+Further, with the additional information about $\lambda$ from the data,
+the variability in our understanding of $\lambda$ drops by more than
+half, from a standard deviation of $1.581$ to $0.764$ calls per day:
 
 $$
 \text{SD}(\lambda) =  \sqrt{\frac{10}{2^2}} \approx 1.581 \text{ and } \text{SD}(\lambda \mid \overrightarrow{\rm y}) =  \sqrt\frac{21}{6^2} \approx  0.764.
-$$
-The convenient `bayesrules::summarize_gamma_poisson()` function , which uses the same arguments as `bayesrules::plot_gamma_poisson()`, helps us contrast the prior and posterior models and confirms the results above:
+$$ The convenient `bayesrules::summarize_gamma_poisson()` function ,
+which uses the same arguments as `bayesrules::plot_gamma_poisson()`,
+helps us contrast the prior and posterior models and confirms the
+results above:
 
-:::::{.my-r-code}
-:::{.my-r-code-header}
-:::::: {#cnj-005-summarize-gamma-poisson-fraud-calls}
+:::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-005-summarize-gamma-poisson-fraud-calls}
 : Summarize Gamma-Poisson model for fraud risk calls
-::::::
 :::
-::::{.my-r-code-container}
+::::
+
+::: my-r-code-container
 ```{r}
 #| label: tbl-005-summarize-gamma-poisson-fraud-calls
 #| tbl-cap: Summarize Gamma-Poisson model for fraud risk calls
@@ -1020,12 +1095,989 @@ bayesrules::summarize_gamma_poisson(
   n = 4) |> 
   knitr::kable(digits = 4)
 ```
+:::
+::::::
+
+## Normal-normal conjugate family
+
+We now have two conjugate families in our toolkit: the Beta-Binomial and
+the Gamma-Poisson. But many more conjugate families exist!
+
+:::::: my-resource
+:::: my-resource-header
+::: {#lem-005-prior-compendium}
+: Prior Compendium
+:::
+::::
+
+::: my-resource-container
+Fink, D. (1997). A Compendium of Conjugate Priors. 47 pages.
+<https://www.johndcook.com/CompendiumOfConjugatePriors.pdf>
+
+This report reviews conjugate priors and priors closed under sampling
+for a variety of data generating processes where the prior distributions
+are univariate, bivariate, and multivariate. The effects of
+transformations on conjugate prior relationships are considered and
+cases where conjugate prior relationships can be applied under
+transformations are identified Univariate and bivariate prior
+relationships are verified using Monte Carlo methods. [@fink-1997]
+:::
+::::::
+
+It’s impossible to cover them all, but there is a third conjugate family
+that’s especially helpful to know: the
+`r glossary("Normal-Normal conjugate family", "Normal-Normal")`.
+
+Consider a data story. As scientists learn more about brain health, the
+dangers of concussions (hence of activities in which participants
+sustain repeated concussions) are gaining greater attention
+[@bachynski-2019]. Among all people who have a history of concussions,
+we are interested in $\mu$, the average volume (in cubic centimeters) of
+a specific part of the brain: the hippocampus. Though we don’t have
+prior information about this group in particular,
+[Wikipedia](https://en.wikipedia.org/wiki/Hippocampus) tells us that
+among the general population of human adults, both halves of the
+hippocampus have a volume between 3.0 and 3.5 cubic centimeters. Thus,
+the *total* hippocampal volume of *both* sides of the brain is between 6
+and 7 $\text{cm}^3$. Using this as a starting point, we’ll assume that
+the mean hippocampal volume among people with a history of concussions,
+$\mu$, is also somewhere between 6 and 7 $\text{cm}^3$, with an average
+of 6.5. We’ll balance this prior understanding with data on the
+hippocampal volumes of $n = 25$ subjects, $(Y_1, Y_2, . . . , Y_n)$,
+using the **Normal-Normal Bayesian model**.
+
+### The Normal data model
+
+#### Normal formulas
+
+Again, the spirit of our Bayesian analysis starts with our prior
+understanding of $\mu$. Yet the specification of an appropriate prior
+model structure for $\mu$ (which we can then tune) can be guided by
+first identifying a model for the dependence of our data $Y_i$ upon
+$\mu$. Since hippocampal volumes $Y_i$ are measured on a continuous
+scale, there are many possible common models of the variability in $Y_i$
+from person to person: `r glossary("Beta-Model", "Beta")`,
+`r glossary("Exponential-Model", "Exponential")`,
+`r glossary("Gamma-Model", "Gamma")`,
+`r glossary("Normal-Model", "Normal")`,
+`r glossary("F-Distribution-Model", "F")`, etc. From this list, we can
+immediately eliminate the Beta model – it assumes that $Y_i \in [0, 1]$,
+whereas hippocampal volumes tend to be around 6.5 $\text{cm}^3$. Among
+the remaining options, the Normal model is quite *reasonable* –
+biological measurements like hippocampal volume are often symmetrically
+or *Normally* distributed around some global average, here $\mu$.
+
+:::::: my-theorem
+:::: my-theorem-header
+::: {#thm-005-normal-model}
+: The Normal model
+:::
+::::
+
+::: my-theorem-container
+Let $Y$ be a continuous random variable which can take any value between
+$−\infty$ and $\infty$, i.e., $Y \in (−\infty, \infty)$. Then the
+variability in $Y$ might be well represented by a Normal model with
+**mean parameter** $\mu \in (−\infty, \infty)$ and **standard deviation
+parameter** $\sigma > 0$:
+
+$$
+Y \sim N (\mu, \sigma^2)
+$$ 
+
+
+The Normal model is specified by continuous pdf
+
+$$
+f(y) =  \frac{1}{\sqrt{2\pi\sigma^2}} exp \left[ −  \frac{(y − \mu)^2}{2\sigma^2} \right] \text{ for } y \in (−\infty, \infty)
+$$ {#eq-005-normal-model}
+
+and has the following features:
+
+$$
+\begin{align*}
+\text{E}(Y) &= \text{Mode}(Y) = \mu \\
+\text{Var}(Y) &= \sigma^2 \\
+\text{SD}(Y) &= \sigma
+\end{align*}
+$$ {#eq-005-normal-model-features}
+
+Further, $\sigma$ provides a sense of scale for $Y$ . Roughly 95% of $Y$
+values will be within $2$ standard deviations of $\mu$:
+
+$$
+\mu \pm 2\sigma
+$$ {#eq-005-95-sd}
+:::
+::::::
+
+#### Normal illustrations
+
+:::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-005-normal-illustrations}
+: Illustration of Normal `r glossary("pdf", "pdfs")`
+:::
+::::
+
+::: my-r-code-container
+```{r}
+#| label: fig-005-normal-illustrations
+#| fig-cap: Normal pdfs with varying mean and standard deviation parameters.
+
+
+# Create data frame with all combinations
+data <- base::expand.grid(
+  x = seq(0, 10, length.out = 100),  # More points for smooth density curve
+  mean = c(2, 2, 4),
+  sd = c(0.5, 1, 2)
+) |> 
+  dplyr::mutate(
+    probability = stats::dnorm(x = x, mean = mean, sd = sd),
+    prob_label = base::paste0("N(", mean, ",", sd, "\u00B2", ")")
+  )
+
+# Create density plot with facets
+ggplot2::ggplot(data, ggplot2::aes(x = x, y = probability)) +
+  ggplot2::geom_line(color = "black", linewidth = 0.8) +
+  ggplot2::facet_wrap(~ prob_label, ncol = 3) +
+  ggplot2::scale_x_continuous(breaks = base::seq(0, 12, by = 2)) +
+  ggplot2::labs(
+    x = "y",
+    y = base::expression("f (y)")
+  ) +
+  ggplot2::theme_minimal() +
+  ggplot2::theme(
+    panel.spacing = grid::unit(1.5, "lines"),
+    strip.background = ggplot2::element_rect(fill = "gray90", color = "gray50"),
+    strip.text = ggplot2::element_text(face = "bold", size = 11)
+  )
+```
+:::
+::::::
+
+@fig-005-normal-illustrations illustrates the Normal model under a
+variety of mean and standard deviation parameter values, $\mu$ and
+$\sigma$. No matter the parameters, the Normal model is bell-shaped and
+symmetric around $\mu$ – thus as $\mu$ gets larger, the model shifts to
+the right along with it. Further, $\sigma$ controls the variability of
+the Normal model – as $\sigma$ gets larger, the model becomes more
+spread out. Finally, though a Normal variable $Y$ can technically range
+from $−\infty$ to $\infty$, the Normal model assigns negligible
+plausibility to $Y$ values that are more than $3$ standard deviations
+$\sigma$ from the mean $\mu$. To play around some more, you can plot
+Normal models using the `bayesrules::plot_normal()` function.
+
+Returning to our brain analysis, we can reasonably assume that the
+hippocampal volumes of our $n = 25$ subjects, $(Y_1, Y_2, . . . , Y_n)$,
+are *independent* and Normally distributed around a mean volume $\mu$
+with standard deviation $\sigma$. Further, to keep our focus on $\mu$,
+we’ll assume throughout our analysis that the standard deviation is
+*known* to be $\mu = 0.5 \text{cm}^3$[^005-conjugate-families-1]. This
+choice of $\sigma$ suggests that most people have hippocampal volumes
+within $2\sigma = 1 \text{cm}^3$ of the average. Thus, the dependence of
+$Y_i$ on the *unknown* mean $\mu$ is:
+
+[^005-conjugate-families-1]: It is a silly assumption that we know
+    $\sigma$ but don’t know $\mu$. Later we learn to relax this
+    assumption.
+    
+$$
+Y_i \mid \mu \sim N (\mu, \sigma^2)
+$$
+
+::: {.callout-warning #wrn-005-reasonable-not-perfect}
+###### Reasonable doesn't mean perfect
+
+Though we’ll later see that our hippocampal volume data does exhibit Normal behavior, the Normal model *technically* assumes that each subject’s hippocampal volume can range from $-\infty$ to $\infty$. However, we’re not too worried about this incorrect assumption here. Per our earlier discussion of @fig-005-normal-illustrations, the Normal model will put negligible weight on unreasonable values of hippocampal volume. In general, not letting *perfect* be the enemy of *good* will be a theme throughout this book (mainly because there is no perfect).
+:::
+
+#### Joint pdf
+
+Accordingly, the `r glossary("Joint_Probability_Density_Function", "joint pdf")` which describes the collective randomness in our $n = 25$ subjects’ hippocampal volumes, $(Y_1, Y_2, . . . , Y_n)$, is the product of the unique Normal pdfs $f (y_i \mid \mu)$ defined by @eq-005-normal-model,
+
+$$
+f(\overrightarrow{\rm y} \mid \mu) = \prod_{i = 1}^{n} f(y_i \mid \mu) = \prod_{i = 1}^{n} \frac{1}{\sqrt{2\pi\sigma^2}} exp \left[ −  \frac{(y − μ)^2}{2\sigma^2} \right]
+$$
+
+#### Likelihood function
+
+Once we observe our sample data $\vec{y}$, we can flip the joint pdf on its head to obtain the Normal likelihood function of $\mu$, $L(\mu \mid \vec{y}) = f (\vec{y} \mid \mu)$. Remembering that we’re assuming $\sigma$ is a known constant, we can simplify the likelihood up to a proportionality constant by dropping the terms that don’t depend upon $\mu$. Then for $\mu \in (−\infty, \infty)$,
+
+$$
+L(\mu \mid \vec{y}) = \propto \prod_{i = 1}^{n} \text{exp} \left[ −  \frac{(y − μ)^2}{2\sigma^2} \right] = \text{exp} \left[ - \frac{\sum_{i = 1}^{n}(y_i - \mu)^2}{2\sigma^2}\right]
+$$
+
+Through a bit more rearranging (which we encourage you to verify if, like us, you enjoy algebra), we can make this even easier to digest by using the sample mean $\overline{y}$ and sample size $n$ to summarize our data values:
+
+$$
+L(\mu \mid \vec{y}) \propto \exp\left[-\frac{\sum_{i=1}^{n}(y_i - \mu)^2}{2\sigma^2 / n}\right]
+$$ {#eq-005-normal-likelihood}
+
+
+Don’t forget the whole point of this exercise! Specifying a model for the data along with its corresponding likelihood function provides the tools we’ll need to assess the compatibility of our data $\overline(y)$ with different values of $\mu$ (once we actually collect that data).
+
+
+::: {.callout-note #nte-005-rearranging-normal-likelihood}
+###### Rearranging likelihood function
+
+
+The content of this note was the result of the `r glossary("LLM")` `r glossary("Qwen-14b"). I have it intentionally not edited, because I wanted to show the difference to the book result.
+
+::: {#big-text style="font-size: 125%"}
+**Step 0: Starting point**
+:::
+
+
+Let's simplify the likelihood function using the **sample mean** $\overline{y}$ and **sample size** $n$, and show how to arrive at the desired form:
+
+$$
+L(\mu \mid \vec{y}) \propto \exp\left(-\frac{\sum_{i=1}^{n}(y_i - \mu)^2}{2\sigma^2 / n}\right)
+$$
+
+We start from the original expression:
+
+$$
+L(\mu \mid \vec{y}) \propto \prod_{i=1}^{n} \exp\left(-\frac{(y_i - \mu)^2}{2\sigma^2}\right) = \exp\left(-\frac{1}{2\sigma^2} \sum_{i=1}^{n}(y_i - \mu)^2\right)
+$$
+
+---
+
+::: {#big-text style="font-size: 125%"}
+**Step 1: Use the identity for sum of squared deviations**
+:::
+
+
+We know that:
+$$
+\sum_{i=1}^{n}(y_i - \mu)^2 = \sum_{i=1}^{n}(y_i - \overline{y} + \overline{y} - \mu)^2
+$$
+
+Expand:
+$$
+= \sum_{i=1}^{n} \left[(y_i - \overline{y}) + (\overline{y} - \mu)\right]^2 = \sum_{i=1}^{n} \left[(y_i - \overline{y})^2 + 2(y_i - \overline{y})(\overline{y} - \mu) + (\overline{y} - \mu)^2 \right]
+$$
+
+Split the sum:
+$$
+= \sum_{i=1}^{n}(y_i - \overline{y})^2 + 2(\overline{y} - \mu)\sum_{i=1}^{n}(y_i - \overline{y}) + n(\overline{y} - \mu)^2
+$$
+
+But $\sum_{i=1}^{n}(y_i - \overline{y}) = 0$, so the middle term vanishes:
+
+$$
+\sum_{i=1}^{n}(y_i - \mu)^2 = \sum_{i=1}^{n}(y_i - \overline{y})^2 + n(\overline{y} - \mu)^2
+$$
+
+---
+
+::: {#big-text style="font-size: 125%"}
+**Step 2: Plug into the likelihood**
+:::
+
+
+Now substitute into the exponent:
+
+$$
+\exp\left(-\frac{1}{2\sigma^2} \left[ \sum_{i=1}^{n}(y_i - \overline{y})^2 + n(\overline{y} - \mu)^2 \right] \right)
+$$
+
+This splits into:
+$$
+= \exp\left(-\frac{1}{2\sigma^2} \sum_{i=1}^{n}(y_i - \overline{y})^2 \right) \cdot \exp\left(-\frac{n(\overline{y} - \mu)^2}{2\sigma^2} \right)
+$$
+
+The first term does **not** depend on $\mu$, so it can be ignored when maximizing the likelihood (since it's constant with respect to $\mu$).
+
+So:
+$$
+L(\mu \mid \vec{y}) \propto \exp\left(-\frac{n(\overline{y} - \mu)^2}{2\sigma^2} \right)
+$$
+
+---
+
+::: {#big-text style="font-size: 125%"}
+**Step 3: Rewrite in the desired form**
+:::
+
+
+We now manipulate the exponent to match the target form:
+
+$$
+\exp\left(-\frac{n(\overline{y} - \mu)^2}{2\sigma^2} \right) = \exp\left(-\frac{\sum_{i=1}^{n}(y_i - \mu)^2}{2\sigma^2 / n} \right)
+$$
+
+Wait — this is **not** correct as written. Let's check the algebra.
+
+We have:
+$$
+\exp\left(-\frac{n(\overline{y} - \mu)^2}{2\sigma^2} \right)
+$$
+
+But we want:
+$$
+\exp\left(-\frac{\sum_{i=1}^{n}(y_i - \mu)^2}{2\sigma^2 / n} \right)
+$$
+
+Let’s compute the exponent in the target form:
+
+$$
+\frac{\sum_{i=1}^{n}(y_i - \mu)^2}{2\sigma^2 / n} = \frac{n}{2\sigma^2} \sum_{i=1}^{n}(y_i - \mu)^2
+$$
+
+So the exponent becomes:
+$$
+- \frac{n}{2\sigma^2} \sum_{i=1}^{n}(y_i - \mu)^2
+$$
+
+But from earlier, we have:
+$$
+\exp\left(-\frac{n(\overline{y} - \mu)^2}{2\sigma^2} \right)
+$$
+
+So unless $\sum (y_i - \mu)^2 = n(\overline{y} - \mu)^2$, which is **not** true, the two expressions are **not** equal.
+
+Wait — this suggests a **mistake** in the target form.
+
+Let’s double-check.
+
+---
+
+**(a) Correct Interpretation**
+
+The **correct** simplified form is:
+
+$$
+L(\mu \mid \vec{y}) \propto \exp\left(-\frac{n(\overline{y} - \mu)^2}{2\sigma^2} \right)
+$$
+
+This is **not** the same as:
+
+$$
+\exp\left(-\frac{\sum (y_i - \mu)^2}{2\sigma^2 / n} \right) = \exp\left(-\frac{n}{2\sigma^2} \sum (y_i - \mu)^2 \right)
+$$
+
+Which is **much larger** than the true likelihood unless all $y_i = \mu$.
+
+So the **target expression** you wrote:
+
+$$
+L(\mu \mid \vec{y}) \propto \exp\left[-\frac{\sum_{i=1}^{n}(y_i - \mu)^2}{2\sigma^2 / n}\right]
+$$
+
+is **incorrect** — it's off by a factor of $n$ in the denominator.
+
+---
+
+
+**(b) Corrected Version**
+
+
+
+The **correct** simplification using $\overline{y}$ and $n$ is:
+
+$$
+L(\mu \mid \vec{y}) \propto \exp\left(-\frac{n(\overline{y} - \mu)^2}{2\sigma^2} \right)
+$$
+
+This is the **correct** form.
+
+---
+
+**(c) Why the target form is wrong**
+
+
+The expression:
+
+$$
+\exp\left(-\frac{\sum (y_i - \mu)^2}{2\sigma^2 / n} \right) = \exp\left(-\frac{n}{2\sigma^2} \sum (y_i - \mu)^2 \right)
+$$
+
+is **not** proportional to the original likelihood — it overweights the sum of squares by a factor of $n$, which changes the shape.
+
+---
+
+::: {#big-text style="font-size: 125%"}
+**Step 4: Final Answer**
+:::
+
+
+
+The correct simplified form using $\overline{y}$ and $n$ is:
+
+$$
+\boxed{L(\mu \mid \vec{y}) \propto \exp\left(-\frac{n(\overline{y} - \mu)^2}{2\sigma^2} \right)}
+$$ {#eq-005-normal-likelihood-function}
+
+This shows that the **maximum likelihood estimate** of $\mu$ is $\overline{y}$, and the likelihood is centered around it with variance $\sigma^2/n$.
+
+---
+
+
+::: {#big-text style="font-size: 150%"}
+**Summary of Steps**
+:::
+
+
+1. Start with the product of normal densities.
+2. Combine into a single exponential.
+3. Use the identity: $\sum (y_i - \mu)^2 = \sum (y_i - \overline{y})^2 + n(\overline{y} - \mu)^2$.
+4. The first term is constant in $\mu$, so it can be dropped.
+5. The likelihood depends only on $(\overline{y} - \mu)^2$.
+6. Final form: $\exp\left(-\frac{n(\overline{y} - \mu)^2}{2\sigma^2} \right)$.
+
+This is the **correct** simplification.
+
+
+:::
+
+### Normal prior
+
+With the likelihood in place, let’s formalize a prior model for $\mu$, the mean hippocampal volume among people that have a history of concussions. By the properties of the $Y_i \mid \mu \sim N(\mu, \sigma^2)$ data model, the Normal mean parameter $\mu$ can technically take any value between −∞ and ∞. Thus, a Normal prior for $\mu$, which is also defined for $\mu \in (−\infty, \infty)$, makes a reasonable choice. 
+
+:::::{.my-theorem}
+:::{.my-theorem-header}
+:::::: {#thm-005-normal-prior}
+: Normal prior
+::::::
+:::
+::::{.my-theorem-container}
+
+We’ll assume that $\mu$ itself is Normally distributed around some mean $\theta$ with standard deviation $\tau$ :
+
+$$\mu \sim N (\theta, \tau^2)$$
+
+where $\mu$ has prior pdf
+
+
+$$
+f(\mu) =  \frac{1}{\sqrt{2\pi\tau^2}} \text{exp} \left[ −  \frac{(\mu - \theta)^2}{2\tau^2} \right] \text{ for } \mu \in (−\infty, \infty)
+$$ {#eq-005-normal-prior}
+
+
+
+::::
+:::::
+
+Not only does the Normal prior assumption that $\mu \in (−\infty, \infty)$ match the same assumption of the Normal data model, we’ll prove below that this is a conjugate prior. You might anticipate this result from the fact that the likelihood function $L(\mu \mid \vec{y})$ in @eq-005-normal-likelihood and prior pdf $f(\mu)$ in @eq-005-normal-prior are both proportional to
+
+$$
+\text{exp} \left[− \frac{(μ − ∎)^2} {  2∎2} \right]
+$$
+
+with different ∎.
+
+#### Tuning Normal prior
+
+Using our understanding of a Normal model, we can now tune the prior hyperparameters $\theta$ and $\tau$ to reflect our prior understanding and uncertainty about the average hippocampal volume among people that have a history of concussions, $\mu$. 
+
+- Based on [Wikipedia research](https://en.wikipedia.org/wiki/Hippocampus) that hippocampal volumes tend to be between $6$ and $7 \text{cm}^3$, we’ll set the Normal prior mean $\theta$ to the midpoint, $6.5$. 
+- Further, we’ll set the Normal prior standard deviation to $\tau = 0.4$. In other words, by @eq-005-95-sd, we think there’s a 95% chance that $\mu$ is somewhere between $5.7$ and $7.3 \text{cm}^3 (6.5 \pm 2 \times 0.4)$. 
+
+This range is wider, and hence more conservative, than what Wikipedia indicated. Our uncertainty here reflects the fact that we didn’t vet the Wikipedia sources, we aren’t confident that the features for the typical adult translates to people with a history of concussions, and we generally aren’t sure what’s going on here (i.e., we’re not brain experts). Putting this together, our tuned prior model for $\mu$ is:
+
+$$\mu \sim N (6.5, 0.4^2)$$
+
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-005-tuning-normal-prior}
+: Tuning the Normal prior
+::::::
+:::
+::::{.my-r-code-container}
+```{r}
+#| label: fig-005-tuning-normal-prior
+#| fig-cap: A Normal prior model for μ, with mean 6.5 and standard deviation 0.4.
+#| fig-height: 3
+
+bayesrules::plot_normal(6.6, 0.4)
+
+```
 
 ::::
 :::::
 
 
-## Normal-normal conjugate family
+### Normal-Normal conjugacy
+
+#### Bayesian model
+
+To obtain our posterior model of $\mu$ we must combine the information from our prior and our data. Again, we were clever to pick a Normal prior model – the Normal-Normal is another convenient conjugate family! Thus, the posterior model for $\mu$ will *also* be Normal with updated parameters that are informed by the prior and observed data.
+
+:::::{.my-theorem}
+:::{.my-theorem-header}
+:::::: {#thm-005-normal-normal-bayesian-model}
+: The Normal-Normal Bayesian model
+::::::
+:::
+::::{.my-theorem-container}
+
+Let $\mu \in (−\infty, \infty)$ be an unknown mean parameter and $(Y_1, Y_2, . . . , Y_n)$ be an independent $N (\mu, \sigma^2)$ sample where $\sigma$ is assumed to be known. The Normal-Normal Bayesian model complements the Normal data structure with a Normal prior on $\mu$:  
+
+$$
+\begin{align*}
+Y_i \mid &\mu \overset{\text{ind}}{\sim} N (\mu, \sigma^2) \\
+&\mu ∼ N (\theta, \tau^2) 
+\end{align*}
+$$ 
+
+Upon observing data $\vec{y} = (y_1, y_2, . . . , y_n)$ with mean $\overline{y}$, the posterior model of $\mu$ is also Normal with updated parameters:
+
+$$
+\begin{align*}
+\mu \mid \vec{y} \sim N \left(\theta \frac{\sigma^2}{n \tau^2 + \sigma^2} + \overline{y} \frac{n\tau^2}{n \tau^2 + \sigma^2}, \frac{\tau^2 \sigma^2}{n \tau^2 + \sigma^2} \right)
+\end{align*}
+$$ {#eq-005-normal-normal-bayesian-model}
+::::
+:::::
+
+Whooo, that is a mouthful! We provide an optional proof of this result in @sec-005-proving-normal-normal-conjugacy. Even without that proof, we can observe the balance that the Normal posterior in @eq-005-normal-normal-bayesian-model strikes between the prior and the data. 
+
+1. First, the posterior mean is a **weighted average** of the prior mean $E(\mu) = \theta$ and the sample mean $\overline{y}$. 
+2. Second, the posterior variance is informed by the prior variability $\tau$ and variability in the data $\sigma$. Both are impacted by sample size $n$. 
+
+a. First, as $n$ increases, the posterior mean places less weight on the prior mean and more weight on sample mean $\overline{y}$:
+
+$$
+\frac{\sigma^2}{n \tau^2 + \sigma^2} \to 0 \text{ and } \frac{n\tau^2}{n \tau^2 + \sigma^2} \to 1
+$$
+
+b. Further, as $n$ increases, the posterior variance decreases:
+  
+$$ 
+\frac{\tau^2 \sigma^2}{n \tau^2 + \sigma^2} \to 0
+$$
+
+That is, the more and more data we have, our posterior certainty about $\mu$ increases and becomes more in sync with the data.
+
+
+#### Apply result
+
+Let’s apply and examine this result in our analysis of $\mu$, the average hippocampal volume among people that have a history of concussions. 
+
+1. We’ve already built our prior model of $\mu$, $\mu \sim N (6.5, 0.4^2)$. 
+2. Next, consider some data. The `football` data in {**bayesrules**}, a subset of the `FootballBrain` data in the {**Lock5Data**} package [@Lock5Data], includes results for a cross-sectional study of hippocampal volumes among 75 subjects [@singh-2014]: 
+
+- 25 collegiate football players with a history of concussions (`fb_concuss`), 
+- 25 collegiate football players that do not have a history of concussions (`fb_no_concuss`), and 
+- 25 control subjects. 
+
+For our analysis, we’ll focus on the $n = 25$ subjects with a history of concussions (`fb_concuss`):
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-005-load-football-data}
+: Load the `football` data from {**bayesrules**}
+::::::
+:::
+::::{.my-r-code-container}
+```{r}
+#| label: load-football-data
+#| lst-label: lst-005-load-football-data
+#| lst-cap: Load, display `football` data and compute mean
+#| results: hold
+
+# Load the data
+data(football, package = "bayesrules")
+dplyr::glimpse(football)
+
+concussion_subjects <- football |> 
+  dplyr::filter(group == "fb_concuss")
+
+mean_hyppocampal_volume <- concussion_subjects |> 
+  dplyr::summarize(mean(volume))
+```
+
+::::
+:::::
+
+These subjects have an average hippocampal volume of y = `r mean_hyppocampal_volume` $\text{cm}^3$.
+
+Further, the hippocampal volumes appear to vary normally from subject to subject, ranging from roughly $4.5$ to $7 \text{cm}^3$. That is, our assumed Normal data model about individual hippocampal volumes, $Y_i \mid \mu \sim N (\mu, \sigma^2)$ with an assumed standard deviation of $\sigma = 0.5$, seems reasonable:
+
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-005-hippocampal-volumes}
+: Density plot of the hippocampal volumes
+::::::
+:::
+::::{.my-r-code-container}
+
+```{r}
+#| label: fig-005-hippocampal-volumes
+#| fig-cap: A density plot of the hippocampal volumes (in cubic centimeters) among 25 subjects that have experienced concussions.
+#| fig-height: 3
+
+ggplot2::ggplot(concussion_subjects, ggplot2::aes(x = volume)) + 
+  ggplot2::geom_density()
+
+```
+
+::::
+:::::
+
+#### Likelihood
+
+Plugging this information from the data ($n = 25, y = 5.735, \text{ and } \sigma = 0.5$) into @eq-005-normal-likelihood-function defines the Normal likelihood function of $\mu$:
+
+$$
+\begin{align*}
+&L(\mu \mid \vec{y}) \propto \exp\left[-\frac{\sum_{i=1}^{n}(y_i - \mu)^2}{2\sigma^2 / n}\right] \\
+&L(\mu \mid \vec{y}) \propto \exp\left(-\frac{(5.735 - \mu)^2}{2 (0.5 / 25)} \right) \text{ for } \mu \in (-\infty, \infty)
+\end{align*}
+$$ 
+
+
+We plot this likelihood function using `bayesrules::plot_normal_likelihood()`, providing our observed volume data and data standard deviation $\sigma = 0.5$ (Figure 5.11). This likelihood illustrates the compatibility of our observed hippocampal data with different $\mu$ values. To this end, the hippocampal patterns observed in our data would most likely have arisen if the mean hippocampal volume across all people with a history of concussions, $\mu$, were between $5.3$ and $6.1 \text{cm}^3$. Further, we’re most likely to have observed a mean volume of $y = 5.735$ among our $25$ sample subjects if the underlying population mean $\mu$ were also $5.735$.
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-005-normal-likelihood-function-hippocampal}
+: Normal likelihood function for mean hippocampal volume $\mu$
+::::::
+:::
+::::{.my-r-code-container}
+```{r}
+#| label: fig-normal-likelihood-function-hippocampal
+#| fig-cap: The Normal likelihood function for mean hippocampal volume $\mu$
+#| fig-height: 3
+
+bayesrules::plot_normal_likelihood(y = concussion_subjects$volume, sigma = 0.5)
+```
+
+::::
+:::::
+
+#### Posterior
+
+We now have all necessary pieces to plug into @eq-005-normal-normal-bayesian-model, and hence to specify the posterior model of $\mu$:  
+
+- our Normal prior model of $\mu$ had mean $theta = 6.5$ and standard deviation $\tau = 0.4$; 
+- our $n = 25$ sample subjects had a sample mean volume $\overline{y} = 5.735$;
+- we assumed a known standard deviation among individual hippocampal volumes of $\sigma = 0.5$.
+
+It follows that the posterior model of $\mu$ is:
+
+$$
+\begin{align*}
+\mu \mid \vec{y} &\sim N \left(\theta \frac{\sigma^2}{n \tau^2 + \sigma^2} + \overline{y} \frac{n\tau^2}{n \tau^2 + \sigma^2}, \frac{\tau^2 \sigma^2}{n \tau^2 + \sigma^2} \right) \\
+&\sim N \left(6.5 \frac{0.5^2}{(25 \cdot 0.4^2) + 0.5^2} + 5.735 \cdot \frac{25 \cdot 0.4^2}{(25 \cdot 0.4^2) + 0.5^2}, \frac{0.4^2 \cdot 0.5^2}{(25 \cdot 0.4^2) + 0.5^2} \right) \\
+&\sim N \left(6.5 \frac{0.25}{(25 \cdot 0.16) + 0.25} + 5.735 \cdot \frac{25 \cdot 0.16}{(25 \cdot 0.16) + 0.25}, \frac{0.16 \cdot 0.25}{(25 \cdot 0.16) + 0.25} \right) \\
+&\sim N \left(6.5 \frac{0.25}{4.25} + 5.735 \cdot \frac{4}{4 + 0.25}, \frac{0.04}{4 + 0.25} \right) \\
+&\sim N \left(6.5 \cdot 0.05882353 + 5.735 \cdot \frac{4}{4.25}, \frac{0.04}{4.25} \right) \\
+&\sim N \left(0.3823529 + 5.735 \cdot 0.9411765, 0.009411765 \right) \\
+&\sim N \left(5.78, 0.009411765 \right) \\
+&\sim \bf{N \left(5.78, 0.0094 \right)}
+\end{align*}
+$$ 
+Standard deviation is $\sqrt{0.0094} = 0.097$.
+
+where the posterior mean places roughly 94% of its weight on the data mean ($\overline{y} = 5.375$) and only 6% of its weight on the prior mean ($E(mu) = 6.5$):
+
+$$
+\text{E}(\mu \mid \vec{y}) = 6.5 \cdot 0.0588 + 5.735 \cdot 0.9412 = 5.78
+$$
+
+Bringing all of these pieces together, we plot and summarize our Normal-Normal analysis of $\mu$ using `plot_normal_normal()` and `summarize_normal_normal()` in the {**bayesrules**} package. Though a compromise between the prior and data, our posterior understanding of $\mu$ is more heavily influenced by the latter. In light of our data, we are much more certain about the mean hippocampal volume among people with a history of concussions, and believe that this figure is somewhere in the range from $5.586$ to $5.974 \text{cm}^3 (5.78 \pm 2 \times 0.097)$.
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-005-plot-and-summarize-posterior}
+: Plot and summarize the result of the Normal-Normal analysis
+::::::
+:::
+::::{.my-r-code-container}
+
+::::: columns
+::: {.column width="50%"}
+```{r}
+#| label: fig-005-plot-normal-normal
+#| fig-cap: The Normal-Normal model of μ, average hippocampal volume.
+
+bayesrules::plot_normal_normal(
+  mean = 6.5,
+  sd = 0.4,
+  sigma = 0.5,
+  y_bar = 5.375,
+  n = 25
+)
+```
+:::
+
+::: {.column width="50%"}
+```{r}
+#| label: tbl-005-summarize-normal-normal
+#| tbl-cap: The Normal-Normal model of μ, average hippocampal volume.
+
+bayesrules::summarize_normal_normal(
+  mean = 6.5,
+  sd = 0.4,
+  sigma = 0.5,
+  y_bar = 5.375,
+  n = 25
+) |> 
+  knitr::kable(digits = 4)
+```
+:::
+:::::
+
+::::
+:::::
+
+
+
+
+### Optional: Proving Normal-Normal conjugacy (skipped) {#sec-005-proving-normal-normal-conjugacy}
+
+
+## Why no simulation in this chapter?
+
+As you may have gathered, we love some simulations. There is something reassuring about the reality check that a simulation can provide. Yet we are at a crossroads. The Gamma-Poisson and Normal-Normal models we’ve studied here are tough to simulate using the techniques we’ve learned thus far. 
+
+:::::{.my-procedure}
+:::{.my-procedure-header}
+:::::: {#prp-005-steps-of-simulations}
+: Steps of simulations
+::::::
+:::
+::::{.my-procedure-container}
+Letting $\theta$ represent some parameter of interest, recall the steps we’ve used for past simulations:  
+
+1. Simulate, say, 10000 values of $\theta$ from the prior model. 
+2. Simulate a set of sample data $Y$ from each simulated $\theta$ value. 
+3. Filter out only those of the 10000 simulated sets of ($\theta$, $Y$ ) for which the simulated $Y$ data matches the data we actually observed. 
+4. Use the remaining $\theta$ values to approximate the posterior of $\theta$.
+::::
+:::::
+
+
+The issue with extending this simulation technique to the `r glossary("Gamma-Poisson Model", "Gamma-Poisson")` and `r glossary("Normal-Normal Conjugate Family", "Normal-Normal")` examples in this chapter comes with step 3. In both of our examples, we had a sample size greater than one, $(Y_1, Y_2, . . . , Y_n)$. Further, in the Normal-Normal example, our data values $Y_i$ are continuous. In both of these scenarios, it’s very likely that no simulated sets of ($\theta, Y$ ) will perfectly match our observed sample data. This is true even if we carry out millions of simulations in step 3. 
+
+Spoiler alert! There are other ways to approximate the posterior model which we will learn in Unit 2.
+
+
+
+## Critiques of conjugate family models
+
+Before we end the chapter, we want to acknowledge that conjugate family models also have drawbacks. In particular:  
+
+- A conjugate prior model isn’t always flexible enough to fit your prior understanding. For example, a Normal model is always unimodal and symmetric around the mean $\mu$. So if your prior understanding is not symmetric or is not unimodal, then the Normal prior might not be the best tool for the job. 
+- Conjugate family models do not always allow you to have an entirely flat prior. While we can tune a flat Beta prior by setting $\alpha = \beta = 1$, neither the Normal nor Gamma priors (or any proper models with infinite support) can be tuned to be *totally* flat. The best we can do is tune the priors to have very high variance, so that they’re *almost* flat.
+
+## Summary
+
+In this chapter, you learned about conjugacy and applied it to a few different situations. Our main takeaways for this chapter are:  
+
+- Using conjugate priors allows us to have easy-to-derive and readily interpretable posterior models. 
+- The Beta-Binomial, Gamma-Poisson, and Normal-Normal conjugate families allow us to analyze data $Y$ in different scenarios. 
+  - The `r glossary("Beta-Binomial-Model", "Beta-Binomial")` is convenient when our data $Y$ is the number of successes in a set of $n$ trials, 
+  - the `r glossary("Gamma-Poisson Model", "Gamma-Poisson")` when $Y$ is a count with no upper limit, and 
+  - the `r glossary("Normal-Normal Conjugate Family", "Normal-Normal")` when $Y$ is continuous. 
+- We can use several functions from the bayesrules package to explore these conjugate families: `plot_poisson_likelihood()`, `plot_gamma()`, `plot_gamma_poisson()`, `summarize_gamma_poisson()`, `plot_normal()`, `plot_normal_normal()`, and `summarize_normal_normal()`.  
+
+We hope that you now appreciate the utility of conjugate priors!
+
+
+::: {.callout-note #nte-005-summary}
+###### Comparison of the three conjugate families
+
+Here's a comprehensive comparison of the three main conjugate families:
+
+::: {#big-text style="font-size: 125%"}
+**1. Beta-Binomial**
+:::
+
+
+::: {#big-text style="font-size: 110%"}
+**Components** 
+:::
+
+- **Parameter**: π ∈ [0, 1] (proportion/probability)
+- **Prior**: Beta(α, β)
+- **Likelihood**: Binomial(n, π)
+- **Posterior**: Beta(α + y, β + n - y)
+
+::: {#big-text style="font-size: 110%"}
+**Key Features** 
+:::
+
+- **Use case**: Modeling proportions, probabilities, success rates
+- **Data type**: Count of successes in fixed number of trials
+- **Prior hyperparameters**: 
+  - α = prior successes
+  - β = prior failures
+- **Update rule**: Add observed successes to α, add failures to β
+
+::: {#big-text style="font-size: 110%"}
+**Interpretation** 
+:::
+
+- **Mean**: E(π) = α/(α + β)
+- **Effective sample size**: α + β (strength of prior belief)
+- The larger α + β relative to n, the more the prior dominates
+
+---
+
+::: {#big-text style="font-size: 125%"}
+**2. Gamma-Poisson**
+:::
+
+::: {#big-text style="font-size: 110%"}
+**Components** 
+:::
+
+
+- **Parameter**: λ > 0 (rate)
+- **Prior**: Gamma(s, r)
+- **Likelihood**: Poisson(λ)
+- **Posterior**: Gamma(s + Σyᵢ, r + n)
+
+::: {#big-text style="font-size: 110%"}
+**Key Features** 
+:::
+
+- **Use case**: Modeling rates, waiting times, counts per unit time/space
+- **Data type**: Count data (0, 1, 2, ...) with no upper limit
+- **Prior hyperparameters**:
+  - s = shape (prior "total count")
+  - r = rate (prior "exposure time")
+- **Update rule**: Add total observed counts to s, add number of observations to r
+
+::: {#big-text style="font-size: 110%"}
+**Interpretation** 
+:::
+
+- **Mean**: E(λ) = s/r
+- **Variance**: Var(λ) = s/r²
+- r represents prior sample size or exposure
+
+---
+
+::: {#big-text style="font-size: 125%"}
+**3. Normal-Normal**
+:::
+
+
+::: {#big-text style="font-size: 110%"}
+**Components** 
+:::
+
+
+- **Parameter**: μ ∈ ℝ (mean)
+- **Prior**: N(μ₀, σ₀²)
+- **Likelihood**: N(μ, σ²) with known σ²
+- **Posterior**: N(μₙ, σₙ²) where:
+  - μₙ = (μ₀/σ₀² + nȳ/σ²)/(1/σ₀² + n/σ²)
+  - σₙ² = 1/(1/σ₀² + n/σ²)
+
+::: {#big-text style="font-size: 110%"}
+**Key Features** 
+:::
+
+- **Use case**: Modeling continuous measurements, averages
+- **Data type**: Continuous real numbers
+- **Prior hyperparameters**:
+  - μ₀ = prior mean
+  - σ₀² = prior variance (uncertainty about μ)
+- **Update rule**: Precision-weighted average of prior mean and sample mean
+
+::: {#big-text style="font-size: 110%"}
+**Interpretation** 
+:::
+
+- **Posterior mean**: Weighted average based on precisions (1/variance)
+- **Posterior variance**: Always smaller than prior variance
+- More data → posterior mean closer to sample mean
+
+---
+
+
+::: {#big-text style="font-size: 125%"}
+**Common Patterns Across All Three** 
+:::
+
+
+::: {#big-text style="font-size: 110%"}
+**1. Simple Update Rules**
+:::
+All three have clean, interpretable posterior formulas:
+- Prior hyperparameters + data summaries = posterior hyperparameters
+
+::: {#big-text style="font-size: 110%"}
+**2. Balance Between Prior and Data**
+:::
+
+- Small n → prior dominates
+- Large n → data dominates
+- The posterior is always a compromise
+
+::: {#big-text style="font-size: 110%"}
+**3. Computational Ease** 
+:::
+- No integration needed
+- Closed-form posteriors
+- Easy to calculate means, variances, credible intervals
+
+::: {#big-text style="font-size: 110%"}
+**4. Interpretable Hyperparameters** 
+:::
+
+- Can be thought of as "prior data"
+- Beta: prior successes/failures
+- Gamma: prior counts/exposure
+- Normal: prior mean/uncertainty
+
+---
+
+::: {#big-text style="font-size: 125%"}
+**When to Use Each** 
+:::
+
+**Beta-Binomial**: 
+- Binary outcomes (yes/no, success/failure)
+- Proportions bounded between 0 and 1
+- Example: conversion rates, disease prevalence
+
+**Gamma-Poisson**:
+- Count data with no fixed upper limit
+- Rates of occurrence
+- Example: customer arrivals, website visits, phone calls
+
+**Normal-Normal**:
+- Continuous measurements
+- Symmetric distributions
+- Example: heights, test scores, measurement errors (when σ² is known)
+
+
+:::
+
+
+::: {.column-page-inset}
+
+| Feature                   | Beta-Binomial                                                                                                                                     | Gamma-Poisson                                                                             | Normal-Normal                                                                                                                                                                   |
+|---------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Parameter**             | π ∈ [0, 1]                                                                                                                                        | λ > 0 (rate)                                                                              | μ ∈ ℝ (mean)                                                                                                                                                                    |
+| **Parameter space**       | [0, 1]                                                                                                                                            | (0, ∞)                                                                                    | (-∞, ∞)                                                                                                                                                                         |
+| **Parameter type**        | Proportion / Probability                                                                                                                          | Rate                                                                                      | Mean                                                                                                                                                                            |
+| **Data support**          | {0, 1, ..., n}                                                                                                                                    | {0, 1, 2, ...}                                                                            | ℝ (continuous)                                                                                                                                                                  |
+| **Data type**             | Count of successes in<br>fixed number of trials                                                                                                   | Count data (0, 1, 2, …) <br>with no upper limit                                           | Continuous real numbers                                                                                                                                                         |
+| **Sufficient statistics** | y, n                                                                                                                                              | Σyᵢ, n                                                                                    | ȳ, n                                                                                                                                                                            |
+| **Prior**                 | Beta(α, β)                                                                                                                                        | Gamma(s, r)                                                                               | N(μ₀, σ₀²)                                                                                                                                                                      |
+| **Prior Hyperparameters** | α = prior successes,<br>β = prior failures                                                                                                        | s = shape (prior “total count”),<br>r = rate (prior “exposure time”)                      | μ₀ = prior mean,<br>σ₀² = prior variance <br>(uncertainty about μ)                                                                                                              |
+| **Likelihood**            | Binomial(n, π)                                                                                                                                    | Poisson(λ)                                                                                | N(μ, σ²) with known σ²                                                                                                                                                          |
+| **Posterior**             | Beta(α + y, β + n - y)                                                                                                                            | Gamma(s + Σyᵢ, r + n)                                                                     | N(μₙ, σₙ²) where:<br>μₙ = (μ₀/σ₀² + nȳ/σ²)/(1/σ₀² + n/σ²)<br>σₙ² = 1/(1/σ₀² + n/σ²)                                                                                             |
+| **Use case**              | Modeling proportions, <br>probabilities, success rates,<br>polls                                                                                  | Modeling rates, waiting times, <br>event counts per unit in<br>time/space, arrivals       | Modeling continuous measurements,<br>heights, averages                                                                                                                          |
+| **Update rule**           | Add observed successes to α, <br>add failures to β                                                                                                | Add total observed counts to s, <br>add number of observations to r                       | Precision-weighted average of <br>prior mean and sample mean                                                                                                                    |
+| **Interpretation**        | **Mean**: E(π) = α/(α + β)<br>**Effective sample size**: α + β (strength of prior belief)<br>The larger α + β relative to n, the more the prior dominates | **Mean**: E(λ) = s/r<br>**Variance**: Var(λ) = s/r²<br>r represents prior sample size or exposure | **Posterior mean**: Weighted average based on precisions (1/variance)<br>**Posterior variance**: Always smaller than prior variance<br>More data → posterior mean closer to sample mean |
+: Side-by-side comparison of Beta-Binomial, Gamm-Poisson, and Normal-Normal  {#tbl-005-model-comparison} {tbl-colwidths="[10,30,30,30]"} {.striped .hover}
+
+
+
+
+
+:::
 
 
 ## Glossary Entries {.unnumbered}
