@@ -1677,6 +1677,7 @@ the posterior model of Michelle’s support $\pi$.
 #| fig-cap: Scatterplot of 10,000 simulated pairs of Michelle’s support $\pi$ and polling outcome $y$
 #| lst-label: lst-003-simulate-beta-binomial-scatterplot-michelle
 #| lst-cap: Scatterplot of 10,000 simulated pairs of the Beta-Binomial
+#| fig-height: 3
 
 base::set.seed(84735)
 michelle_sim <- tibble::tibble(pi = stats::rbeta(10000, 45, 55)) |> 
@@ -1706,6 +1707,7 @@ approximates the $\text{Beta}(75,75)$ posterior model of $\pi$:
 #| fig-cap: A density plot of simulated $\pi$ values that produced polling outcomes in which $Y = 30$ voters supported Michelle.
 #| lst-label: lst-003-simulate-beta-binomial-density-michelle
 #| lst-cap: Density plot of simulated $\pi$ values
+#| fig-height: 3
 
 # Keep only the simulated pairs that match our data
 michelle_posterior <- michelle_sim  |>  
