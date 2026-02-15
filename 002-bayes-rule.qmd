@@ -582,7 +582,7 @@ To determine the probabilities of these **joint events**, note that 40% of artic
 ::: my-theorem-container
 **Co-occurrence of (not) exclamation point and fake article**
 
-That is, the `r glossary("joint_probability", "joint probability")` of observing both $A$ and $B$ is
+That is, the `r glossary("joint-probability", "joint probability")` of observing both $A$ and $B$ is
 
 $$
 \begin{align*}
@@ -731,7 +731,7 @@ Joint probabilities (Brave-AI, middle part corrected by Positron Assistant)
 ::: {#nte-002-joint-probabilities .callout-note}
 ####### Joint probabilities
 
-`r glossary("Joint_probability", "Joint probabilities")` measure the co-occurrence of two events. In the case of @exm-002-joint-probabilities it measures the co-occurrence of fake article *and* using an exclamation sign in the title.
+`r glossary("joint-probability", "Joint probabilities")` measure the co-occurrence of two events. In the case of @exm-002-joint-probabilities it measures the co-occurrence of fake article *and* using an exclamation sign in the title.
 
 This table is missing in the original book text. I have added it to improve my understanding.
 
@@ -1100,7 +1100,7 @@ conditional_prob |>
   knitr::kable(digits = 4)
 ```
 
--   **3. Joint probability:** `r glossary("Joint_Probability", "Joint Probability")` is a statistical measure that calculates the `r glossary("Likelihood_x", "likelihood")` of two or more events occurring simultaneously at the same point in time. It represents the probability of the intersection of two events, denoted mathematically as $P(A \cap B)$, which is read as "the probability of A and B". The joint probability of two independent events $A$ and $B$ is computed as the product of their individual probabilities: $P(A \cap B) = P(A) \cdot P(B)$. In our example: $P(\text{excl} \cap \text{fake}) = P(\text{excl}) \cdot P(\text{fake}) = 0.2667 \cdot 0.4 = 0.1067$.
+-   **3. Joint probability:** `r glossary("joint-probability", "Joint Probability")` is a statistical measure that calculates the `r glossary("Likelihood_x", "likelihood")` of two or more events occurring simultaneously at the same point in time. It represents the probability of the intersection of two events, denoted mathematically as $P(A \cap B)$, which is read as "the probability of A and B". The joint probability of two independent events $A$ and $B$ is computed as the product of their individual probabilities: $P(A \cap B) = P(A) \cdot P(B)$. In our example: $P(\text{excl} \cap \text{fake}) = P(\text{excl}) \cdot P(\text{fake}) = 0.2667 \cdot 0.4 = 0.1067$.
 
 ```{r}
 #| label: step-3-joint-prob
@@ -1697,7 +1697,7 @@ As with the fake news analysis, our analysis of random variable $\pi$ will start
 
 Consider the prior model defined in @tbl-002-prior-model-chess. We’ll get into how we might build such a prior in later chapters. For now, let’s focus on interpreting and utilizing the given prior:
 
-The first thing you might notice is that this model greatly simplifies reality. Though Kasparov’s win probability $\pi$ can *technically* be any number from zero to one, this prior assumes that $\pi$ has a discrete set of possibilities: Kasparov’s win probability is either 20%, 50%, or 80%. Next, examine the `r glossary("probability_mass_function", "probability mass function")` (pmf) $f (\cdot)$ which specifies the prior probability of each possible $\pi$ value. This pmf reflects the prior understanding that Kasparov learned from the 1996 match-up, and so will most likely improve in 1997. Specifically, this pmf places a 65% chance on Kasparov’s win probability jumping to $\pi$ = 0.8 and only a 10% chance on his win probability dropping to $\pi$ = 0.2, i.e., f ($\pi$ = 0.8) = 0.65 and f ($\pi$ = 0.2) = 0.10.
+The first thing you might notice is that this model greatly simplifies reality. Though Kasparov’s win probability $\pi$ can *technically* be any number from zero to one, this prior assumes that $\pi$ has a discrete set of possibilities: Kasparov’s win probability is either 20%, 50%, or 80%. Next, examine the `r glossary("Probability-Mass-Function", "probability mass function")` (pmf) $f (\cdot)$ which specifies the prior probability of each possible $\pi$ value. This pmf reflects the prior understanding that Kasparov learned from the 1996 match-up, and so will most likely improve in 1997. Specifically, this pmf places a 65% chance on Kasparov’s win probability jumping to $\pi$ = 0.8 and only a 10% chance on his win probability dropping to $\pi$ = 0.2, i.e., f ($\pi$ = 0.8) = 0.65 and f ($\pi$ = 0.2) = 0.10.
 
 :::::: my-theorem
 :::: my-theorem-header
@@ -1707,7 +1707,7 @@ The first thing you might notice is that this model greatly simplifies reality. 
 ::::
 
 ::: my-theorem-container
-Let $Y$ be a discrete random variable. The probability model of $Y$ is specified by a `r glossary("probability_mass_function", "probability mass function")` (pmf) $f (y)$. This pmf defines the probability of any given outcome $y$,
+Let $Y$ be a discrete random variable. The probability model of $Y$ is specified by a `r glossary("Probability-Mass-Function", "probability mass function")` (pmf) $f (y)$. This pmf defines the probability of any given outcome $y$,
 
 $$
 f (y) = P (Y = y)
@@ -2451,7 +2451,7 @@ ggplot2::ggplot(win_one, ggplot2::aes(x = pi)) +
 
 Steps 2 and 3 have interim steps under different names:
 
-The conditional pmf is defined using the `r glossary("joint_probability", "joint probability")` mass function and the `r glossary("marginal_probability", "marginal probability")` also called the `r glossary("total_probability", "total probability")`.
+The conditional pmf is defined using the `r glossary("joint-probability", "joint probability")` mass function and the `r glossary("marginal_probability", "marginal probability")` also called the `r glossary("total_probability", "total probability")`.
 
 :::::{.my-theorem}
 :::{.my-theorem-header}
