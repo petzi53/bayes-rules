@@ -19,7 +19,7 @@ Johnson, Miles Q. Ott and Mine Dogucu [@johnson2022].
 ::: {.callout-note style="color: blue;"}
 #### This is work in progress
 
-Finished about 23%. I am currently working on the exercises of the fifth chapter, resp. starting with chapter 6.
+Finished about 23%. I am currently working in parallel on the exercises of the fifth chapter and started with chapter 6.
 :::
 
 

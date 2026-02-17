@@ -301,7 +301,7 @@ $$ {#eq-005-poisson-equal-mean-variance}
 
 #### Poisson illustrations
 
-Figure 5.3 illustrates the Poisson pmf @eq-005-poisson-model under
+@eq-005-poisson-model illustrates the Poisson pmf @eq-005-poisson-model under
 different rate parameters $\lambda$. In general, as the rate of events
 $\lambda$ increases, the typical number of events increases, the
 variability increases, and the skew decreases. For example, when events
@@ -311,6 +311,15 @@ $1$ events, and rarely more than 3. In contrast, when events occur at a
 higher rate of $\lambda = 5$, the model is roughly symmetric and more
 variable – we’re most likely to observe $4$ or $5$ events, though have a
 reasonable chance of observing anywhere between $1$ and $10$ events.
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-005-plot-poisson-models}
+: Plot for illustration some poisson pmfs with different rate parameters.
+::::::
+:::
+::::{.my-r-code-container}
+
 
 ```{r}
 #| label: fig-005-plot-poisson-models
@@ -352,6 +361,9 @@ ggplot2::ggplot(data, ggplot2::aes(x = x, y = probability)) +
     strip.text = ggplot2::element_text(face = "bold", size = 11)
   )
 ```
+
+::::
+:::::
 
 Let $(Y_1, Y_2, . . . , Y_n)$ denote the number of fraud risk calls we
 observed on each of the $n$ days in our data collection period. We
@@ -586,8 +598,11 @@ $$
 :::
 ::::::
 
+#### Gamma illustrations
+
 Notice that the Gamma model depends upon two hyperparameters, `r` and
 `s`.
+
 
 :::::: my-r-code
 :::: my-r-code-header
@@ -681,7 +696,7 @@ plot_data |>
 :::
 ::::::
 
-#### Gamma illustrations
+
 
 Assess your understanding of how these hyperparameters impact the Gamma
 model properties in the following quiz.
@@ -2056,21 +2071,22 @@ All three have clean, interpretable posterior formulas:
 
 ::: {.column-page-inset}
 
-| Feature                   | Beta-Binomial                                                                                                                                     | Gamma-Poisson                                                                             | Normal-Normal                                                                                                                                                                   |
-|---------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **Parameter**             | π ∈ [0, 1]                                                                                                                                        | λ > 0 (rate)                                                                              | μ ∈ ℝ (mean)                                                                                                                                                                    |
-| **Parameter space**       | [0, 1]                                                                                                                                            | (0, ∞)                                                                                    | (-∞, ∞)                                                                                                                                                                         |
-| **Parameter type**        | Proportion / Probability                                                                                                                          | Rate                                                                                      | Mean                                                                                                                                                                            |
-| **Data support**          | {0, 1, ..., n}                                                                                                                                    | {0, 1, 2, ...}                                                                            | ℝ (continuous)                                                                                                                                                                  |
-| **Data type**             | Count of successes in<br>fixed number of trials                                                                                                   | Count data (0, 1, 2, …) <br>with no upper limit                                           | Continuous real numbers                                                                                                                                                         |
-| **Sufficient statistics** | y, n                                                                                                                                              | Σyᵢ, n                                                                                    | ȳ, n                                                                                                                                                                            |
-| **Prior**                 | Beta(α, β)                                                                                                                                        | Gamma(s, r)                                                                               | N(μ₀, σ₀²)                                                                                                                                                                      |
-| **Prior Hyperparameters** | α = prior successes,<br>β = prior failures                                                                                                        | s = shape (prior “total count”),<br>r = rate (prior “exposure time”)                      | μ₀ = prior mean,<br>σ₀² = prior variance <br>(uncertainty about μ)                                                                                                              |
-| **Likelihood**            | Binomial(n, π)                                                                                                                                    | Poisson(λ)                                                                                | N(μ, σ²) with known σ²                                                                                                                                                          |
-| **Posterior**             | Beta(α + y, β + n - y)                                                                                                                            | Gamma(s + Σyᵢ, r + n)                                                                     | N(μₙ, σₙ²) where:<br>μₙ = (μ₀/σ₀² + nȳ/σ²)/(1/σ₀² + n/σ²)<br>σₙ² = 1/(1/σ₀² + n/σ²)                                                                                             |
-| **Use case**              | Modeling proportions, <br>probabilities, success rates,<br>polls                                                                                  | Modeling rates, waiting times, <br>event counts per unit in<br>time/space, arrivals       | Modeling continuous measurements,<br>heights, averages                                                                                                                          |
-| **Update rule**           | Add observed successes to α, <br>add failures to β                                                                                                | Add total observed counts to s, <br>add number of observations to r                       | Precision-weighted average of <br>prior mean and sample mean                                                                                                                    |
-| **Interpretation**        | **Mean**: E(π) = α/(α + β)<br>**Effective sample size**: α + β (strength of prior belief)<br>The larger α + β relative to n, the more the prior dominates | **Mean**: E(λ) = s/r<br>**Variance**: Var(λ) = s/r²<br>r represents prior sample size or exposure | **Posterior mean**: Weighted average based on precisions (1/variance)<br>**Posterior variance**: Always smaller than prior variance<br>More data → posterior mean closer to sample mean |
+| Feature                   | Beta-Binomial                                                                                                                                     | Gamma-Poisson                                                                                                       | Normal-Normal                                                                                                                                                                   |
+|:--------------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------|:--------------------------------------------------------------------------------------------------------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Parameter**             | π ∈ [0, 1]                                                                                                                                        | λ > 0 (rate)                                                                                                        | μ ∈ ℝ (mean)                                                                                                                                                                    |
+| **Parameter space**       | [0, 1]                                                                                                                                            | (0, ∞)                                                                                                              | (-∞, ∞)                                                                                                                                                                         |
+| **Parameter type**        | Proportion / Probability                                                                                                                          | Rate                                                                                                                | Mean                                                                                                                                                                            |
+| **Data support**          | {0, 1, ..., n}                                                                                                                                    | {0, 1, 2, ...}                                                                                                      | ℝ (continuous)                                                                                                                                                                  |
+| **Data type**             | Count of successes in<br>fixed number of trials                                                                                                   | Count data (0, 1, 2, …) <br>with no upper limit                                                                     | Continuous real numbers                                                                                                                                                         |
+| **Sufficient statistics** | y, n                                                                                                                                              | Σyᵢ, n                                                                                                              | ȳ, n                                                                                                                                                                            |
+| **Prior**                 | Beta(α, β)                                                                                                                                        | Gamma(s, r)                                                                                                         | N(μ₀, σ₀²)                                                                                                                                                                      |
+| **Prior Hyperparameters** | α = prior successes,<br>β = prior failures                                                                                                        | s = shape (prior “total count”),<br>r = rate (prior “exposure time”)                                                | μ₀ = prior mean,<br>σ₀² = prior variance <br>(uncertainty about μ)                                                                                                              |
+| **Likelihood**            | Binomial(n, π)                                                                                                                                    | Poisson(λ)                                                                                                          | N(μ, σ²) with known σ²                                                                                                                                                          |
+| **Posterior**             | Beta(α + y, β + n - y)                                                                                                                            | Gamma(s + Σyᵢ, r + n)                                                                                               | N(μₙ, σₙ²) where:<br>μₙ = (μ₀/σ₀² + nȳ/σ²)/(1/σ₀² + n/σ²)<br>σₙ² = 1/(1/σ₀² + n/σ²)                                                                                             |
+| **Use case**              | Modeling proportions, <br>probabilities, success rates,<br>polls                                                                                  | Modeling rates, waiting times, <br>event counts per unit in<br>time/space, arrivals                                 | Modeling continuous measurements,<br>heights, averages                                                                                                                          |
+| **Update rule**           | Add observed successes to α, <br>add failures to β                                                                                                | Add total observed counts to s, <br>add number of observations to r                                                 | Precision-weighted average of <br>prior mean and sample mean                                                                                                                    |
+| **Interpretation**        | Mean: E(π) = α/(α + β)<br>Effective sample size: α + β (strength of prior belief)<br>The larger α + β relative to n, the more the prior dominates | Mean: E(λ) = s/r<br>Variance: Var(λ) = s/r²<br>r represents prior sample size or exposure                           | Posterior mean: Weighted average based on precisions (1/variance)<br>Posterior variance: Always smaller than prior variance<br>More data → posterior mean closer to sample mean |
+| **R function**            | plot_beta()<br>plot_beta_binomial()<br>plot_binomial_likelihood()<br>summarize_beta()<br>summarize_beta_binomial()                                | plot_gamma()<br>plot_gamma_poisson()<br>plot_poisson_likelihood()<br>summarize_gamma()<br>summarize_gamma_poisson() | plot_normal()<br>plot_normal_normal()<br>plot_normal_likelihood()<br><br>summarize_normal_normal()                                                                              |
 : Side-by-side comparison of Beta-Binomial, Gamm-Poisson, and Normal-Normal  {#tbl-005-model-comparison} {tbl-colwidths="[10,30,30,30]"} {.striped .hover}
 
 
@@ -2078,6 +2094,785 @@ All three have clean, interpretable posterior formulas:
 
 
 :::
+
+## Exercises
+
+::: {#wrn-005-exercises .callout-warning}
+###### Take my solutions with caution!
+
+Keep in mind, that I am not an expert but a learner. This means that the
+presented solutions may have errors or are completely wrong.
+
+If you find errors please report to me at the [GitHub
+repo](https://github.com/petzi53/bayes-rules) of this website.
+:::
+
+### Practice Gamma-Poisson
+
+#### Tuning a Gamma prior
+
+##### Mode & mean {#sec-005-tune-gamma-prior-mean-mode}
+
+:::::{.my-theorem}
+:::{.my-theorem-header}
+:::::: {#thm-005-tune-gamma-prior-mean-mode}
+: How to tune a Gamma prior given mode and mean?
+::::::
+:::
+::::{.my-theorem-container}
+
+To find the appropriate Gamma(s, r) prior given a desired **mode** and **mean**, we use the known formulas for the Gamma distribution in @eq-005-gamma-central-measures:
+
+::: {#big-text style="font-size: 125%"}
+**🔍 Gamma Distribution Properties** 
+:::
+
+- **Mean** = $\frac{s}{r}$
+- **Mode** = $\frac{s - 1}{r}$, for $s > 1$
+
+Let:
+
+- $\lambda$ = desired **mode**
+- $\mu$ = desired **mean**
+
+We solve the system of equations:
+
+$$
+\begin{align*}
+\frac{s}{r} &= \mu \quad \text{(1)} \\
+\frac{s - 1}{r} &= \lambda \quad \text{(2)}
+\end{align*}
+$$ 
+
+***
+
+::: {#big-text style="font-size: 125%"}
+**🛠️ Step-by-step Formula Derivation** 
+:::
+
+
+From (1):  
+$$
+s = \mu r
+$$
+
+Substitute into (2):  
+$$
+\frac{\mu r - 1}{r} = \lambda
+$$
+
+$$
+\mu - \frac{1}{r} = \lambda
+$$
+
+$$
+\frac{1}{r} = \mu - \lambda
+\Rightarrow r = \frac{1}{\mu - \lambda}
+$$
+
+Then from $s = \mu r$:  
+$$
+s = \mu \cdot \frac{1}{\mu - \lambda} = \frac{\mu}{\mu - \lambda}
+$$
+
+***
+
+::: {#big-text style="font-size: 125%"}
+**✅ Final Formula** 
+:::
+
+Given **mode** $\lambda$ and **mean** $\mu$, the Gamma parameters are:
+
+$$
+\boxed{
+r = \frac{1}{\mu - \lambda}, \quad s = \frac{\mu}{\mu - \lambda}
+}
+$$ {#eq-005-tune-gamma-prior-mean-mode}
+
+
+::: {#big-text style="font-size: 125%"}
+**🛑 Conditions** 
+:::
+
+- $\mu > \lambda$ (mean > mode, which is true for Gamma distributions)
+- $s > 1$ (required for mode formula to hold)
+
+***
+
+::: {#big-text style="font-size: 125%"}
+**📝 Example** 
+:::
+
+If $\mu = 7$, $\lambda = 4$:
+
+$$
+r = \frac{1}{7 - 4} = \frac{1}{3}, \quad s = \frac{7}{3} \approx 2.333
+$$
+
+::: {#big-text style="font-size: 110%"}
+<center>**Gamma(2.33, 0.33)**</center>
+:::
+
+
+
+
+::::
+:::::
+
+##### Mode & variance {#sec-005-tune-gamma-prior-mode-var}
+
+:::::{.my-theorem}
+:::{.my-theorem-header}
+:::::: {#thm-005-tune-gamma-prior-mode-variance}
+: How to tune a Gamma prior given mode and variance?
+::::::
+:::
+::::{.my-theorem-container}
+
+To find the appropriate **Gamma(s, r)** prior given a desired **mode** and **variance**, we use the known properties of the Gamma distribution in @eq-005-gamma-central-measures.
+
+***
+
+::: {#big-text style="font-size: 125%"}
+**🔍 Gamma Distribution Properties** 
+:::
+
+For a Gamma distribution with shape $s$ and rate $r$:
+
+- **Mean**: $\mu = \frac{s}{r}$
+- **Variance**: $\sigma^2 = \frac{s}{r^2}$
+- **Mode**: $\lambda = \frac{s - 1}{r}$, for $s > 1$
+
+We are given:
+
+- $\lambda$: desired **mode**
+- $\sigma^2$: desired **variance**
+
+We want to solve for $s$ and $r$.
+
+***
+
+::: {#big-text style="font-size: 125%"}
+**🛠️ Step-by-Step Derivation** 
+:::
+
+We use the three equations:
+
+1. $\mu = \frac{s}{r}$
+2. $\sigma^2 = \frac{s}{r^2}$
+3. $\lambda = \frac{s - 1}{r}$
+
+
+::: {#big-text style="font-size: 110%"}
+**Step 1: Use variance and mean** 
+:::
+
+
+From (1) and (2):
+
+$$
+\sigma^2 = \frac{s}{r^2} = \frac{1}{r} \cdot \frac{s}{r} = \frac{\mu}{r}
+\Rightarrow r = \frac{\mu}{\sigma^2}
+$$
+
+But we don't have $\mu$ directly — we have $\lambda$ and $\sigma^2$.
+
+So instead, use **mode** and **variance**.
+
+
+::: {#big-text style="font-size: 110%"}
+**Step 2: Express $s$ and $r$ in terms of $\lambda$ and $\sigma^2$** 
+:::
+
+
+From the mode:
+$$
+\lambda = \frac{s - 1}{r} \Rightarrow s = \lambda r + 1 \quad \text{(1)}
+$$
+
+From the variance:
+$$
+\sigma^2 = \frac{s}{r^2} \quad \text{(2)}
+$$
+
+Substitute (1) into (2):
+
+$$
+\sigma^2 = \frac{\lambda r + 1}{r^2} = \frac{\lambda}{r} + \frac{1}{r^2}
+$$
+
+Multiply both sides by $ r^2 $:
+
+$$
+\sigma^2 r^2 = \lambda r + 1
+\Rightarrow \sigma^2 r^2 - \lambda r - 1 = 0
+$$
+
+This is a **quadratic in $r$**:
+
+$$
+\sigma^2 r^2 - \lambda r - 1 = 0
+$$
+
+Solve for $r$:
+
+$$
+r = \frac{ \lambda \pm \sqrt{ \lambda^2 + 4 \sigma^2 } }{2 \sigma^2}
+$$
+
+Since $r > 0$, we take the **positive root**:
+
+$$
+r = \frac{ \lambda + \sqrt{ \lambda^2 + 4 \sigma^2 } }{2 \sigma^2}
+$$
+
+Then from (1):
+
+$$
+s = \lambda r + 1
+$$
+
+***
+
+::: {#big-text style="font-size: 125%"}
+**✅ Final Formula** 
+:::
+
+
+Given **mode** $\lambda$ and **variance** $\sigma^2$, compute:
+
+$$
+\boxed{
+r = \frac{ \lambda + \sqrt{ \lambda^2 + 4 \sigma^2 } }{2 \sigma^2}, \quad
+s = \lambda r + 1
+}
+$$ {#eq-005-tune-gamma-prior-mode-var}
+
+
+
+***
+
+::: {#big-text style="font-size: 110%"}
+**🛑 Edge Cases** 
+:::
+
+
+| Condition | Interpretation | Action |
+|--------|----------------|--------|
+| $\lambda \leq 0$ | Mode not positive | Invalid for Gamma with $s > 1$ |
+| $\sigma^2 = 0$ | Zero variance | Degenerate — only possible if $s \to \infty$, $r \to \infty$ |
+| $\lambda > 0$, $\sigma^2 > 0$ | Valid | Use formula |
+
+***
+
+::: {#big-text style="font-size: 110%"}
+**📝 Example** 
+:::
+
+
+Let $\lambda = 4$, $\sigma^2 = 3$
+
+Then:
+
+Auxiliary calculation: Square root expression
+
+$\sqrt{ \lambda^2 + 4 \sigma^2 } = \sqrt{16 + 12} = \sqrt{28} \approx 5.2915$
+
+$$
+\begin{align*}
+r &= \frac{4 + 5.2915}{2 \cdot 3} = \frac{9.2915}{6} &\approx 1.5486 \\
+s &= 4 \cdot 1.5486 + 1 &\approx 7.1944
+\end{align*}
+$$ 
+
+
+::: {#big-text style="font-size: 110%"}
+<center>**Gamma(7.19, 1.55)**</center>
+:::
+
+
+Check:
+
+$$
+\begin{align*}
+\text{E}(\lambda) &= \frac{s}{r} &\approx \frac{7.1944}{1.5486} &\approx 4.64 \\
+\text{Mode}(\lambda) &= \frac{s-1}{r} &\approx \frac{6.1944}{1.5486} &\approx 4.00 \quad ✅ \\
+\text{Var}(\lambda) &= \frac{s}{r^2} &\approx \frac{7.1944}{1.5486^2} &\approx 3.00 \quad ✅
+\end{align*}
+$$ 
+
+::::
+:::::
+
+##### Mean & variance {#sec-005-tune-gamma-prior-mean-var}
+
+:::::{.my-theorem}
+:::{.my-theorem-header}
+:::::: {#thm-005-tune-gamma-prior-mean-variance}
+: How to tune a Gamma prior given mean and variance?
+::::::
+:::
+::::{.my-theorem-container}
+
+To find the appropriate **Gamma(s, r)** prior given a desired **mean** $\mu$ and **variance** $\sigma^2$, we use the known properties of the Gamma distribution in @eq-005-gamma-central-measures.
+
+***
+
+::: {#big-text style="font-size: 125%"}
+**🔍 Gamma Distribution Properties** 
+:::
+
+
+For a Gamma distribution with shape $s$ and rate $r$:
+
+- **Mean**: $\mu = \frac{s}{r}$
+- **Variance**: $\sigma^2 = \frac{s}{r^2}$
+
+We solve for $s$ and $r$ using these two equations.
+
+***
+
+::: {#big-text style="font-size: 125%"}
+**🛠️ Step-by-Step Derivation** 
+:::
+
+
+From the mean:
+$$
+s = \mu r \quad \text{(1)}
+$$
+
+Substitute into the variance:
+$$
+\sigma^2 = \frac{s}{r^2} = \frac{\mu r}{r^2} = \frac{\mu}{r}
+\Rightarrow r = \frac{\mu}{\sigma^2}
+$$
+
+Now plug back into (1):
+$$
+s = \mu r = \mu \cdot \frac{\mu}{\sigma^2} = \frac{\mu^2}{\sigma^2}
+$$
+
+***
+
+::: {#big-text style="font-size: 125%"}
+**✅ Final Formula** 
+:::
+
+
+Given **mean** $\mu$ and **variance** $\sigma^2$, the Gamma parameters are:
+
+$$
+\boxed{
+r = \frac{\mu}{\sigma^2}, \quad
+s = \frac{\mu^2}{\sigma^2}
+}
+$$ {#eq-005-tune-gamma-prior-mean-var}
+
+***
+
+::: {#big-text style="font-size: 110%"}
+**🛑 Edge Cases** 
+:::
+
+
+| Condition | Interpretation | Action |
+|--------|----------------|--------|
+| $\mu \leq 0$ | Mean not positive | Invalid (Gamma requires $\mu > 0$) |
+| $\sigma^2 = 0$ | Zero variance | Degenerate — only possible if $s \to \infty$, $r \to \infty$ |
+| $\mu > 0$, $\sigma^2 > 0$ | Valid | Use formula |
+
+***
+
+::: {#big-text style="font-size: 110%"}
+**📝 Example** 
+:::
+
+
+Let $\mu = 7$, $\sigma^2 = 3$
+
+Then:
+
+$$
+r = \frac{7}{3} \approx 2.333, \quad s = \frac{49}{3} \approx 16.333
+$$
+
+::: {#big-text style="font-size: 110%"}
+<center>**Gamma(16.33, 2.33)**</center>
+:::
+
+
+Check:
+
+$$
+\begin{align*}
+\text{E}(\lambda) &= \frac{s}{r} &\approx  \frac{16.333}{2.333} &\approx 7.00 \quad  ✅ \\ \text{Var}(\lambda) &= \frac{s}{r^2} &\approx  \frac{16.333}{2.333^2} &\approx 3.00 \quad  ✅ 
+\end{align*}
+$$ 
+
+
+::::
+:::::
+
+
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-005-get-gamma-hyperparameter}
+: Given mode and mean return Gamma hyperparameter
+::::::
+:::
+::::{.my-r-code-container}
+```{r}
+#| label: gamma-tuning
+#| lst-label: lst-005-gamma-tuning
+#| lst-cap: Gamma tuning 3 variants with given mode & mean; given mode & variance; given mean and variance
+#| code-fold: show
+
+my_gamma_prior_tuning <-  function(lambda = NULL, mu = NULL, var = NULL) {
+  
+  if (is.null(var)) {
+    rate = round(1 / (mu - lambda), 2)
+    shape =  round(mu / (mu - lambda), 2)
+  }
+  
+  if (is.null(mu)) {
+    rate = round((lambda + sqrt(lambda^2 + (4 * var))) / (2 * var), 2)
+    shape = round(((lambda * rate ) + 1), 2)
+  }
+  
+  if (is.null(lambda)) {
+    rate = round((mu / var), 2)
+    shape = round((mu^2 / var), 2)
+  }
+  
+  # glue::glue("Gamma({shape}, {rate})")
+  gamma <- tibble::tribble(
+    ~shape, ~rate,
+    shape, rate
+  )
+  gamma
+}
+
+
+
+```
+
+::::
+:::::
+
+
+
+:::::{.my-exercise}
+:::{.my-exercise-header}
+:::::: {#exr-005-tune-gamma-prior}
+: Tuning a Gamma prior
+::::::
+:::
+::::{.my-exercise-container}
+
+For each situation below, tune an appropriate $\text{Gamma}(s, r)$ prior model for $\lambda$.
+
+1. At first a tried to find a solution with trial & error using the `bayesrules::plot_gamma()` function. But I couldn't find a system how to change the parameters.
+2. Therefore I changed the approach and solved the question mathematically (with the help of `r glossary("Qwen-14b")` (see: @sec-005-tune-gamma-prior-mean-mode, @sec-005-tune-gamma-prior-mode-var, @sec-005-tune-gamma-prior-mean-var).
+3. I got as result different formulas (see: @eq-005-tune-gamma-prior-mean-mode, @eq-005-tune-gamma-prior-mode-var, @eq-005-tune-gamma-prior-mean-var).
+4. Finally I integrated the formulas into the `my_gamma_prior_tuning()` (see: @lst-005-gamma-tuning).
+
+My solutions for this exercise appear as 
+
+- text $\text{Gamma}(s, r)$
+- table with `bayesrules::summarize_gamma(shape, rate)` and
+- figure with `bayesrules::plot_gamma(shape, rate, mean = TRUE, mode = TRUE)`
+
+
+a) The most common value of λ is 4, and the mean is 7. Solution: **Gamma(`r my_gamma_prior_tuning(lambda = 4, mu = 7)[[1]]`,`r my_gamma_prior_tuning(lambda = 4, mu = 7)[[2]]`)**
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-005-005-tune-gamma-prior-a}
+: Plot the Gamma distribution for $\lambda = 4$, and $\mu = 7$
+::::::
+:::
+::::{.my-r-code-container}
+
+::::: columns
+::: {.column width="50%"}
+```{r}
+#| label: fig-005-plot-tuning-gamma-a
+#| fig-cap: The Gamma distribution for $\lambda = 4$, and $\mu = 7$.
+
+shape <- my_gamma_prior_tuning(lambda = 4, mu = 7)[[1]]
+rate  <- my_gamma_prior_tuning(lambda = 4, mu = 7)[[2]] 
+
+my_plot_gamma(
+  shape = shape,
+  rate = rate,
+  show_mean = TRUE,
+  show_mode = TRUE
+  )
+
+```
+:::
+
+::: {.column width="50%"}
+```{r}
+#| label: tbl-005-summarize-tuning-gamma-a
+#| tbl-cap: Summarize the Gamma model for $\lambda = 4$, and $\mu = 7$.
+
+bayesrules::summarize_gamma(
+  shape = my_gamma_prior_tuning(lambda = 4, mu = 7)[[1]],
+  rate = my_gamma_prior_tuning(lambda = 4, mu = 7)[[2]]
+) |>
+  knitr::kable(digits = 4)
+```
+:::
+:::::
+
+::::
+:::::
+
+
+b) The most common value of λ is 10 and the mean is 12. Solution: **Gamma(`r my_gamma_prior_tuning(lambda = 10, mu = 12)[[1]]`,`r my_gamma_prior_tuning(lambda = 10, mu = 12)[[2]]`)**
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-005-005-tune-gamma-prior-b}
+: Plot the Gamma distribution for $\lambda = 10$, and $\mu = 12$
+::::::
+:::
+::::{.my-r-code-container}
+
+::::: columns
+::: {.column width="50%"}
+```{r}
+#| label: fig-005-plot-tuning-gamma-b
+#| fig-cap: The Gamma distribution for $\lambda = 10$, and $\mu = 12$.
+
+shape <- my_gamma_prior_tuning(lambda = 10, mu = 12)[[1]]
+rate  <- my_gamma_prior_tuning(lambda = 10, mu = 12)[[2]] 
+
+my_plot_gamma(
+  shape = shape,
+  rate = rate,
+  show_mean = TRUE,
+  show_mode = TRUE
+  )
+
+```
+:::
+
+::: {.column width="50%"}
+```{r}
+#| label: tbl-005-summarize-tuning-gamma-b
+#| tbl-cap: Summarize the Gamma model for $\lambda = 10$, and $\mu = 12$.
+
+bayesrules::summarize_gamma(
+  shape = my_gamma_prior_tuning(lambda = 10, mu = 12)[[1]],
+  rate = my_gamma_prior_tuning(lambda = 10, mu = 12)[[2]]
+) |>
+  knitr::kable(digits = 4)
+```
+:::
+:::::
+
+::::
+:::::
+
+
+c) The most common value of λ is 5, and the variance is 3. Solution: **Gamma(`r my_gamma_prior_tuning(lambda = 5, var = 3)[[1]]`,`r my_gamma_prior_tuning(lambda = 5, var = 3)[[2]]`)**
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-005-005-tune-gamma-prior-c}
+: Plot the Gamma distribution for $\lambda = 5$, and $\text{var} = 3$
+::::::
+:::
+::::{.my-r-code-container}
+
+::::: columns
+::: {.column width="50%"}
+```{r}
+#| label: fig-005-plot-tuning-gamma-c
+#| fig-cap: The Gamma distribution for $\lambda = 5$, and $\text{var} = 3$.
+
+shape <- my_gamma_prior_tuning(lambda = 5, var = 3)[[1]]
+rate  <- my_gamma_prior_tuning(lambda = 5, var = 3)[[2]] 
+
+my_plot_gamma(
+  shape = shape,
+  rate = rate,
+  show_mean = TRUE,
+  show_mode = TRUE
+  )
+
+```
+:::
+
+::: {.column width="50%"}
+```{r}
+#| label: tbl-005-summarize-tuning-gamma-c
+#| tbl-cap: Summarize the Gamma model for $\lambda = 5$, and $\text{var} = 3$.
+
+bayesrules::summarize_gamma(
+  shape = my_gamma_prior_tuning(lambda = 5, var = 3)[[1]],
+  rate = my_gamma_prior_tuning(lambda = 5, var = 3)[[2]]
+) |>
+  knitr::kable(digits = 4)
+```
+:::
+:::::
+
+::::
+:::::
+
+
+d) The most common value of λ is 14, and the variance is 6. **Gamma(`r my_gamma_prior_tuning(lambda = 14, var = 6)[[1]]`,`r my_gamma_prior_tuning(lambda = 14, var = 6)[[2]]`)**
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-005-005-tune-gamma-prior-d}
+: Plot the Gamma distribution for $\lambda = 14$, and $\text{var} = 6$
+::::::
+:::
+::::{.my-r-code-container}
+
+::::: columns
+::: {.column width="50%"}
+```{r}
+#| label: fig-005-plot-tuning-gamma-d
+#| fig-cap: The Gamma distribution for $\lambda = 14$, and $\text{var} = 6$.
+
+shape <- my_gamma_prior_tuning(lambda = 14, var = 6)[[1]]
+rate  <- my_gamma_prior_tuning(lambda = 14, var = 6)[[2]] 
+
+my_plot_gamma(
+  shape = shape,
+  rate = rate,
+  show_mean = TRUE,
+  show_mode = TRUE
+  )
+
+```
+:::
+
+::: {.column width="50%"}
+```{r}
+#| label: tbl-005-summarize-tuning-gamma-d
+#| tbl-cap: Summarize the Gamma model for $\lambda = 14$, and $\text{var} = 6$.
+
+bayesrules::summarize_gamma(
+  shape = my_gamma_prior_tuning(lambda = 14, var = 6)[[1]],
+  rate = my_gamma_prior_tuning(lambda = 14, var = 6)[[2]]
+) |>
+  knitr::kable(digits = 4)
+```
+:::
+:::::
+
+::::
+:::::
+
+
+
+e) The mean of λ is 4 and the variance is 12. **Gamma(`r my_gamma_prior_tuning(mu = 4, var = 12)[[1]]`,`r my_gamma_prior_tuning(mu = 4, var = 12)[[2]]`)**
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-005-005-tune-gamma-prior-e}
+: Plot the Gamma distribution for $\mu = 4$, and $\text{var} = 12$
+::::::
+:::
+::::{.my-r-code-container}
+
+::::: columns
+::: {.column width="50%"}
+```{r}
+#| label: fig-005-plot-tuning-gamma-e
+#| fig-cap: The Gamma distribution for $\mu = 4$, and $\text{var} = 12$.
+
+shape <- my_gamma_prior_tuning(mu = 4, var = 12)[[1]]
+rate  <- my_gamma_prior_tuning(mu = 4, var = 12)[[2]] 
+
+my_plot_gamma(
+  shape = shape,
+  rate = rate,
+  show_mean = TRUE,
+  show_mode = TRUE
+  )
+
+```
+:::
+
+::: {.column width="50%"}
+```{r}
+#| label: tbl-005-summarize-tuning-gamma-e
+#| tbl-cap: Summarize the Gamma model for $\mu = 4$, and $\text{var} = 12$.
+
+bayesrules::summarize_gamma(
+  shape = my_gamma_prior_tuning(mu = 4, var = 12)[[1]],
+  rate = my_gamma_prior_tuning(mu = 4, var = 12)[[2]]
+) |>
+  knitr::kable(digits = 4)
+```
+:::
+:::::
+
+::::
+:::::
+
+
+f) The mean of λ is 22 and the variance is 3. **Gamma(`r my_gamma_prior_tuning(mu = 22, var = 3)[[1]]`,`r my_gamma_prior_tuning(mu = 22, var = 3)[[2]]`)**
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-005-005-tune-gamma-prior-f}
+: Plot the Gamma distribution for $\mu = 22$, and $\text{var} = 3$
+::::::
+:::
+::::{.my-r-code-container}
+
+::::: columns
+::: {.column width="50%"}
+```{r}
+#| label: fig-005-plot-tuning-gamma-f
+#| fig-cap: The Gamma distribution for $\mu = 22$, and $\text{var} = 3$.
+
+shape <- my_gamma_prior_tuning(mu = 22, var = 3)[[1]]
+rate  <- my_gamma_prior_tuning(mu = 22, var = 3)[[2]] 
+
+my_plot_gamma(
+  shape = shape,
+  rate = rate,
+  show_mean = TRUE,
+  show_mode = TRUE
+  )
+
+```
+:::
+
+::: {.column width="50%"}
+```{r}
+#| label: tbl-005-summarize-tuning-gamma-f
+#| tbl-cap: Summarize the Gamma model for $\mu = 22$, and $\text{var} = 3$.
+
+bayesrules::summarize_gamma(
+  shape = my_gamma_prior_tuning(mu = 22, var = 3)[[1]],
+  rate = my_gamma_prior_tuning(mu = 22, var = 3)[[2]]
+) |>
+  knitr::kable(digits = 4)
+```
+:::
+:::::
+
+::::
+:::::
+
+
+
+::::
+:::::
+
+
 
 
 ## Glossary Entries {.unnumbered}
