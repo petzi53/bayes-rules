@@ -1,0 +1,1677 @@
+---
+format: 
+    live-html:
+        theme: cosmo
+        highlight-style: atom-one
+        css:
+         - include/quarto.css
+         - include/glossary.css
+         - include/webex.css
+        number-sections: true
+        toc-depth: 5
+        toc-expand: 4
+        toc_float: true
+        code-fold: true
+        code-summary: "Show/hide the code"
+        code-tools: true
+        code-link: true
+        code-overflow: scroll
+        df-print: default
+        link-external-newwindow: true
+        link-external-icon: true
+        include-after-body: include/webex.js
+webr:
+    packages:
+        - cli
+        - generics
+        - glue
+        - magrittr
+        - utf8
+        - vctrs
+        - pillar
+        - R6
+        - fansi
+        - pkgconfig
+        - tibble
+        - withr
+        - tidyselect
+        - dplyr
+        
+engine: knitr
+---
+
+{{< include ./_extensions/r-wasm/live/_knitr.qmd >}}
+
+
+# Approximating the Posterior {#sec-chap-006}
+
+```{r}
+#| label: setup
+#| results: hold
+#| include: false
+
+base::source(file = "R/helper.R")
+ggplot2::theme_set(ggplot2::theme_bw())
+```
+
+
+
+::::: {#obj-chap-006}
+:::: {.my-objectives}
+::: {.my-objectives-header}
+Objectives
+:::
+
+::: {.my-objectives-container}
+
+- Implement and examine the limitations of using grid approximation to simulate a posterior model. 
+- Explore the fundamental properties of `r glossary("MCMC")` posterior simulation techniques and how these differ from grid approximation. 
+- Implement MCMC simulation in R. 
+- Learn several `r glossary("Markov chain")` diagnostics for examining the quality of an MCMC posterior simulation.
+
+
+:::
+::::
+:::::
+
+## Grid approximation
+
+We needn’t observe $f (\theta \mid y)$ at every possible $\theta$ to get a sense of its structure. Rather, we can evaluate $f (\theta \mid y)$ at a finite, discrete grid of possible $\theta$ values. Subsequently, we can take random samples from this discretized pdf to approximate the full posterior pdf $f (\theta \mid y)$.
+
+:::::{.my-experiment}
+:::{.my-experiment-header}
+:::::: {#def-006-grid-approximation}
+: Grid approximation
+::::::
+:::
+::::{.my-experiment-container}
+Grid approximation produces a sample of $N$ **independent** $\theta$ values, $\{\theta(1), \theta(2), . . . , \theta(N)\}$, from a **discretized approximation** of posterior pdf $f (\theta \mid y)$.
+::::
+:::::
+
+:::::{.my-procedure}
+:::{.my-procedure-header}
+:::::: {#prp-006-grid-approximation}
+: Grid approximation
+::::::
+:::
+::::{.my-procedure-container}
+The grid approximation algorithm evolves in four steps:
+
+1. Define a discrete grid of possible $\theta$ values. 
+2. Evaluate the prior pdf $f (\theta)$ and likelihood function $L(\theta \mid y)$ at each $\theta$ grid value. 
+3. Obtain a discrete approximation of the posterior pdf $f (\theta \mid y)$ by: 
+    (a) calculating the product $f (\theta)L(\theta \mid y)$ at each $\theta$ grid value; and then 
+    (b) normalizing the products so that they sum to $1$ across all $\theta$. 
+4. Randomly sample $N$ $\theta$ grid values with respect to their corresponding normalized posterior probabilities.
+
+
+::::
+:::::
+
+### Beta-Binomial example
+
+#### Definition
+
+To bring the grid approximation technique to life, let’s explore the following generic `r glossary("Beta-Binomial-Model", "Beta-Binomial model")` (one without a corresponding data story):  
+ 
+$$
+\begin{align*}
+Y \mid \pi &\sim \text{Bin}(10, \pi) \\
+\pi &\sim \text{Beta}(2, 2)
+\end{align*}
+$$ {#eq-006-beta-binomial-example}
+
+  
+We can interpret $Y$ here as the number of successes in $10$ independent trials. Each trial has probability of success $\pi$ where our prior understanding about $\pi$ is captured by a $\text{Beta}(2, 2)$ model. Suppose we observe $Y = 9$ successes. Then by our work in @sec-chap-003, we know that the updated posterior model of $\pi$ is Beta with parameters $11 \quad (Y + \alpha = 9 + 2)$ and $3 \quad (n − Y +\beta = 10 − 9 + 2)$:  
+
+$$\pi \mid (Y = 9) \sim \text{Beta}(11, 3)$$
+
+#### Approximation {#sec-006-approximation}
+
+We’re now going to ask you to *forget* that we were able to specify this posterior. Instead, we’ll try to *approximate* the posterior using grid approximation.
+
+:::::{.my-procedure}
+:::{.my-procedure-header}
+:::::: {#prp-006-detailed-steps-of-grid-approximation}
+: Detailed steps of grid approximation
+::::::
+:::
+::::{.my-procedure-container}
+
+::: {#big-text style="font-size: 110%"}
+**Step 1** 
+:::
+
+we need to split the continuum of possible $\pi$ values on $0 to 1$ into a finite grid. We’ll start with a course grid of only $6$ $\pi$ values, $\pi \in \{0, 0.2, 0.4, 0.6, 0.8, 1\}$:
+
+```{r}
+#| code-fold: false
+
+# Step 1: Define a grid of 6 pi values 
+grid_data <- tibble::tibble(pi_grid = base::seq(from = 0, to = 1, length = 6))
+```
+
+::: {#big-text style="font-size: 110%"}
+**Step 2** 
+:::
+
+We use `stats::dbeta()` and `stats::dbinom()`, respectively, to evaluate the $\text{Beta}(2, 2)$ `r glossary("priorx", "prior")` `r glossary("pdf")` and $\text{Bin}(10, \pi)$ `r glossary("Likelihood-Function", "likelihood function")` with $Y = 9$ at each $\pi$ in `pi_grid`:
+
+```{r}
+#| code-fold: false
+
+# Step 2: Evaluate the prior & likelihood at each pi
+grid_data <- grid_data |>  
+  dplyr::mutate(prior = stats::dbeta(pi_grid, 2, 2),
+         likelihood = stats::dbinom(9, 10, pi_grid))
+```
+
+
+::: {#big-text style="font-size: 110%"}
+**Step 3** 
+:::
+
+We calculate the product of the likelihood and prior at each grid value. This provides an *unnormalized* discrete approximation of the `r glossary("posteriorx", "posterior")` pdf that doesn’t sum to one. We subsequently `r glossary("Normalizing Constant", "normalize")` this approximation by dividing each unnormalized posterior value by their collective sum:
+
+```{r}
+#| code-fold: false
+
+# Step 3: Approximate the posterior
+grid_data <- grid_data |>  
+  dplyr::mutate(unnormalized = likelihood * prior,
+         posterior = unnormalized / sum(unnormalized))
+
+# Confirm that the posterior approximation sums to 1
+grid_data |> 
+  dplyr::summarize(sum(unnormalized), sum(posterior)) |> 
+    knitr::kable(digits = 4)
+  
+```
+
+
+The resulting discretized posterior pdf, rounded to 2 decimal places and plotted below, provides a very rigid glimpse into the *actual* posterior pdf. It places a roughly 99% chance on $\pi$ being either $0.6$ or $0.8$, a 1% chance on $\pi$ being 0.4, and a near 0% chance on the other $\pi$ grid values:
+
+
+```{r}
+#| label: tbl-006-grid-approx-posterior
+#| tbl-cap: Examine the grid approximated posterior
+#| code-fold: false
+
+# Examine the grid approximated posterior
+grid_data |> 
+    knitr::kable(digits = 2)
+```
+
+```{r}
+#| label: fig-006-grid-approx-posterior
+#| fig-cap: Plot of the grid approximated posterior
+#| fig-height: 3
+#| fig-width: 4
+#| code-fold: false
+
+# Plot the grid approximated posterior
+ggplot2::ggplot(grid_data, 
+                ggplot2::aes(x = pi_grid, y = posterior)) + 
+  ggplot2::geom_point() + 
+  ggplot2::geom_segment(
+      ggplot2::aes(x = pi_grid, xend = pi_grid, y = 0, yend = posterior))
+```
+
+::: {#big-text style="font-size: 110%"}
+**Step 4** 
+:::
+
+Each sample draw has only 6 possible outcomes and is highly likely to be $0.6$ or $0.8$. Let’s try it: use `dplyr::slice_sample()` to take a sample of `n = 10000` values from the 6-length grid_data, with replacement, and using the discretized `posterior` probabilities as sample weights.
+
+```{r}
+#| label: tbl-sample-discretized-posterior
+#| tbl-cap: Sample form the discetized Posterior
+#| code-fold: false
+
+# Step 4: sample from the discretized posterior
+
+# Set the seed
+set.seed(84735)
+
+post_sample <- dplyr::slice_sample(grid_data, n = 10000, 
+                        weight_by = posterior, replace = TRUE)
+
+
+# A table of the 10000 sample values
+post_sample |> 
+  janitor::tabyl(pi_grid) |> 
+  janitor::adorn_totals("row") |> 
+  knitr::kable(digits = 4)
+```
+
+As expected, most of our $10,000$ sample values of $\pi$ were $0.6$ or $0.8$, few were $0.4$, and none were below $0.4$ or above $0.8$.
+
+
+
+
+
+::::
+:::::
+
+This is an extremely oversimplified approximation of the true $\text{Beta}(11, 3)$ posterior. If you need any more convincing, Figure 6.2 superimposes the true posterior pdf $f (\pi \mid y)$ on a scaled histogram of the $10,000$ sample values. If this were a good approximation, the histogram would mimic the shape, location, and spread of the smooth pdf. It does not.
+
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-005-grid-simulation-with-posterior}
+: Histogram of the grid simulation with Posterior PDF
+::::::
+:::
+::::{.my-r-code-container}
+```{r}
+#| label: fig-grid-simulation-with-posterior
+#| fig-cap: A grid approximation of the posterior pdf of  π using only 6 grid values. The actual pdf is represented by the curve.
+#| fig-height: 3
+#| fig-width: 4
+
+# Histogram of the grid simulation with posterior pdf
+ggplot2::ggplot(post_sample, ggplot2::aes(x = pi_grid)) + 
+  ggplot2::geom_histogram(
+      ggplot2::aes(y = ggplot2::after_stat(density)), 
+        color = "white",
+        bins = 30,
+        boundary = 0) +   ## added to ensure that bins start at 0
+  ggplot2::stat_function(
+      fun = dbeta, 
+      args = list(11, 3),
+      color = "darkred",
+      linewidth = 1) + 
+  ggplot2::xlim(0, 1)
+```
+
+
+
+::::
+:::::
+
+::: {.callout-note #nte-006-remove-warning}
+###### Warning about values outside of range
+
+The last line of the code in book (`lims(x = c(0, 1))`) produces a warning:
+
+> Removed 2 rows containing missing values or values outside the scale range (`geom_bar()`).
+
+My first solution was to use instead `coord_cartesian(xlim = c(0, 1)` to remove this warning. Although this worked in @fig-006-grid-simulation-101-values it didn't work here:
+
+**Why it works in @fig-006-grid-simulation-101-values**
+
+- `xlim()` and `ylim()` filter the data before plotting, removing rows that fall outside the range, which triggers the warning. 
+- `coord_cartesian()` zooms the plot without removing data, so no rows are dropped and the warning is avoided.
+
+**Why it didn't work in @fig-grid-simulation-with-posterior**
+
+`ggplot2::coord_cartesian(xlim = c(0, 1))` zooms into the plot **after** the histogram bins are calculated, so the binning is based on the full data range, not just [0,1].  This can distort the appearance of the histogram, even if your data (pi_grid) is already within [0,1]
+
+Here the solution is to add the histogram parameter `boundary = 0`. This ensures that bins start at 0.
+
+:::
+
+Instead of chopping up the 0-to-1 continuum of possible $˜pi$ values into a grid of only 6 values, let’s try a more reasonable grid of **101 values**: $\pi \in \{0, 0.01, 0.02, . . . , 0.99, 1\}$. The first 3 grid approximation steps using this refined grid are performed below:
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-006-grid-approximation-101-values}
+: Numbered R Code Title
+::::::
+:::
+::::{.my-r-code-container}
+```{r}
+#| label: fig-grid-approximation-101-values
+#| fig-cap: The discretized posterior pdf of π at 101 grid values.
+#| fig-height: 3
+#| fig-width: 4
+
+# Step 1: Define a grid of 101 pi values
+grid_data  <- tibble::tibble(
+    pi_grid = base::seq(from = 0, to = 1, length = 101)
+    )
+
+# Step 2: Evaluate the prior & likelihood at each pi
+grid_data <- grid_data |>  
+  dplyr::mutate(prior = stats::dbeta(pi_grid, 2, 2),
+         likelihood = stats::dbinom(9, 10, pi_grid))
+
+
+# Step 3: Approximate the posterior
+grid_data <- grid_data |>  
+  dplyr::mutate(unnormalized = likelihood * prior,
+         posterior = unnormalized / base::sum(unnormalized))
+
+ggplot2::ggplot(grid_data, 
+        ggplot2::aes(x = pi_grid, y = posterior)) + 
+  ggplot2::geom_point() + 
+  ggplot2::geom_segment(
+        ggplot2::aes(
+            x = pi_grid, 
+            xend = pi_grid, 
+            y = 0, 
+            yend = posterior)
+        )
+```
+
+::::
+:::::
+
+The resulting discretized posterior pdf is quite smooth, especially in comparison to the rigid approximation when we only used 6 grid values in @fig-006-grid-approx-posterior.
+
+Finally, in step 4 of the grid approximation, we sample 10,000 draws from the discretized posterior pdf:
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-006-grid-simulation-101-values}
+: Grid approximation of the posterior pdf of π using 101 grid values.
+::::::
+:::
+::::{.my-r-code-container}
+```{r}
+#| label: fig-006-grid-simulation-101-values
+#| fig-cap: A grid approximation of the posterior pdf of π using 101 grid values. The actual pdf is represented by the curve.
+#| fig-height: 3
+#| fig-width: 4
+
+# Set the seed
+set.seed(84735)
+
+# Step 4: sample from the discretized posterior
+post_sample <- dplyr::slice_sample(grid_data, n = 10000, 
+                        weight_by = posterior, replace = TRUE)
+
+ggplot2::ggplot(post_sample, ggplot2::aes(x = pi_grid)) + 
+    ggplot2::geom_histogram(
+          ggplot2::aes(y = ggplot2::after_stat(density)), 
+          color = "white", 
+          binwidth = 0.05) + 
+    ggplot2::stat_function(
+        fun = dbeta, 
+        args = list(11, 3),
+        color = "darkred",
+        linewidth = 1) + 
+    ggplot2::coord_cartesian(xlim = c(0, 1))
+
+```
+
+::::
+:::::
+
+@fig-006-grid-simulation-101-values displays a histogram of the resulting sample values. The shape, location, and spread of these values mimic those of the true target posterior pdf $f (\pi \mid y)$, represented by the smooth curve.
+
+Take a step back to appreciate what we’ve just accomplished. We’ve taken an independent sample from a discretized approximation of the posterior pdf $f (\pi \mid y)$ that’s defined only on a grid of $\pi$ values. The algorithm is pretty intuitive and didn’t require advanced programming skills to implement. Most of all, the result was a sample that behaves much like a random sample taken directly from $f (\pi \mid y)$ itself. 
+
+Thus, grid approximation can be a lifeline in scenarios in which the posterior is intractable, providing an approximation that’s nearly indistinguishable from the “real thing.”
+
+### Gamma-Poisson example
+
+#### Definition
+
+For practice, let’s apply the grid approximation technique to simulate the posterior of another Bayesian model, this time a Gamma-Poisson. Let $Y$ be the number of events that occur in a one-hour period, where events occur at an average rate of $\lambda$ per hour. Further, suppose we collect two data points ($Y_1, Y_2$) and place a $\text{Gamma}(3, 1)$ prior on $\lambda$:
+
+$$
+\begin{align*}
+Y_i \mid \lambda &\overset{\text{ind}}{\sim} Pois(λ) \\ 
+\lambda &\sim \text{Gamma}(3, 1)
+\end{align*}
+$$ {#eq-006-gamma-poisson-example}
+
+
+If we observe $Y_1 = 2$ events in the first one-hour observation period and $Y_2 = 8$ in the next, then by our work in @sec-chap-005 specifically @eq-005-gamma-poisson-model, the updated posterior model of $\lambda$ is Gamma with parameters 13 ($s + \sum{Y} = 3 + 10$) and 3 ($r + n = 1 + 2$):
+
+$$
+\lambda \mid ((Y_1, Y_2) = (2, 8)) \sim \text{Gamma}(13, 3)
+$$ {#eq-006-gamma-poisson-example2}
+
+(There is a typo in the book: $Y_2 = 8$ and not $3$ as in the book.)
+
+#### Approximation
+
+##### Step 1: Determine grid
+
+To simulate this posterior using grid approximation, **Step 1** is to specify a discrete grid of reasonable $\lambda$ values. Unlike the π parameter in the Beta-Binomial which is restricted to the finite 0-to-1 interval, the Poisson parameter $\lambda$ can technically take on any non-negative real value ($\lambda \in [0, \infty)$). 
+
+However, in a plot of the Gamma prior pdf and Poisson likelihood function it appears that, though possible, values of $\lambda$ beyond 15 are implausible (@fig-006-gamma-poisson-prior-likelihood).
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-006-gamma-poisson-prior-likelihood}
+:  Plot of the Gamma prior pdf and Poisson likelihood function
+::::::
+:::
+::::{.my-r-code-container}
+```{r}
+#| label: fig-006-gamma-poisson-prior-likelihood
+#| fig-cap: A Gamma prior pdf and scaled Poisson likelihood function for λ.
+#| fig-height: 3
+
+bayesrules::plot_gamma_poisson(
+    shape = 3,
+    rate = 1,
+    sum_y = 10,
+    n = 2,
+    posterior = FALSE
+)
+```
+
+::::
+:::::
+
+##### Step 2: Grid approximation quiz
+
+With this in mind, we’ll set up a discrete grid of $\lambda$ values between 0 and 15, essentially truncating the posterior’s tail. Before completing the corresponding grid approximation together, we encourage you to challenge yourself by first trying the quiz below.
+
+
+:::::{.my-assessment}
+:::{.my-assessment-header}
+:::::: {#cor-006-quiz-grid-approx}
+: Construct a grid approximation of the Gamma-Poisson posterior
+::::::
+:::
+::::{.my-assessment-container}
+
+Fill in the code below to construct a grid approximation of the Gamma-Poisson posterior corresponding to @eq-006-gamma-poisson-example. In doing so, use a grid of 501 $\lambda$ values between 0 and 15.
+
+If you have difficulties then use the step-by-step example in @sec-006-approximation for the Beta-Binomial as a template changing those parts that are different for the Gamma-Poisson.
+
+::: {#big-text style="font-size: 110%"}
+**Step 1: Define a grid of 501 lambda values**
+:::
+
+::: {#monospace-text style="font-family: 'Fira Code', monospace"}
+grid_data <- data.frame(    
+&nbsp;&nbsp;lambda_grid = seq(   
+&nbsp;&nbsp;&nbsp;&nbsp;from = `r fitb(0, width = 3)`,     
+&nbsp;&nbsp;&nbsp;&nbsp;to = `r fitb(15, width = 3)`,      
+&nbsp;&nbsp;&nbsp;&nbsp;length = `r fitb(501, width = 3)`)    
+&nbsp;&nbsp;&nbsp;&nbsp;)
+:::
+
+
+::: {#big-text style="font-size: 110%"}
+**Step 2: Evaluate the prior & likelihood at each lambda**
+:::
+
+::: {#monospace-text style="font-family: 'Fira Code', monospace"}
+grid_data <- grid_data  |>      
+&nbsp;&nbsp;`r fitb("mutate", width = 10)`(prior =       
+&nbsp;&nbsp;&nbsp;&nbsp;dgamma(`r fitb("grid_data", width = 10)`,     
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`r fitb(3, width = 10)`,      
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`r fitb(1, width = 10)`)),    
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;likelihood = dpois(`r fitb(2, width = 10)`,`r fitb("lambda_grid", width = 10)`) * 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;dpois(`r fitb(8, width = 10)`, `r fitb("lambda_grid", width = 10)`))
+:::
+
+::: {#big-text style="font-size: 110%"}
+**Step 3: Approximate the posterior**
+:::
+
+::: {#monospace-text style="font-family: 'Fira Code', monospace"}
+grid_data <- grid_data  |>       
+&nbsp;&nbsp;`r fitb("mutate", width = 10)`(unnormalized = `r fitb("likelihood", width = 10)` *  `r fitb("prior", width = 10)`,         
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;posterior = `r fitb("unnormalized", width = 10)` / `r fitb("sum(unnormalized)", width = 10)`))
+:::
+        
+**Set the seed**
+
+::: {#monospace-text style="font-family: 'Fira Code', monospace"}
+set.seed(84735)  
+:::
+
+::: {#big-text style="font-size: 110%"}
+**Step 4: sample from the discretized posterior**
+:::
+
+
+::: {#monospace-text style="font-family: 'Fira Code', monospace"}
+post_sample <- slice_sample(`r fitb("grid_data", width = 10)`, n = `r fitb("grid_data", width = 10)`,        
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;weight_by = `r fitb("posterior", width = 10)`, replace = `r fitb("TRUE", width = 10)`)
+:::
+
+
+::::
+:::::
+
+
+Check out the complete code of @cor-006-quiz-grid-approx. Much of this is the same as it was for the Beta-Binomial model. There are two key differences. 
+
+1. First, we use `dgamma()` and `dpois()` instead of `dbeta()` and `dbinom()` to evaluate the prior pdf and likelihood function of $\lambda$. 
+2. Second, since we have a sample of two data points $(Y_1, Y_2) = (2, 8)$, the Poisson likelihood function of $\lambda$ must be calculated by the product of the marginal Poisson pdfs, $L(\lambda \mid y_1, y_2) = f (y_1, y2 \mid \lambda) =  f (y_1 \mid \lambda)f (y_2 \mid \lambda)$.
+
+##### Step 2: Grid approximation exercise
+
+If you have successfully filled in the quiz try now a more complex exercise. Try it out without looking into @cor-006-quiz-grid-approx. In contrast to @cor-006-quiz-grid-approx you have to fill in all the gaps before you can run the (real) code and see if it gets as output the structure of the `post_sample`.
+
+
+Remember: Use a grid of 501 with values between 0 and 15 applying the formula @eq-006-gamma-poisson-example resp. @eq-006-gamma-poisson-example2:
+
+$$
+\begin{align*}
+Y_i \mid \lambda &\overset{\text{ind}}{\sim} Pois(λ) \\ 
+\lambda &\sim \text{Gamma}(3, 1) \\
+\\
+\lambda \mid ((Y_1, Y_2) = (2, 8)) &\sim \text{Gamma}(13, 3).
+\end{align*}
+$$
+**Construct a grid approximation of the Gamma-Poisson posterior corresponding to @prp-006-detailed-steps-of-grid-approximation.**
+
+```{webr}
+#| label: construct-grid-approximation-gamma-poisson-posterior
+#| exercise: ex-1
+
+# Step 1: Define a grid of 501 lambda values
+grid_data   <- data.frame(
+    lambda_grid = seq(from = ___, to = ___, length = ___)
+    )
+
+# Step 2: Evaluate the prior & likelihood at each lambda
+grid_data <- grid_data |> 
+  dplyr::___(prior = dgamma(___, ___, ___),
+         likelihood = dpois(___, ___) * dpois(___, ___)
+      )
+
+# Step 3: Approximate the posterior
+grid_data <- grid_data |>  
+  dplyr::___(unnormalized = ___ * ___,
+         posterior = ___ / ___)
+     )
+
+# Set the seed
+set.seed(84735)
+
+# Step 4: sample from the discretized posterior
+post_sample <- dplyr::slice_sample(___, n = ___, 
+                        weight_by = ___, replace = ___)
+
+dplyr::glimpse(post_sample)
+```
+
+Compare your result with the following code and output:
+
+
+```{r}
+#| label: construct-grid-approximation-gamma-poisson-posterior2
+#| lst-label: lst-construct-grid-approximation-gamma-poisson-posterior
+#| lst-cap: Show the code for the above exercise
+
+# Step 1: Define a grid of 501 lambda values
+grid_data   <- data.frame(lambda_grid = seq(from = 0, to = 15, length = 501))
+
+# Step 2: Evaluate the prior & likelihood at each lambda
+grid_data <- grid_data |> 
+  dplyr::mutate(prior = dgamma(lambda_grid, 3, 1),
+         likelihood = dpois(2, lambda_grid) * dpois(8, lambda_grid))
+
+# Step 3: Approximate the posterior
+grid_data <- grid_data |> 
+  dplyr::mutate(unnormalized = likelihood * prior,
+         posterior = unnormalized / sum(unnormalized))
+
+# Set the seed
+set.seed(84735)
+
+# Step 4: sample from the discretized posterior
+post_sample2 <- dplyr::slice_sample(grid_data, n = 10000, 
+                        weight_by = posterior, replace = TRUE)
+
+dplyr::glimpse(post_sample2)
+```
+
+
+
+
+
+
+#### Step 2: Grid approximation final
+
+Most importantly, grid approximation again produced a decent approximation of our target posterior:
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-006-grid-approximation-gamma-poisson-example}
+: Grid approximation of the posterior pdf of $\lambda$ using 501 grid values
+::::::
+:::
+::::{.my-r-code-container}
+```{r}
+#| label: fig-006-grid-approximation-gamma-poisson-example
+#| fig-cap: A grid approximation of the posterior pdf of λ using 501 grid values. The actual pdf is represented by the red curve.
+#| fig-width: 4
+#| fig-height: 3
+
+# Step 1: Define a grid of 501 lambda values
+grid_data   <- data.frame(lambda_grid = seq(from = 0, to = 15, length = 501))
+
+# Step 2: Evaluate the prior & likelihood at each lambda
+grid_data <- grid_data |>  
+  dplyr::mutate(prior = dgamma(lambda_grid, 3, 1),
+         likelihood = dpois(2, lambda_grid) * dpois(8, lambda_grid))
+
+# Step 3: Approximate the posterior
+grid_data <- grid_data |>  
+  dplyr::mutate(unnormalized = likelihood * prior,
+         posterior = unnormalized / sum(unnormalized))
+
+# Set the seed
+set.seed(84735)
+
+# Step 4: sample from the discretized posterior
+post_sample <- dplyr::slice_sample(grid_data, n = 10000, 
+                        weight_by = posterior, replace = TRUE)
+
+# Histogram of the grid simulation with posterior pdf 
+ggplot2::ggplot(post_sample, ggplot2::aes(x = lambda_grid)) + 
+  ggplot2::geom_histogram(
+      ggplot2::aes(y = ggplot2::after_stat(density)), 
+            color = "black",
+            binwidth = 0.5,
+            boundary = 0) + 
+  ggplot2::stat_function(
+      fun = dgamma, 
+      args = list(13, 3),
+      linewidth = 1,
+      color = "darkred") + 
+  ggplot2::lims(x = c(0, 15))
+```
+
+::::
+:::::
+
+
+### Limitation
+
+Limitations in the grid approximation method quickly present themselves as our models get more complicated. For example, by the end of Unit 4 we’ll be working with models that have lots of model parameters $\theta = (\theta_1, \theta_2, . . . , \theta_k)$. In such settings, grid approximation suffers from the **curse of dimensionality**.
+
+When using grid approximation to simulate multivariate posteriors, we need to divide the multidimensional sample space of $\theta = (\theta_1, \theta_2, . . . , \theta_k)$ into a very, very fine grid in order to prevent big gaps in our approximation. In practice, this might not be feasible. When evaluated on finer and finer grids, the grid approximation method becomes computationally expensive. You can’t merely start the simulation, get up for a cup of coffee, come back, and poof the simulation is done. You might have to start the simulation and go off to a month-long meditation retreat (to practice the patience you’ll need for grid approximation). `r glossary("MCMC")` methods provide a more flexible alternative.
+
+
+## Markov chains via {rstan}
+
+The `r glossary("Markov chain")` component of `r glossary("MCMC")` is named for the Russian mathematician Andrey Markov (1856-1922). The etymology of the Monte Carlo component is more dubious:
+
+As part of their top secret nuclear weapons project in the 1940s, Stanislav Ulam, John von Neumann, and their collaborators at the Los Alamos National Laboratory used Markov chains to simulate and better understand neutron travel [@roger1987]. The Los Alamos team referred to their work by the code name “Monte Carlo,” a choice said to be inspired by the opulent Monte Carlo casino in the French Riviera. What inspired the link between random simulation methods and casinos? We can’t help you there.
+
+Today, “Markov chain Monte Carlo” refers to the application of Markov chains to simulate probability models using methods pioneered by the Monte Carlo project. In contrast to grid approximation, MCMC simulation methods scale up for more complicated Bayesian models. But this flexibility doesn’t come for free. Like grid approximation samples, **MCMC samples are *not* taken directly from the posterior pdf** $f (\theta \mid y)$. Yet unlike grid approximation samples, **MCMC samples aren’t even independent** – each subsequent sample value depends directly upon the previous value. This feature is evoked by the “chain” terminology. 
+
+Specifically, let $\{\theta^{(1)}, \theta^{(2)}, . . . , \theta^{(N)}\}$ be an N-length MCMC sample, or **Markov chain**. In  constructing this chain, (2) is drawn from some model that depends upon $\theta^{(1)}$, $\theta^{(3)}$ is drawn from some model that depends upon $\theta^{(2)}$, $\theta^{(4)}$ is drawn from some model that depends upon $\theta^{(3)}$, and so on and so on the chain grows. In general, the (i + 1)st chain value $\theta^{(i+1)} is drawn from a model that depends on data $y$ and the previous chain value $\theta^{(i)}$ with conditional pdf
+
+$$
+f (\theta^{(i+1)} \mid \theta^{(i)}, y)
+$$
+
+There are a couple of things to note about this dependence among chain values. First, by the **Markov property**, $\theta^{(i+1)}$ depends upon the preceding chain values only through the most recent value $\theta^{(i)}$:  
+
+$$
+f (\theta^{(i+1)} \mid \theta^{(1)}, \theta^{(2)}, . . . , \theta^{(i)}, y) = f (\theta^{(i+1)} \mid \theta^{(i)}, y)
+$$
+
+For example, since $\theta^{(i+i)}$ depends on $\theta^{(i)}$ which depends on $\theta^{(i-1)}$, it’s also true that $\theta^{(i+i)}$ depends on $\theta^{(i-1)}$. However, if we know $\theta^{(i)}$, then $\theta^{(i-1)}$ is of no consequence to $\theta^{(i+1)}$ – the only information we need to simulate $\theta^{(i+1)}$ is the value of $\theta^{(i)}$. Further, each chain value can be drawn from a different model, and none of these models are the target posterior. That is, the pdf from which a Markov chain value is simulated is not equivalent to the posterior pdf: 
+
+$$
+f (\theta^{(i+1)} \mid \theta^{(i)}, y) \ne f (\theta^{(i+1)} \mid y)
+$$
+
+:::::{.my-experiment}
+:::{.my-experiment-header}
+:::::: {#def-006-markov-chain}
+: Markov Chain Monte Carlo (MCMC)
+::::::
+:::
+::::{.my-experiment-container}
+
+`r glossary("MCMC")` simulation produces a chain of N **dependent** $\theta$ values,
+\theta^{(1)}, \theta^{(2)}, . . . , \theta^{(N)}, which are **not** drawn from the posterior pdf $f (\theta \mid y)$.
+
+::::
+:::::
+
+It likely seems strange to approximate the posterior using a dependent sample that’s not even taken from the posterior. But mathemagically, with reasonable MCMC *algorithms*, it can work. The rub is that these algorithms have a steeper learning curve than the grid approximation technique.
+
+:::::{.my-resource}
+:::{.my-resource-header}
+:::::: {#lem-006-mcmc-resources}
+: MCMC resources
+::::::
+:::
+::::{.my-resource-container}
+
+We provide a glimpse into the details of the MCMC workings in @sec-chap-007. 
+
+Though a review of @sec-chap-007 and a firm grasp of these details would be ideal, there’s a growing number of MCMC computing resources that can do the heavy lifting for us:
+
+- In this book, we’ll conduct MCMC simulation using the {**rstan**} package [@rstan] which combines the power of R with the Stan engine. You’ll get into the nitty gritty of {**rstan**} in this chapter, building up the code line by line and thereby gaining familiarity with the key elements of an {**rstan**} simulation. 
+- Starting in @sec-chap-009, you will utilize the complementary {**rstanarm**} package [@rstanarm], which provides shortcuts for simulating a broad framework of Bayesian *applied regression models* (arm).
+
+::::
+:::::
+
+
+### Beta-Binomial example
+
+There are two essential steps to all rstan analyses: 
+
+(1) **define the Bayesian model structure** in {**rstan**} notation and 
+(2) **simulate the posterior**. 
+
+#### Step 1: Define model structure
+
+Let’s examine these steps in the context of the Beta-Binomial model defined by @eq-006-beta-binomial-example, starting with step 1. In defining the structure of this model, we must specify the three aspects upon which it depends:  
+
+::: {#big-text style="font-size: 120%"}
+**data** 
+:::
+ 
+Data $Y$ is the observed number of successes in $10$ trials. Since {**rstan**} isn’t a mind reader, we must specify that $Y$ is an integer between $0$ and $10$.
+
+::: {#big-text style="font-size: 120%"}
+**parameters** 
+:::
+  
+The model depends upon parameter $\pi$, or `pi` in {**rstan**} notation. We must specify that $\pi$ can be any real number between $0$ and $1$.  
+
+::: {#big-text style="font-size: 120%"}
+**model** 
+:::
+  
+The model is defined by the $\text{Bin}(10, \pi)$ model for data $Y$ and the $\text{Beta}(2, 2)$ prior for $\pi$. We specify these using `binomial()` and `beta()`.  Below we translate this Beta-Binomial structure into {**rstan**} syntax and store it as the character string `bb_model`. We encourage you to pause and examine the code, noting how it matches up with the three aspects above.
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-006-beta-binomial-rstan-syntax}
+: Step 1: Define Beta-Binomial in {rstan}-syntax
+::::::
+:::
+::::{.my-r-code-container}
+```{r}
+#| label: beta-binomial-rstan-syntax
+#| lst-label: lst-006-beta-binomial-rstan-syntax
+#| lst-cap: "Step 1: Define Beta-Binomial in {**rstan**}-syntax"
+#| code-fold: false
+
+# STEP 1: DEFINE the model
+bb_model <- "
+  data {
+    int<lower = 0, upper = 10> Y;
+  }
+  parameters {
+    real<lower = 0, upper = 1> pi;
+  }
+  model {
+    Y ~ binomial(10, pi);
+    pi ~ beta(2, 2);
+  }
+"
+```
+
+::::
+:::::
+
+#### Step 2: Simulate the posterior
+
+In **step 2**, we *simulate* the posterior using the `rstan::stan()` function. Very loosely speaking, `rstan::stan()` designs and runs an MCMC algorithm to produce an approximate sample from the Beta-Binomial posterior.
+
+::: {.callout-warning #wrn-006-stan-slow}
+###### Simulation is quite slow for each new model
+
+Since `rstan::stan()` has to do the double duty of identifying an appropriate MCMC algorithm for simulating the given model, and then applying this algorithm to our data, the simulation will be quite slow for each new model. (About 15 seconds on Apple M4 Pro, 48 GB memory, Tahoe 26.3.)
+
+:::
+
+Note that `rstan::stan()` requires two types of arguments. 
+
+1. First, we must specify the **model information** by:  
+
+- `model_code` = the character string defining the model (here `bb_model`) 
+- `data` = a list of the observed data (here `Y = 9`).  
+
+2. Second, we must specify the desired **Markov chain information** using three additional arguments:  
+
+- The `chains` argument specifies how many parallel Markov chains to run. We run four chains here, thus obtain four distinct samples of $\pi$ values. We discuss this choice in Section 6.3.  
+- The `iter` argument specifies the desired number of iterations in, or *length* of, each Markov chain. By default, the first half of these iterations are thrown out as “burn-in” or “warm-up” samples (see below for details). The second half are kept as the final Markov chain sample.  
+- To set the random number generating seed for an {**rstan**} simulation, we utilize the `seed` argument *within* the `rstan::stan()` function. 
+
+The result, stored in `bb_sim`, is a `stanfit` object. This object includes four parallel Markov chains run for 10,000 iterations each. After tossing out the first 5,000 iterations of all four chains, we end up with four separate Markov chain samples of size 5,000, or a combined **Markov chain sample size** of 20,000.
+
+The first four $\pi$ values for each of the four parallel chains are extracted and shown here:
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-006-beta-binomial-example-simulation}
+: Step 2: Simulation of the Beta-Binomial example
+::::::
+:::
+::::{.my-r-code-container}
+```{r}
+#| label: tbl-006-beta-binomial-example-simulation
+#| tbl-cap: "Step 2: Simulation of the Beta-Binomial example"
+#| lst-label: lst-006-beta-binomial-example-simulation
+#| lst-cap: "Step 2: Simulation of the Beta-Binomial example"
+#| code-fold: false
+#| results: hold
+
+# STEP 2: SIMULATE the posterior
+bb_sim <- rstan::stan(model_code = bb_model, data = list(Y = 9), 
+               chains = 4, iter = 5000*2, seed = 84735)
+
+as.array(bb_sim, pars = "pi") |> 
+  head(4) |> 
+    knitr::kable()
+```
+
+::::
+:::::
+
+
+It’s important to remember that these **Markov chain values are NOT a random sample from the posterior and are NOT independent**. Rather, each of the four parallel chains forms a dependent 5,000 length Markov *chain* of $\pi$ values, $(\pi^{(1)}, \pi^{(2)}, . . . , \pi^{(5000)})$. 
+
+For  example, in iteration 1, `chain:1` starts at a value of roughly $\pi^{(1)}$ = `r rstan::extract(bb_sim, permuted = FALSE)[1]`. The value at iteration 2, $\pi^{(2)}$, depends upon $\pi^{(1)}$. In this case the chain moves from `r rstan::extract(bb_sim, permuted = FALSE)[1]` to `r rstan::extract(bb_sim, permuted = FALSE)[2]`. Similarly, the chain moves from `r rstan::extract(bb_sim, permuted = FALSE)[2]` to `r rstan::extract(bb_sim, permuted = FALSE)[3]`, from `r rstan::extract(bb_sim, permuted = FALSE)[3]` to `r rstan::extract(bb_sim, permuted = FALSE)[4]`, and so on. Thus, the chain traverses the sample space or range of posterior plausible $\pi$ values. 
+
+A Markov chain trace plot illustrates this traversal, plotting the $\pi$ value (y-axis) in each iteration (x-axis). We use the `mcmc_trace()` function in the {**bayesplot**} package [@bayesplot] to construct the trace plots of all four Markov chains:
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-006-trace-plot-beta-binomial-example}
+: Trace plot for the Beta-Binomial example
+::::::
+:::
+::::{.my-r-code-container}
+```{r}
+#| label: fig-006-trace-plot-beta-binomial-example
+#| fig-cap: Trace plots of the four parallel Markov chains of π for the Beta_Binomial example
+#| fig-height: 3
+#| cache: true
+
+bayesplot::color_scheme_set("viridisA")
+bayesplot::mcmc_trace(bb_sim, pars = "pi", size = 0.5)
+```
+
+::::
+:::::
+
+::: {.callout-note #nte-006-trace-plot}
+###### Many parameters
+
+There are many parameters available for `bayesplot::mcmcm_trace()` that I do not understand (yet). I have experimented with two parameters:
+
+- the line width (aka `size`): In the book is recommended 0.1,. Default value is 0.5 which gives in my opinion a trace plot that is better visible and interpretable.
+- the color scheme: This is actually a different function `color_scheme_set()` but can be used in conjunction with `bayesplot::mcmcm_trace()` to improve the visibility of the trace plot.
+:::
+
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-006-trace-plot-first-iterations}
+: Trace plot with the first 20 resp. 200 iterations
+::::::
+:::
+::::{.my-r-code-container}
+
+
+```{r}
+#| label: fig-trace-plot-first-iterations
+#| fig-cap: A trace plot of the first 20 iterations (left) and 200 iterations (right) of the first Beta-Binomial Markov chain.
+#| fig-height: 3
+
+# Extract all chains as a 3D array [iterations, chains, parameters]
+chains_array <- as.array(bb_sim)
+
+# Create a data frame from the first 20 iterations of chain 1
+chain1_df_20 <- data.frame(
+  iteration = 1:20,
+  pi        = chains_array[1:20, 1, "pi"]
+)
+
+# Create a data frame from the first 200 iterations of chain 1
+chain1_df_200 <- data.frame(
+  iteration = 1:200,
+  pi        = chains_array[1:200, 1, "pi"]
+)
+
+# Plot the first 20 iterations
+p_20 <- ggplot2::ggplot(chain1_df_20, 
+                ggplot2::aes(x = iteration, y = pi)) +
+  ggplot2::geom_line(linewidth = 0.5) +
+  ggplot2::labs(
+    title = "Trace plot: Chain 1 (first 20 iterations)",
+    x     = "Iteration",
+    y     = expression(pi)
+  )
+
+# Plot the first 200 iterations
+p_200 <- ggplot2::ggplot(chain1_df_200, 
+                ggplot2::aes(x = iteration, y = pi)) +
+  ggplot2::geom_line(linewidth = 0.5) +
+  ggplot2::labs(
+    title = "Trace plot: Chain 1 (first 200 iterations)",
+    x     = "Iteration",
+    y     = expression(pi)
+  )
+
+# plot both results side by side
+patchwork:::"-.ggplot"(p_20, p_200)
+```
+
+
+::::
+:::::
+
+@fig-trace-plot-first-iterations zooms in on the trace plot of chain 1. In the first 20 iterations (left), the chain largely explores values between 0.61 and 0.91. After 200 iterations (right), the Markov chain has started to explore new territory, traversing a wider range of values between 0.40 and 0.96. Both trace plots also exhibit evidence of the slight dependence among the Markov chain values, places where the chain tends to float up for multiple iterations and then down for multiple iterations.
+
+Marking the *sequence* of the chain values, the trace plots in @fig-trace-plot-first-iterations illuminate the Markov chains’ **longitudinal** behavior. We also want to examine the **distribution** of the values these chains visit along their journey, ignoring the order of these visits. 
+
+The histogram and density plot in Figure 6.10 provide a snapshot of this distribution for the combined 20,000 chain values, 5,000 from each of the four separate chains. Notice the important punchline here: the distribution of the Markov chain values is an excellent approximation of the target Beta(11, 3) posterior model of $\pi$ (superimposed in black). That’s a relief – that was the whole point.
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-006-plot-combined-chain-values}
+: Plot distribution of the combined 20,000 chain values
+::::::
+:::
+::::{.my-r-code-container}
+```{r}
+#| label: fig-006-plot-combined-chain-values
+#| fig-cap: A histogram (left) and density plot (right) of the combined 20,000 Markov chain π values from the 4 parallel chains. The target pdf is superimposed in red.
+#| fig-height: 3
+
+# Histogram of the Markov chain values
+bayesplot::color_scheme_set("teal")
+p1 <- bayesplot::mcmc_hist(bb_sim, pars = "pi", bins = 30) + 
+  bayesplot::yaxis_text(TRUE) + 
+  ggplot2::ylab("count")
+
+# Density plot of the Markov chain values
+bayesplot::color_scheme_set("teal")
+p2 <- bayesplot::mcmc_dens(bb_sim, pars = "pi") + 
+  bayesplot::yaxis_text(TRUE) + 
+  ggplot2::ylab("density") +
+  ggplot2::stat_function(
+        fun = dbeta, 
+        args = list(11, 3),
+        color = "darkred",
+        linewidth = 1)
+
+# plot both results side by side
+patchwork:::"-.ggplot"(p1, p2)
+```
+
+::::
+:::::
+
+### Gamma-Poisson example
+
+For more practice with {**rstan**} and `r glossary("MCMC")` simulation, let’s use these tools to approximate the Gamma-Poisson posterior corresponding to @eq-006-gamma-poisson-example upon observing data $(Y_1, Y_2) = (2, 8)$. Recall that this involves two steps:
+
+- In **step 1**, we define the Gamma-Poisson model structure, specifying the three aspects upon which it depends: the `data`, `parameters`, and `model.` 
+- In **step 2**, we simulate the posterior. We encourage you to challenge yourself by trying this on your own first. Your code will require two terms you haven’t yet seen, but you might guess how to use: `poisson()` and `gamma()`. Further, your code will incorporate a vector of $(Y_1, Y_2)$ variables and observations as opposed to a single variable $Y$.
+
+### MCMC approximation quiz
+
+:::::{.my-assessment}
+:::{.my-assessment-header}
+:::::: {#cor-006-mcmc-approx-quiz}
+: MCMC approximation of the Gamma-Poisson posterior 
+::::::
+:::
+::::{.my-assessment-container}
+Fill in the code below to construct an MCMC approximation of the Gamma-Poisson posterior corresponding to @eq-006-gamma-poisson-example. We have seen another example that shows how to fill in gaps in @lst-006-beta-binomial-rstan-syntax and in @lst-006-beta-binomial-example-simulation.
+
+In doing so, run four parallel chains for 10,000 iterations each (resulting in a sample size of 5,000 per chain).
+
+::: {#big-text style="font-size: 110%"}
+**Step 1: DEFINE the model**
+:::
+
+::: {#monospace-text style="font-family: 'Fira Code', monospace"}
+
+gp_model <- "     
+&nbsp;&nbsp;data {     
+&nbsp;&nbsp;&nbsp;&nbsp;int<`r fitb("lower = 0", width = 10, ignore_ws = TRUE)`> Y[2];             
+&nbsp;&nbsp;}      
+&nbsp;&nbsp;parameters {       
+&nbsp;&nbsp;&nbsp;&nbsp;real<`r fitb("lower = 0", width = 10, ignore_ws = TRUE)`> lambda;      
+&nbsp;&nbsp;}       
+&nbsp;&nbsp;model {        
+&nbsp;&nbsp;&nbsp;&nbsp;Y ~ `r fitb("poisson", width = 10)`(`r fitb("lambda", width = 10)`);     
+&nbsp;&nbsp;&nbsp;&nbsp;lambda ~ `r fitb("gamma", width = 10)`(`r fitb(3, width = 3)`, `r fitb(1, width = 3)`);      
+&nbsp;&nbsp;}     
+"
+:::
+
+::: {#big-text style="font-size: 110%"}
+**# STEP 2: SIMULATE the posterior**
+:::
+
+::: {#monospace-text style="font-family: 'Fira Code', monospace"}
+
+gp_sim <- `r fitb(c("stan", "rstan::stan"), width = 12)`(model_code = `r fitb("gp_model", width = 10)`, data = list(`r fitb("Y = c(2, 8)", width = 10, ignore_ws = TRUE)`),      
+&nbsp;&nbsp;&nbsp;&nbsp;chains = `r fitb(4, width = 3)`, iter = `r fitb(c("5000 * 2", 10000), width = 10)`, seed = 84735)
+
+:::
+
+::::
+:::::
+
+In defining the model in **step 1**, take note of the three aspects upon which it depends.  
+
+- **data**  
+  Data Y[2] represents the vector of event counts, $(Y_1, Y_2)$, where the counts can be any non-negative integers in $\{0, 1, 2, . . .\}$.  
+- **parameters**  
+  The model depends upon rate parameter $\lambda$, which can be any non-negative real number.  
+- **model**  
+  The model is defined by the $\text{Pois}(\lambda)$ model for data $Y$ and the $\text{Gamma}(3,1)$ prior for $\lambda$. We specify these using `poisson()` and `gamma()`.  
+  
+In **step 2**, we must feed in the vector of both data points, $Y = c(2,8)$.
+
+Try it again. This time with a simulated exercise using real R code:
+
+```{webr}
+#| label: define-and-feed-gamma-poisson-example
+#| exercise: ex-2
+
+# STEP 1: DEFINE the model
+gp_model <- "
+  data {
+    int<___> Y[2];
+  }
+  parameters {
+    real<___> lambda;
+  }
+  model {
+    Y ~ ___(___);
+    lambda ~ ___(___, ___);
+  }
+"
+
+# STEP 2: SIMULATE the posterior
+gp_sim <- rstan::___(model_code = ___, data = list(___), 
+               chains = ___, iter = ___, seed = 84735)
+```
+
+Compare your solution with the following code:
+
+```{r}
+#| label: define-and-feed-gamma-poisson-example2
+#| lst-label: lst-006-define-and-feed-gamma-poisson-example2
+#| lst-cap: Define and feed with data the Gamma-Poisson example
+#| results: hide
+
+
+# STEP 1: DEFINE the model
+gp_model <- "
+  data {
+    int<lower = 0> Y[2];
+  }
+  parameters {
+    real<lower = 0> lambda;
+  }
+  model {
+    Y ~ poisson(lambda);
+    lambda ~ gamma(3, 1);
+  }
+"
+
+# STEP 2: SIMULATE the posterior
+gp_sim <- rstan::stan(model_code = gp_model, data = list(Y = c(2,8)), 
+               chains = 4, iter = 5000*2, seed = 84735)
+```
+
+
+@fig-006-trace-histogram-density-plots-gamma-poisson-example illustrates the simulation results. First, the trace plots (top) illustrate the paths these chains take through the $\lambda$ sample space. To this end, note that the $\lambda$ chain values travel around the rough range from $0$ to $10$, but mostly remain below $7.5$. Further, the histogram and density plot (bottom) provide a better look into the overall distribution of $\lambda$ Markov chain values. The punchline: this distribution provides an excellent approximation of the $\text{Gamma}(13,3)$ posterior (superimposed in black).
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-006-trace-histogram-density-plots-gamma-poisson-example}
+: Trace plots, histogram and densitiy plots for the Gamma-Poisson example
+::::::
+:::
+::::{.my-r-code-container}
+```{r}
+#| label: fig-006-trace-histogram-density-plots-gamma-poisson-example
+#| fig-cap: "Trace plots of the four parallel Markov chains of λ (top). A histogram and density plot of the 20,000 combined Markov chain values of λ (bottom). The black curve represents the actual posterior pdf of λ."
+
+# Trace plots of the 4 Markov chains
+p1 <- bayesplot::mcmc_trace(
+  gp_sim, 
+  pars = "lambda", 
+  size = 0.1,
+  ) +
+  ggplot2::scale_y_continuous(breaks = pretty)
+
+
+# Histogram of the Markov chain values
+p2 <- bayesplot::mcmc_hist(gp_sim, 
+                     pars = "lambda",
+                     bins = 30 ) + 
+  bayesplot::yaxis_text(TRUE) + 
+  ggplot2::labs(y = "count")
+
+# Density plot of the Markov chain values
+p3 <- bayesplot::mcmc_dens(gp_sim, pars = "lambda") +
+  bayesplot::yaxis_text(TRUE) + 
+  ggplot2::labs(y = "density") +
+  ggplot2::stat_function(
+    fun = dgamma,
+    args = list(shape = 13, rate = 3),
+    color = "darkred"
+  )
+
+library(patchwork)
+p1 / (p2 | p3)
+```
+
+::::
+:::::
+
+::: {.callout-note #nte-006-plots-slightly-different}
+###### My plots differ slightly from the figures in the book
+
+The overlaid function (`ggplot2::stat_function(dgamma, args = list(shape = 13, rate = 3))`) for the Gamma-Poisson model is in the book missing.
+
+Although I am using the exact same code, seed, scaling, and bandwidth, I am getting a slightly different curve overlay.
+
+::: {#big-text style="font-size: 125%"}
+**Most likely causes:** 
+:::
+
+1. **Different R/package versions** — The textbook was written with specific versions of `rstan`, `bayesplot`, and other packages. Updates to these packages (especially `bayesplot`'s density estimation or plotting functions) could produce slightly different results even with identical code and seeds.
+
+2. **Different Stan version** — `rstan` itself may have been updated since the book was published (July 2025 cutoff). Even with the same seed, different Stan versions can produce slightly different MCMC samples due to algorithmic refinements or numerical precision changes.
+
+3. **System/compiler differences** — Stan uses C++ compilation, which can vary across different operating systems, compilers, or hardware. This could lead to minor numerical differences in the chain values themselves.
+
+4. **Random number generator differences** — R's RNG implementation or how `rstan` interfaces with it may have changed between versions.
+
+
+::: {#big-text style="font-size: 125%"}
+**Summary**
+:::
+
+I think that this small differences are not a problem: If the overall shape and fit of the curves are visually similar the small differences are likely **not a problem with code or understanding**. Minor discrepancies due to software versions are normal and expected in reproducible research.
+
+:::
+
+## Markov chain diagnostics
+
+Simulation is fantastic. Even when we’re able to derive a Bayesian posterior, we can use posterior simulation to verify our work and provide some intuition. More importantly, when we’re *not* able to derive a posterior, simulated samples provide a crucial *approximation.* In the `r glossary("MCMC")` examples above, we saw that the `r glossary("Markov chain", "Markov chains")` traverse the sample space of our parameter ($\pi$ or $\lambda$) and, in the end, *mimic* a random sample that eventually *converges* to the posterior. “Approximation” and “converges” are key words here – **simulations aren’t perfect**. This begs the following questions:  
+
+- What does a good Markov chain look like? 
+- How can we tell if our Markov chain sample produces a reasonable approximation of the posterior? 
+- How big should our Markov chain sample size be?
+
+Answering these questions is both an art and science. There are no one-size-fits-all magic formulas that provide definitive answers here. Rather, it’s through experience that you get a feel for what “good” Markov chains look like and what you can do to fix a “bad” Markov chain. 
+
+In this section, we’ll focus on a couple visual diagnostic tools that will get us started: 
+
+- `r glossary("trace plot")`: see also Annex @sec-906-trace-plots.
+- `r glossary("parallel chain")`: see also Annex @sec-906-parallel-chains.
+- `r glossary("effective sample size")` see also @sec-906-effective-sample-size.
+- `r glossary("autocorrelation")`: see also @sec-906-autocorrelation.
+- `r glossary("R hat")` ($hat{R}$): see also @sec-906-r-hat.
+
+Utilizing these diagnostics should be done holistically. Since no single visual or numerical diagnostic is one-size-fits-all, they provide a fuller picture of Markov chain quality when considered together. Further, other excellent diagnostics exist. We focus here on those that are common and easy to implement in the software packages we’ll be using.
+
+### Examining trace plots {#sec-006-examining-trace-plots}
+
+See also Annex @sec-906-trace-plots.
+
+Reexamine the trace plots for the Beta-Binomial simulation in @fig-006-trace-plot-beta-binomial-example. These are textbook examples of what we want trace plots to look like. Mainly, they look like a bunch of white noise with no discernible trends or notable phenomena. This nothingness implies that the chains are stable. In contrast, the hypothetical Markov chains for the same Beta-Binomial model shown in Figure @fig-006-bad-trace-plots illustrate potential chain behavior that should give us pause.
+
+![Trace plots (left) and corresponding density plots (right) of two hypothetical Markov chains. These provide examples of what “bad” Markov chains might look like. The superimposed black lines (right) represent the target Beta(11,3) posterior pdf.](img/906-bad-trace-plots.png){#fig-006-bad-trace-plots
+fig-alt="4 graphs in two rows and columns. Top left: Chain A: trace plot; x = iteration, y = pi. It shows a narrow zig-zag curve moving from the top left edge to the middle of the window. Important here is also that the amplitudes of the zig-zag are rather small, just 0.1 pi. Top right: Chain A: density plot; x = pi, y = no scale. It shows the result of the bad trace plot from chain A. Instead of a left-skewed distribution, representing the superimposed target Beta(3, 11) posterior with a maximum at 0.85 pi, the simulation shows a symmetric distribution with mode under 0.8. Bottom left: Chain B: trace plot; x = iteration, y = pi. It shows a narrow zig-zag curve, this time with big amplitudes. But in two places the zag-zag pattern is broken with a horizontal line. One horizontal line with 0.62 pi at iteration 800-1200, the other one with 0.55 pi between iteration 3000-3800. Bottom right: Chain B: Density plot; x = pi, y = no scale. Instead of a smooth left-skewed distribution, representing the superimposed target Beta(3, 11) posterior, it shows a left skewed distribution with two spikes. A bigger one at 0.55 pi, the other, smaller one at 0.62 pi." fig-align="center" }
+
+::: {#big-text style="font-size: 110%"}
+**@fig-006-bad-trace-plots: Trace plots left** 
+:::
+
+The downward trend in **Chain A** indicates that it has not yet stabilized after 5,000 iterations – it has not yet “found” or does not yet know how to explore the range of posterior plausible π values. The downward trend also hints at strong correlation among the chain values – they don’t look like independent noise. All of this to say that Chain A is mixing slowly. This is bad. Though Markov chains are inherently dependent, the more they behave like fast mixing (noisy) independent samples, the smaller the error in the resulting posterior approximation (roughly speaking). 
+
+**Chain B** exhibits a different problem. As evidenced by the two completely flat lines in the trace plot, it tends to get stuck when it visits smaller values of $\pi$.
+
+::: {#big-text style="font-size: 110%"}
+**@fig-006-bad-trace-plots: Density plots right** 
+:::
+
+The density plots confirm that both of these goofy-looking chains result in a serious issue: they produce poor approximations of the $\text{Beta}(11,3)$ posterior (superimposed in black), and thus misleading posterior conclusions. 
+
+**Consider Chain A**. Since it’s mixing so slowly, it has only explored $\pi$ values in the rough range from 0.6 to 0.9 in its first 5,000 iterations. As a result, its posterior approximation overestimates the plausibility of $\pi$ values in this range while completely underestimating the plausibility of values outside this range. 
+
+**Consider Chain B**. In getting stuck, Chain B over-samples some values in the left tail of the posterior $\pi$ values. This phenomenon produces the erroneous spikes in the posterior approximation.
+
+In *practice*, we run {**rstan**} simulations when we can’t specify, and thus want to approximate the posterior. This means that we won’t have the privilege of being able to compare our simulation results to the “real” posterior. This is why diagnostics are so important. If we see bad trace plots like those in @fig-006-bad-trace-plots, there are some immediate steps we can take:  
+
+1. **Check the model**. Are the assumed prior and data models appropriate? 
+2. **Run the chain for more iterations**. Some undesirable short-term chain trends might iron out in the long term.  
+
+We’ll get practice with the more nuanced Step 1 throughout the book. Step 2 is easy, though it requires extra computation time.
+
+### Comparing parallel chains {#sec-006-comparing-parallel-chains}
+
+See also @sec-906-parallel-chains.
+
+Recall that our `rstan::stan()` simulation for the Beta-Binomial model produced four parallel Markov chains. Not only do we want to see stability in each individual chain (as discussed above), we want to see consistency across the four chains. Mainly, though we expect different chains take different paths, they should exhibit similar features and produce similar posterior approximations. 
+
+For example, the trace plots for the four parallel chains in @fig-006-trace-plot-beta-binomial-example appear similar in their randomness. Further, in the Figure 6.13 density plots, we observe that these four chains produce nearly indistinguishable posterior approximations. This provides evidence that our simulation is stable and sufficiently long – running the chains for more iterations likely wouldn’t produce drastically different or improved posterior approximations.
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-006-density-plots-individual-chains}
+: Density plots of individual chains
+::::::
+:::
+::::{.my-r-code-container}
+```{r}
+#| label: fig-006-density-plots-individual-chains
+#| fig-cap: "Density plot of the four parallel Markov chains for π"
+#| fig-height: 3
+#| fig-width: 4
+
+bayesplot::mcmc_dens_overlay(bb_sim, pars = "pi") + 
+  ggplot2::labs(y = "density")
+```
+
+::::
+:::::
+
+For a point of comparison, let’s implement a *shorter* Markov chain simulation for the same model. Instead of running four parallel chains for 10,000 iterations and a resulting sample size of 5,000 each, run four parallel chains for only 100 iterations and a resulting sample size of 50 each.
+
+The trace plots and corresponding density plots of the short Markov chains are shown below. Though the chains’ trace plots exhibit similar random behavior, their corresponding density plots differ, hence they produce discrepant posterior approximations. In the face of such instability and confusion about which of these four approximations is the most accurate, it would be a mistake to stop our simulation after only 100 iterations.
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-006-short-markov-chain}
+: A shorter Markov chain simulation for the same model
+::::::
+:::
+::::{.my-r-code-container}
+```{r}
+#| label: fig-006-short-markov-chain
+#| fig-cap: "Trace plots and density plots of the four short parallel Markov chains for π, each of length 50"
+#| fig-height: 3
+
+# STEP 2: SIMULATE the posterior
+bb_sim_short <- rstan::stan(model_code = bb_model, data = list(Y = 9), 
+                     chains = 4, iter = 50*2, seed = 84735)
+
+# Trace plots of short chains
+p1 <- bayesplot::mcmc_trace(bb_sim_short, pars = "pi")
+
+# Density plots of individual short chains
+p2 <- bayesplot::mcmc_dens_overlay(bb_sim_short, pars = "pi")
+
+patchwork:::"-.ggplot"(p1, p2)
+```
+
+::::
+:::::
+
+The output warns twice: 
+
+1. During the sampling of the model. For each of the four chains it says: 
+
+> WARNING: There aren't enough warmup iterations to fit the three stages of adaptation as currently configured. Reducing each adaptation stage to 15%/75%/10% of the given number of warmup iterations: init_buffer = 7, adapt_window = 38, term_buffer = 5
+
+2. For the calculation of the figure it says:
+
+> Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable. Running the chains for more iterations may help. See <https://mc-stan.org/misc/warnings.html#bulk-ess>.
+
+> Warning: Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable. Running the chains for more iterations may help. See <https://mc-stan.org/misc/warnings.html#tail-ess>.
+
+### Calculating effective sample size & autocorrelation
+
+#### Effective sample size {#sec-006-effective-sample-size}
+
+See also @sec-906-effective-sample-size.
+
+Recall from @sec-006-examining-trace-plots that the more a dependent Markov chain behaves like an independent sample, the smaller the error in the resulting posterior approximation (loosely speaking).
+
+Though trace plots provide some visual insight into this behavior, supplementary numerical assessments can provide more nuanced information. To begin, recall that our Markov chain simulation `bb_sim` produced a combined 20,000 dependent values of $\pi$, sampled from models other than the posterior. We then used this chain to approximate the posterior model of $\pi$. Knowing that the error in this approximation is likely larger than if we had used 20,000 independent sample values drawn directly from the posterior begs the following question: Relatively, how many independent sample values would it take to produce an equivalently accurate posterior approximation? The **effective sample size ratio** provides an answer.
+
+:::::{.my-assessment}
+:::{.my-assessment-header}
+:::::: {#cor-006-effective-sample-size-ratio}
+: Effective sample size ratio
+::::::
+:::
+::::{.my-assessment-container}
+
+Let $N$ denote the actual sample size or length of a *dependent* Markov chain. The **effective sample size** of this chain, $N_{eff}$, quantifies the number of *independent* samples it would take to produce an equivalently accurate posterior approximation. The greater the $N_{eff}$ the better, yet it’s typically true that the accuracy of a Markov chain approximation is only as good as that of a smaller independent sample. That is, it’s typically true that $N_{eff} < N$ , thus the *effective sample size ratio* is less than 1:
+
+$$\frac{N_{eff}}{N}$$
+There’s no magic rule for interpreting this ratio, and it should be utilized alongside other diagnostics such as the trace plot. That said, we might be suspicious of a Markov chain for which the effective sample size ratio is less than 0.1, i.e., the effective sample size $N_{eff}$ is less than 10% of the actual sample size $N$t.
+
+
+::::
+:::::
+
+A quick call to the `bayesplot::neff_ratio()` function provides the estimated effective sample size ratio for our Markov chain sample of pi values. Here, the accuracy in using our 20,000 length Markov chain to approximate the posterior of $\pi$ is roughly as great as if we had used only 34% as many *independent* values. Put another way, our 20,000 Markov chain values are about as useful as only 6800 independent samples (0.34 ⋅ 20000). Since this ratio is above 0.1, we’re not going to stress.
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-006-calculate-effective-sample-size-ratio}
+: Calculate the effective sample size ratio
+::::::
+:::
+::::{.my-r-code-container}
+```{r}
+#| label: tbl-006-calculate-effective-sample-size-ratio
+#| tbl-cap: Calculation of the effective sample size ratio
+
+# Calculate the effective sample size ratio
+bayesplot::neff_ratio(bb_sim, pars = c("pi")) |> 
+  knitr::kable()
+  
+```
+
+::::
+:::::
+
+#### Autocorrelation {#sec-006-autocorrelation}
+
+See also @sec-906-autocorrelation.
+
+Autocorrelation provides another metric by which to evaluate whether our Markov chain sufficiently mimics the behavior of an independent sample. *Strong* autocorrelation or dependence is a bad thing – it goes hand in hand with small effective sample size ratios, and thus provides a warning sign that our resulting posterior approximations might be unreliable. 
+
+We saw some evidence of this in Chain A of @fig-006-bad-trace-plots. Now, by the simple construction of a Markov chain, there’s inherently going to be some autocorrelation among the chain values – one chain value ($\pi^{(i)}$) depends upon the previous chain value ($\pi^{(i-1)}$), which depends upon the one before that ($\pi^{(i-2)}$), which depends upon the one before that ($\pi^{(i-3})$), and so on. This chain of dependencies also means that each chain value depends in *some* degree on all previous chain values. For example, since $\pi^{(i)}$ is dependent on $\pi^{(i-1)}$ which is dependent on $\pi^{(i-2)}$, $\pi^{(i)}$ is also dependent on $\pi^{(i-2)}$. Yet this dependence, or autocorrelation, fades. It’s like Tobler’s first law of geography: *everything is related to everything else, but near things are more related than distant things*. Thus, it’s typically the case that a chain value $\pi^{(i)}$ is more strongly related to the previous value ($\pi^{(i-1)}$) than to a chain value 100 steps back ($\pi^{(i-100)}$).
+
+:::::{.my-experiment}
+:::{.my-experiment-header}
+:::::: {#def-006-autocorrelation}
+: Autocorrelation
+::::::
+:::
+::::{.my-experiment-container}
+
+**Lag 1** autocorrelation measures the correlation between pairs of Markov chain values that are one “step” apart (e.g., $\pi^{(i)}$ and $\pi^{(i−1)}$). 
+
+**Lag 2** autocorrelation measures the correlation between pairs of Markov chain values that are two “steps” apart (e.g., $\pi^{(i)}$ and $\pi^{(i−2)}$). 
+
+And so on.
+::::
+:::::
+
+Let’s apply these concepts to our `bb_sim` analysis. Check out the trace plot and **autocorrelation plot** of our simulation results in Figure 6.15. (For simplicity, we show the results for only one of our four parallel chains.)
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-006-autocorrelation}
+: Trace plot and autocorrelation plot
+::::::
+:::
+::::{.my-r-code-container}
+```{r}
+#| label: fig-006-autocorrelation
+#| fig-cap: "A trace plot (left) and autocorrelation plot (right) for all four Markov chains from the `bb_sim` analysis."
+#| fig-height: 3
+#| lst-label: lst-006-autocorrelation
+#| lst-cap: "Trace plot and autocorrelation plot for all four Markov chains"
+
+p1 <- bayesplot::mcmc_trace(bb_sim, pars = "pi") 
+p2 <- bayesplot::mcmc_acf(bb_sim, pars = "pi")
+
+patchwork:::"-.ggplot"(p1, p2)
+```
+
+::::
+:::::
+
+::: {.callout-caution #cau-006-autocorrelation-book-code}
+###### Book’s code does not match figure
+
+The @lst-006-autocorrelation code does not conform to the book’s "Figure 6.15". With the code it shows all four chains as demonstrated in @fig-006-autocorrelation.
+
+What follows in the text is the correct code for "Figure 6.15".
+
+:::
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-006-autocorrelation-2}
+: Trace plot and autocorrelation plot of only one chain
+::::::
+:::
+::::{.my-r-code-container}
+
+```{r}
+#| label: fig-006-autocorrelation-2
+#| fig-cap: "A trace plot (left) and autocorrelation plot (right) for a single Markov chain from the `bb_sim` analysis."
+#| fig-height: 3
+#| lst-label: lst-006-autocorrelation-2
+#| lst-cap: "Trace plot and autocorrelation plot for only one Markov chain"
+
+# Extract posterior draws as a matrix/array for subsetting
+posterior_array <- as.array(bb_sim)
+
+# Show trace plot for chain 1 only
+p1 <- bayesplot::mcmc_trace(posterior_array[, 1, , drop = FALSE], pars = "pi")
+
+# Show ACF plot for chain 1 only
+p2 <- bayesplot::mcmc_acf(posterior_array[, 1, , drop = FALSE], pars = "pi")
+
+patchwork:::"-.ggplot"(p1, p2)
+```
+
+***
+
+The key is `posterior_array[, 1, , drop = FALSE]` where the second index (`1`) selects chain 1. Change it to 2, 3, or 4 for other chains.
+::::
+:::::
+
+
+
+Again, notice that there are no obvious patterns in the trace plot. This provides one visual clue that, though the chain values are inherently dependent, this dependence is relatively weak and limited to small lags or values that are just a few steps apart. This observation is supported by the autocorrelation plot which marks the autocorrelation (y-axis) at lags 0 through 20 (x-axis). The lag 0 autocorrelation is naturally 1 – it measures the correlation between a Markov chain value and *itself.* From there, the lag 1 autocorrelation is roughly 0.5, indicating moderate correlation among chain values that are only 1 step apart. But then the autocorrelation quickly drops off and is effectively 0 by lag 5. That is, there’s very little correlation between Markov chain values that are more than a few steps apart. This is all good news. It’s more confirmation that our Markov chain is **mixing quickly**, i.e., quickly moving around the range of posterior plausible $\pi$ values, and thus at least mimicking an independent sample.  
+
+Presuming you’ve never seen an autocorrelation plot before, we imagine that it’s not very obvious that the plot in @fig-006-autocorrelation-2 is a “good” one. For contrast, consider the results for an unhealthy Markov chain (Figure 6.16). The trace plot exhibits strong trends, and hence autocorrelation, in the Markov chain values. This observation is echoed and further formalized by the autocorrelation plot. The slow decrease in the autocorrelation curve indicates that the dependence between chain values does *not* quickly fade away. In fact, there’s a roughly 0.9 correlation between Markov chain values that are a full *20 steps apart*!
+
+Since its chain values are so strongly tied to the previous values, this chain is slow mixing it would take a long time for it to adequately explore the full range of the posterior. Thus, just as with the slow mixing Chain A in @fig-006-bad-trace-plots, we should be wary about using this chain to approximate the posterior. Let’s tie these ideas together.
+
+![A trace plot (left) and autocorrelation plot (right) for a slow mixing Markov chain of π.](img/006-autocorrelation-bad.png){#fig-006-autocorrelation-bad
+fig-alt="Two figures side-by-side. Left trace plot show a kind of fever chart or stock index with big waves pf pi (y-axis) during the iterations (x-axis) and additionally small changes inside the big waves. In the right plot you see a line starting from y-axis 1.0 (Autocorrelation) to end after 20 lags about 0.9 Autocorrelation." fig-align="center" 
+width="100%"}
+
+:::::{.my-experiment}
+:::{.my-experiment-header}
+:::::: {#def-006-fast-vs-slow-mixing}
+: Fast vs slow mixing Markov chains
+::::::
+:::
+::::{.my-experiment-container}
+
+- **Fast mixing chains** exhibit behavior similar to that of an independent sample: the chains move “quickly” around the range of posterior plausible values, the autocorrelation among the chain values drops off quickly, and the effective sample size ratio is reasonably large. 
+- **Slow mixing chains** do *not* enjoy the features of an independent sample: the chains move “slowly” around the range of posterior plausible values, the autocorrelation among the chain values drops off very slowly, and the effective sample size ratio is small.
+
+::::
+:::::
+
+So what do we do if ours is a dreaded slow mixing chain? 
+
+1. The first and, in our opinion best, possible solution is the tried and true “**run a longer chain**.” Even a slow mixing chain can eventually produce a good posterior approximation if we run it for enough iterations. 
+2. Another common approach is to **thin the Markov chain**. For example, from our original chain of 5000 $\pi$ values, we might keep every second value and toss out the rest: $\{\pi^{(2)}, \pi^{(4)}, \pi^{(6)}, . . . , \pi^{(5000)}\}$.  Or, we might keep every ten chain values: ${\pi^{(10)}, \pi^{(20)}, \pi^{(30)}, . . . , \pi^{(5000)}\}$. By discarding the  draws in between, we remove the strong correlations at low lags. For example, $\pi^{(20)}$ is less correlated with the previous value in the thinned chain ($\pi^{(10)}$) than with the previous value in the original chain ($\pi^{(19)}$).
+
+**For illustration only**, we thin out our original `bb_sim` chains to just every tenth value using the `thin` argument in `rstan::stan()`. As a result, the autocorrelation drops off a bit earlier, after 1 lag instead of 5 (@fig-006-thinned-mcmc-example). BUT, since this was *already* a quick mixing simulation with quickly decreasing autocorrelation and a relatively high effective sample size ratio, this minor improvement in autocorrelation **isn’t worth the information we lost**. Instead of a sample size of 5000 chain values, we now only have 500 values with which to approximate the posterior.
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-006-thinned-mcmc-example}
+: Simulate a thinned MCMC example
+::::::
+:::
+::::{.my-r-code-container}
+```{r}
+#| label: fig-006-thinned-mcmc-example
+#| fig-cap: "A trace plot (left) and autocorrelation plot (right) for a single Markov chain from the `bb_sim` analysis, thinned to every tenth value."
+#| fig-height: 3
+
+# Simulate a thinned MCMC sample
+thinned_sim <- rstan::stan(model_code = bb_model, data = list(Y = 9), 
+                    chains = 4, iter = 5000*2, seed = 84735, thin = 10)
+
+# Extract posterior draws as a matrix/array for subsetting
+posterior_thinned_array <- as.array(thinned_sim)
+
+# Check out the results
+p1 <- bayesplot::mcmc_trace(posterior_thinned_array[, 1, , drop = FALSE], pars = "pi")
+p2 <- bayesplot::mcmc_acf(posterior_thinned_array[, 1, , drop = FALSE], pars = "pi")
+
+patchwork:::"-.ggplot"(p1, p2)
+```
+
+::::
+:::::
+
+We similarly thin our slow mixing chain down to every tenth value (@fig-006-autocorrelation-thinned). The resulting chain still exhibits slow mixing trends in the trace plot, but the autocorrelation drops more quickly than the pre-thinned chain. This is good, but is it worth losing 90% of our original sample values? We’re not so sure.
+
+![A trace plot (left) and autocorrelation plot (right) for a slow mixing Markov chain of π, thinned to every tenth value.](img/006-autocorrelation-thinned.png){#fig-006-autocorrelation-thinned
+fig-alt="Two figures side-by-side. Left trace plot show a kind of fever chart or stock index with big waves pf pi (y-axis) during the iterations (x-axis) and additionally small changes inside the big waves. In the right plot you see a line starting from y-axis 1.0 (Autocorrelation) to end after 20 lags about 0.25 Autocorrelation." fig-align="center" 
+width="100%"}
+
+::: {.callout-caution #cau-thinned-chain-not-always-good}
+###### How to decide wheter or not to thin a Markov chain
+
+There is a careful line to walk when deciding whether or not to thin a Markov chain. The benefits of reduced autocorrelation don’t necessarily outweigh the loss of precious chain values. That is, 5000 Markov chain values with stronger autocorrelation might produce a better posterior approximation than 500 chain values with weaker autocorrelation. 
+
+The effectiveness of thinning also depends in part on the algorithm used to construct the Markov chain. For example, the {**rstan**} and {**rstanarm**} packages used throughout this book employ an efficient `r glossary("HMC", "Hamiltonian Monte Carlo")` algorithm. As such, in the current `rstan::stan()` help file, the **package authors advise against thinning** unless your simulation hogs up too much memory on your machine.
+:::
+
+
+### Calculating R-hat {#sec-006-calculating-r-hat}
+
+See also @sec-906-r-hat.
+
+Just as effective sample size and autocorrelation provide numerical supplements to the visual trace plot diagnostic in assessing the degree to which a Markov chain behaves like an independent sample, the split-$\hat{R}$ metric (or “R-hat” for short) provides a numerical supplement to the visual comparison of parallel chains. Recall from @sec-006-comparing-parallel-chains that, not only do we want each *individual* Markov chain in our simulation to be stable, we want there to be consistency *across* the parallel chains. R-hat addresses this consistency by comparing the variability in sampled $\pi$ values across all chains *combined* to the variability *within* each individual chain. Before presenting a more formal definition, check your intuition.
+
+:::::{.my-assessment}
+:::{.my-assessment-header}
+:::::: {#cor-006-marker-good-mc}
+: What is a marker of a “good” Markov chain simulation?
+::::::
+:::
+::::{.my-assessment-container}
+Figure 6.19 provides simulation results for `bb_sim` (top row) along with a bad hypothetical alternative (bottom row). Based on the patterns in these plots, what do you think is a marker of a “good” Markov chain simulation?  
+
+- a. The variability in $\pi$ values *within* any individual chain is **less than** the variability in $\pi$ values across all chains *combined.* 
+- b. The variability in $\pi$ values *within* any individual chain is **comparable to** the variability in $\pi$ values across all chains *combined.*
+
+![Simulation results for `bb_sim` (top row) and a hypothetical alternative (bottom row). Included are trace plots of the four parallel chains (left), density plots for each individual chain (middle), and a density plot of the combined chains (right).](img/006-r-hat-quiz.png){#fig-006-r-hat-quiz
+fig-alt="Top left: All four chains overly each other in a zig-zag curve with high amplitude. Top middle: The four posterior densities are very similar. Top right: The summary of all four densities is similar to their four individual densities. Bottom left: The four chains are not overlapping, Their (smaller) zig-zag curve do not overlap. Bottom middle: The four densities plot have their maximum on very different values of pi (0.70, 0.76, 0.78 and 0.84). Bottom right: The resulting combined density curve has three spikes at different pi values and the middle curve has a small bump on their top. There is no similarity between the combined and individual densities." fig-align="center" 
+width="100%"}
+
+What is the correct answer `r mcq(c("a", answer = "b"))`
+
+::::
+:::::
+
+To answer this quiz, let’s dig into @fig-006-r-hat-quiz. Based on what we learned in Section @sec-006-comparing-parallel-chains, we can see that `bb_sim` is superior to the alternative – its parallel chains exhibit similar features and produce similar posterior approximations. In particular, the variability in $\pi$ values is nearly identical *within* each chain (top middle plot). As a consequence, the variability in $\pi$ values across all chains *combined* (top right plot) is similar to that of the individual chains. 
+
+In contrast, notice that the four parallel chains in the alternative simulation produce conflicting posterior approximations (bottom middle plot), and hence an unstable and poor posterior approximation when we combine these chains (bottom right plot). As a consequence, the range and variability in $\pi$ values across all chains *combined* are much larger than the range and variability in $\pi$ values *within* any individual chain.  
+
+Bringing this analysis together, we’ve intuited the importance of the relationship between the variability in values across all chains *combined* and *within* the individual parallel chains. Specifically:  
+
+- in a “good” Markov chain simulation, the variability across all parallel chains combined will be roughly comparable to the variability within any individual chain;
+- in a “bad” Markov chain simulation, the variability across all parallel chains combined might exceed the typical variability within each chain.  
+
+We can *quantify* the relationship between the combined chain variability and within-chain variability using R-hat. We provide an intuitive definition of R-hat here. For a more detailed definition, see [@vehtari2021]. And to learn more about the exciting connection between effective sample size and R-hat, see [@vats2021]!
+
+:::::{.my-theorem}
+:::{.my-theorem-header}
+:::::: {#thm-006-r-hat}
+: R-hat
+::::::
+:::
+::::{.my-theorem-container}
+
+Consider a Markov chain simulation of parameter $\theta$ which utilizes four parallel chains. Let $Var_{combined}$ denote the variability in $\theta$ across all four chains combined and $Var_{within}$ denote the typical variability within any individual chain. The R-hat metric calculates the ratio between these two sources of variability:
+
+$$
+\begin{align*}
+R-hat \approx \sqrt\frac{\text{Var}_{combined}}{\text{Var}_{within}}
+\end{align*}
+$$
+Ideally, $R-hat \approx 1$, reflecting stability across the parallel chains. In contrast, $R-hat > 1$ indicates instability, with the variability in the combined chains exceeding that within the chains. Though no golden rule exists, an R-hat ratio greater than $1.05$ raises some red flags about the stability of the simulation.
+
+::::
+:::::
+
+To calculate the R-hat ratio for our simulation, we can apply the `bayesplot::rhat()` function:
+
+`bayesplot::rhat(bb_sim, pars = "pi")` = `r bayesplot::rhat(bb_sim, pars = "pi")`.
+
+Reflecting our observation that the variability across and within our four parallel chains is comparable, `bb_sim` has an R-hat value that’s effectively equal to 1. In contrast, the bad hypothetical simulation exhibited in @fig-006-r-hat-quiz has an R-hat value of 5.35. That is, the variance across all chain values combined is more than 5 *times* the typical variance within each chain. This *well* exceeds the 1.05 red flag marker, providing ample evidence that the hypothetical parallel chains do not produce consistent posterior approximations, thus the simulation is unstable.
+
+## Summary
+
+As our Bayesian models get more sophisticated, their posteriors will become too difficult, if not impossible, to specify. In this chapter, you learned two **simulation techniques for approximating the posterior** in such scenarios: grid approximation and Markov chain Monte Carlo. Both techniques produce a **sample** of $N \theta$ values,
+
+$$
+\{\theta^{(1)}, \theta^{(2)}, . . . , \theta^{(N)}\}
+$$
+
+However, the properties of these samples differ:  
+
+- **Grid approximation** takes an **independent** sample of $\theta^{(i)}$ from a *discretized approximation* of posterior pdf $f (\theta \mid y)$. This approach is nicely straightforward but breaks down in more complicated model settings. 
+- **Markov chain Monte Carlo** offers a more flexible alternative. Though MCMC produces a **dependent** sample of $\theta^{(i)}$ which are **not** drawn from the posterior pdf $f (\theta \mid y)$, this sample will mimic the posterior model so long as the chain length $N$ is big enough.
+
+Finally, you learned some MCMC **diagnostics** for checking the resulting simulation quality. In short, we can visually examine **trace plots** and **density plots** of multiple parallel chains for **stability** and **mixing** in our simulation:
+
+And we can supplement these visual diagnostics with numerical diagnostics such as **effective sample size ratio**, **autocorrelation**, and **R-hat**:
+
+```R
+# Visual diagnostics (plots)
+bayesplot::mcmc_trace(my_sim, pars = "___")
+bayesplot::mcmc_dens_overlay(my_sim, pars = "___")
+
+
+# Numerical diagnostics 
+bayesplot::neff_ratio(my_sim, pars = "___")
+bayesplot::mcmc_acf(my_sim, pars = "___")
+bayesplot::rhat(my_sim, pars = "___")
+
+```
+
+## Exercises
+
+::: {#wrn-006-exercises .callout-warning}
+###### Take my solutions with caution!
+
+Keep in mind, that I am not an expert but a learner. This means that the
+presented solutions may have errors or are completely wrong.
+
+For some of the exercises I have used `r glossary("LLMs")`, mostly the free `r glossary("Claude Haiku")`.
+
+If you find errors please report to me at the [GitHub
+repo](https://github.com/petzi53/bayes-rules) of this website.
+:::
+
+### Conceptual exercises
+
+
+
+
+## Glossary Entries {.unnumbered}
+
+```{r}
+#| label: glossary-table
+#| echo: false
+
+glossary_table()
+```
+
+------------------------------------------------------------------------
+
+## Session Info {.unnumbered}
+
+::: my-r-code
+::: my-r-code-header
+Session Info
+:::
+
+::: my-r-code-container
+```{r}
+#| label: session-info
+
+sessioninfo::session_info()
+```
+:::
+:::
+

@@ -1,0 +1,225 @@
+# MCMC Under the Hood {#sec-chap-007}
+
+```{r}
+#| label: setup
+#| results: hold
+#| include: false
+
+base::source(file = "R/helper.R")
+ggplot2::theme_set(ggplot2::theme_bw())
+```
+
+
+
+::::: {#obj-chap-007}
+:::: {.my-objectives}
+::: {.my-objectives-header}
+
+- Build a strong conceptual understanding of how Markov chain algorithms work. 
+- Explore the foundational Metropolis-Hastings algorithm. 
+- Implement the Metropolis-Hastings algorithm in the Normal-Normal and Beta-Binomial settings.
+:::
+
+::: {.my-objectives-container}
+
+
+:::
+::::
+:::::
+
+
+Bayesian `r glossary("MCMC")` simulation is a rich field, spanning various algorithms that share a common goal: approximate the posterior model. For example, the {**rstan**} package utilized throughout this book employs a Hamiltonian Monte Carlo (`r glossary("HMC")`) algorithm. The alternative {**rjags**} package for Bayesian modeling employs a `r glossary("Gibbs")` sampling algorithm. Though the details differ, both algorithms are variations on the fundamental `r glossary("Metropolis Algorithm", "Metropolis-Hastings")` algorithm.
+
+## The big idea
+
+It helps to think of the illustrated Markov chain $\{\mu^{(1)}, \mu^{(2)}, \cdots , \mu^{(N)}\}$ as a **tour** around the range of posterior plausible values of $\mu$ and yourself as the **tour manager**.
+
+As tour manager, it’s your job to ensure that the density of tour stops in each $\mu$ region is proportional to its posterior plausibility. That is, the chain should spend more time touring values where the posterior pdf is greatest, and less time visiting $\mu$ values where the posterior drops off. This consideration is crucial to producing a collection of tour stops that accurately approximate the posterior.
+
+The Metropolis-Hastings algorithm iterates through a two-step process. Assuming the Markov chain is at location $\mu^{(i)} = \mu$ at iteration or “tour stop” $i$, the next tour stop $\mu^{(i+1)}$ is selected as follows:  
+
+- **Step 1:** Propose a random location, $\mu′$, for the next tour stop. 
+- **Step 2:** Decide whether to go to the proposed location ($\mu^{(i+1)} = \mu′$) or to stay at the current location for another iteration ($\mu^{(i)} = \mu$.
+
+The special case that step 2 requires to go unconditionally to the proposed location is called `r glossary("Monte-Carlo Algorithm", "Monte Carlo Algorithm")`.
+
+:::::{.my-procedure}
+:::{.my-procedure-header}
+:::::: {#prp-007-monte-carlo-algorithm}
+: Monte Carlo Algorithm
+::::::
+:::
+::::{.my-procedure-container}
+
+To construct an *independent* Monte Carlo sample *directly* from posterior pdf $f \{\mu^{(1)}, \mu^{(2)}, \cdots , \mu^{(N)}\}$, select each tour stop    $\mu^{(i)} = \mu$ as follows:  
+
+- **Step 1: Propose a location**.  Draw a location $\mu$ from the posterior model with pdf $f (\mu \mid y)$.  
+- **Step 2: Go there**.
+
+
+::::
+:::::
+
+
+Consider the following `r glossary("Normal-Normal Conjugate Family", "Normal-Normal model")` with numerical outcome $Y$ that varies Normally around an unknown mean $\mu$ with a standard deviation of 0.75:
+
+$$
+\begin{align*}
+Y \mu \mu &\sim \mathcal{N}(\mu, 0.75^2) \\  
+\mu &\sim \mathcal{N}(0, 1^2)
+\end{align*}
+$$ {#eq-007-normal-normal-example}
+
+Suppose we observe an outcome $Y = 6.25$. Then by our Normal-Normal work in @sec-chap-005 @eq-005-normal-normal-bayesian-model, the posterior model of $\mu$ is Normal with mean $4$ and standard deviation $0.6$:
+
+$$
+\begin{align*}
+\mu \mid \vec{y} \sim N \left(\theta \frac{\sigma^2}{n \tau^2 + \sigma^2} + \overline{y} \frac{n\tau^2}{n \tau^2 + \sigma^2}, \frac{\tau^2 \sigma^2}{n \tau^2 + \sigma^2} \right)
+\end{align*}
+$$
+
+::: {#big-text style="font-size: 110%"}
+**Posterior Variance** 
+:::
+
+$$
+\begin{align*}
+\frac{1}{\tau_n^2} &= \frac{1}{\tau^2} + \frac{1}{\sigma^2} \\
+\frac{1}{\tau_n^2} &= \frac{1}{1^2} + \frac{1}{0.75^2} \\
+\frac{1}{\tau_n^2} &= 1 + \frac{1}{0.5625} \\
+\frac{1}{\tau_n^2} &= 1 + 1.7\overline{7} \\
+\frac{1}{\tau_n^2} &= 2.7\overline{7} \\
+\frac{1}{\tau_n^2} &= \frac{25}{9} \\
+\tau_n^2 &= \frac{9}{25} = 0.36 \quad \Rightarrow \quad \tau_n = 0.6
+\end{align*}
+$$ 
+
+
+::: {#big-text style="font-size: 110%"}
+**Posterior Mean** 
+:::
+
+
+$$
+\begin{align*}
+\mu_n &= \frac{\frac{\theta}{\tau^2} + \frac{y}{\sigma^2}}{\frac{1}{\tau^2} + \frac{1}{\sigma^2}} \\
+&= \frac{\frac{0}{1} + \frac{6.25}{0.5625}}{2.7\overline{7}} \\
+&= \frac{0 + 11.1\overline{1}}{2.7\overline{7}} \\
+\mu_n &= \frac{100/9}{25/9} = \frac{100}{25} = 4 \\
+\end{align*} 
+$$ 
+
+
+::: {#big-text style="font-size: 110%"}
+**Posterior Distribution** 
+:::
+
+
+$$\boxed{\mu \mid Y = 6.25 \;\sim\; \mathcal{N}(4, 0.36)}$$
+
+Or equivalently: 
+
+$$\boxed{\mu \mid Y = 6.25 \sim \mathcal{N}(4, 0.6^2)}$$
+
+::: {#big-text style="font-size: 110%"}
+**Interpretation** 
+:::
+
+| Aspect | Value |
+|--------|-------|
+| **Posterior mean** | 4.0 |
+| **Posterior SD** | 0.6 |
+| **95% credible interval** | $[4 \pm 1.96(0.6)] = [2.82, 5.18]$ |
+
+::: {#big-text style="font-size: 110%"}
+**Key insights** 
+:::
+
+1. The posterior mean (4.0) is **pulled toward the data** (6.25) but **tempered by the prior** (0), reflecting both sources of information.
+2. The posterior is **much more concentrated** than the prior (SD: 0.6 vs 1.0), because the data provides strong evidence about $\mu$.
+3. We're now 95% confident that $\mu$ lies between **2.82 and 5.18**, a substantial reduction in uncertainty from the prior.
+
+***
+
+Posterior Variance: $\tau_n^2 = \dfrac{9}{25}$
+
+This is simply taking the reciprocal of $\dfrac{25}{9}$:
+
+$$\frac{1}{\tau_n^2} = \frac{25}{9} \quad \Longrightarrow \quad \tau_n^2 = \frac{9}{25} = 0.36$$
+
+The $\dfrac{25}{9}$ itself comes from converting $2.7\overline{7}$ to a fraction:
+
+$$1 + \frac{1}{0.5625} = 1 + \frac{16}{9} = \frac{9}{9} + \frac{16}{9} = \frac{25}{9}$$
+
+since $0.75^2 = 0.5625 = \dfrac{9}{16}$, so $\dfrac{1}{0.5625} = \dfrac{16}{9}$.
+
+
+Posterior Mean: $\mu_n = \dfrac{100/9}{25/9}$
+
+The **numerator** $\dfrac{100}{9}$ comes from:
+
+$$\frac{y}{\sigma^2} = \frac{6.25}{0.5625} = \frac{6.25}{9/16} = 6.25 \times \frac{16}{9} = \frac{100}{9}$$
+
+The **denominator** $\dfrac{25}{9}$ is just $\dfrac{1}{\tau_n^2}$ from above.
+
+So the full calculation is:
+
+$$\mu_n = \frac{\frac{100}{9}}{\frac{25}{9}} = \frac{100}{9} \times \frac{9}{25} = \frac{100}{25} = 4$$
+
+How to convert $\dfrac{1}{0.5625}$ into $\dfrac{16}{9}$:
+
+
+**Step 1**: Convert the decimal to a fraction
+
+First, recognize that $0.5625$ is a terminating decimal. I can express it as:
+
+$$0.5625 = \frac{5625}{10000}$$
+
+**Step 2**: Simplify by finding the GCD
+
+Now I need to reduce this fraction. Finding the greatest common divisor (GCD) of 5625 and 10000:
+
+- $5625 = 5^4 \times 9 = 625 \times 9$
+- $10000 = 10^4 = 2^4 \times 5^4$
+
+The GCD is $5^4 = 625$, so:
+
+$$\frac{5625}{10000} = \frac{5625 \div 625}{10000 \div 625} = \frac{9}{16}$$
+
+**Step 3**: Take the reciprocal
+
+$$\frac{1}{0.5625} = \frac{1}{\frac{9}{16}} = \frac{16}{9}$$
+
+***
+
+**Alternative approach:** You could also recognize that $0.75^2 = (3/4)^2 = 9/16$, so immediately $\dfrac{1}{0.75^2} = \dfrac{16}{9}$ without converting the decimal at all!
+
+
+
+## Glossary Entries {.unnumbered}
+
+```{r}
+#| label: glossary-table
+#| echo: false
+
+glossary_table()
+```
+
+------------------------------------------------------------------------
+
+## Session Info {.unnumbered}
+
+::: my-r-code
+::: my-r-code-header
+Session Info
+:::
+
+::: my-r-code-container
+```{r}
+#| label: session-info
+
+sessioninfo::session_info()
+```
+:::
+:::
+

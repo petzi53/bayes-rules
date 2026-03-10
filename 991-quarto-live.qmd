@@ -1,0 +1,67 @@
+---
+title: "Quarto Live Exercises"
+format: 
+    live-html:
+        theme: cosmo
+        highlight-style: atom-one
+        css:
+         - include/quarto.css
+         - include/glossary.css
+         - include/webex.css
+        number-sections: true
+        toc-depth: 5
+        toc-expand: 4
+        toc_float: true
+        code-fold: true
+        code-summary: "Show/hide the code"
+        code-tools: true
+        code-link: true
+        code-overflow: scroll
+        df-print: default
+        link-external-newwindow: true
+        link-external-icon: true
+        include-after-body: include/webex.js
+engine: knitr
+---
+
+{{< include ./_extensions/r-wasm/live/_knitr.qmd >}}
+
+
+```{r}
+#| label: setup
+#| results: hold
+#| include: false
+
+base::source(file = "R/helper.R")
+ggplot2::theme_set(ggplot2::theme_bw())
+```
+
+
+
+::::: {#obj-chap-006}
+:::: {.my-objectives}
+::: {.my-objectives-header}
+Objectives
+:::
+
+::: {.my-objectives-container}
+
+- Implement and examine the limitations of using grid approximation to simulate a posterior model. 
+- Explore the fundamental properties of `r glossary("MCMC")` posterior simulation techniques and how these differ from grid approximation. 
+- Implement MCMC simulation in R. 
+- Learn several `r glossary("Markov chain")` diagnostics for examining the quality of an MCMC posterior simulation.
+
+
+:::
+::::
+:::::
+
+
+Fill in the blank so that the result of the sum is 10.
+
+```{webr}
+#| exercise: ex_1
+1 + 2 + 3 + ______
+```
+
+

@@ -19,7 +19,7 @@ Johnson, Miles Q. Ott and Mine Dogucu [@johnson2022].
 ::: {.callout-note style="color: blue;"}
 #### This is work in progress
 
-Finished about 23%. I am currently working in parallel on the exercises of the fifth chapter and started with chapter 6.
+Finished about 31%. I am currently working in parallel on the exercises of the sixth chapter and outlining chapter 7.
 :::
 
 
@@ -425,6 +425,8 @@ singular/plural or other grammar changes).
 
 ::: my-resource-container
 XXX: \[ADD HERE USED ADDITIONAL SOURCES\]
+
+
 :::
 ::::::
 

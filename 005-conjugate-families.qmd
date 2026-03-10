@@ -555,7 +555,7 @@ First, let’s learn more about the Gamma model.
 
 ### Gamma prior
 
-#### Gamma formulas
+#### Gamma formulas {#sec-005-gamma-formulas}
 
 :::::: my-theorem
 :::: my-theorem-header
@@ -1113,7 +1113,7 @@ bayesrules::summarize_gamma_poisson(
 :::
 ::::::
 
-## Normal-normal conjugate family
+## Normal-normal conjugate family {#sec-005-normal-normal-conjugacy}
 
 We now have two conjugate families in our toolkit: the Beta-Binomial and
 the Gamma-Poisson. But many more conjugate families exist!
@@ -1635,7 +1635,7 @@ $$
 Y_i \mid &\mu \overset{\text{ind}}{\sim} N (\mu, \sigma^2) \\
 &\mu ∼ N (\theta, \tau^2) 
 \end{align*}
-$$ 
+$$ {#eq-005-normal-normal-model}
 
 Upon observing data $\vec{y} = (y_1, y_2, . . . , y_n)$ with mean $\overline{y}$, the posterior model of $\mu$ is also Normal with updated parameters:
 
@@ -1683,19 +1683,20 @@ For our analysis, we’ll focus on the $n = 25$ subjects with a history of concu
 :::::{.my-r-code}
 :::{.my-r-code-header}
 :::::: {#cnj-005-load-football-data}
-: Load the `football` data from {**bayesrules**}
+: Load and skim the `football` data from {**bayesrules**}
 ::::::
 :::
 ::::{.my-r-code-container}
 ```{r}
-#| label: load-football-data
-#| lst-label: lst-005-load-football-data
+#| label: tbl-005-load-skim-football-data
+#| tbl-cap: "Load an skim football data"
+#| lst-label: lst-005-load-skim-football-data
 #| lst-cap: Load, display `football` data and compute mean
 #| results: hold
 
 # Load the data
 data(football, package = "bayesrules")
-dplyr::glimpse(football)
+skimr::skim(football)
 
 concussion_subjects <- football |> 
   dplyr::filter(group == "fb_concuss")
@@ -1703,11 +1704,18 @@ concussion_subjects <- football |>
 mean_hyppocampal_volume <- concussion_subjects |> 
   dplyr::summarize(mean(volume))
 ```
+```{r}
+#| label: tbl-load-football-data
+#| tbl-cap: "Show 8 random rows with the first and last row."
+
+my_glance_data(football) |> 
+  knitr::kable()
+```
 
 ::::
 :::::
 
-These subjects have an average hippocampal volume of y = `r mean_hyppocampal_volume` $\text{cm}^3$.
+**Football players with a concussion history have an average hippocampal volume of y = `r mean_hyppocampal_volume` $\text{cm}^3$.**
 
 Further, the hippocampal volumes appear to vary normally from subject to subject, ranging from roughly $4.5$ to $7 \text{cm}^3$. That is, our assumed Normal data model about individual hippocampal volumes, $Y_i \mid \mu \sim N (\mu, \sigma^2)$ with an assumed standard deviation of $\sigma = 0.5$, seems reasonable:
 
@@ -1800,7 +1808,7 @@ Bringing all of these pieces together, we plot and summarize our Normal-Normal a
 :::::{.my-r-code}
 :::{.my-r-code-header}
 :::::: {#cnj-005-plot-and-summarize-posterior}
-: Plot and summarize the result of the Normal-Normal analysis
+: Plot and summarize the result of the Normal-Normal analysis for football players with concussion history
 ::::::
 :::
 ::::{.my-r-code-container}
@@ -2103,9 +2111,28 @@ All three have clean, interpretable posterior formulas:
 Keep in mind, that I am not an expert but a learner. This means that the
 presented solutions may have errors or are completely wrong.
 
+For some of the exercises I have used `r glossary("LLMs")`, mostly the free `r glossary("Claude Haiku")`.
+
 If you find errors please report to me at the [GitHub
 repo](https://github.com/petzi53/bayes-rules) of this website.
 :::
+
+:::::{.my-resource}
+:::{.my-resource-header}
+:::::: {#lem-005-distribution-zoo}
+: Distribution Zoo: Shiny app for a variety of distributions
+::::::
+:::
+::::{.my-resource-container}
+
+
+My first book I read on Bayesian statistics was "A Student’s Guide to Bayesian Statistics" [@lambert2018]. At the time of my reading (September 2023) it was too complex for me and I stopped reading. The book recommends a Shiny app to view distribution properties and access dynamically in R, Python, Matlab, Mathematica and Stan. ([Website](https://ben18785.shinyapps.io/distribution-zoo/), [GitHub Repo](https://github.com/ben18785/distribution-zoo)).
+
+At the time of my reading I didn't understand the importance of this tool, but now with my greater knowledge it comes very handy! The app is more extensive and elaborated than the proposed Shiny app from [Chapter 3 of STAT 454 Bayesian Statistics](https://ajohns24.github.io/454_Fall_21/the-beta-binomial-model.html#shiny-apps). 
+
+
+::::
+:::::
 
 ### Practice Gamma-Poisson
 
@@ -2868,12 +2895,2726 @@ bayesrules::summarize_gamma(
 :::::
 
 
+::::
+:::::
+
+#### Poisson likelihood functions
+
+:::::{.my-exercise}
+:::{.my-exercise-header}
+:::::: {#exr-005-poisson-likelihood-functions}
+: Poisson likelihood functions
+::::::
+:::
+::::{.my-exercise-container}
+
+For each situation below, we observe the  outcomes for a random sample of Poisson variables, $Y_i \mid λ \overset{\text{ind}}{\sim} \text{Pois}(\lambda)$. Specify and plot the likelihood function of $\lambda$.
+
+::: {#big-text style="font-size: 125%"}
+**(a) $(y_1, y_2, y_3) = (3, 7, 19)$** 
+:::
+
+::: {#big-text style="font-size: 110%"}
+**Poisson Likelihood Function** 
+:::
+
+The **likelihood function** for a Poisson distribution with parameter $\lambda$, given independent observations $y_1, y_2, y_3$, is the product of the individual Poisson `r glossary("Probability-Mass-Function", "probability mass functions")` (PMFs):
+
+$$
+L(\lambda \mid y_1, y_2, y_3) = \prod_{i=1}^3 \frac{e^{-\lambda} \lambda^{y_i}}{y_i!}
+$$
+
+For the specific data $(y_1, y_2, y_3) = (3, 7, 19)$, substitute the values:
+
+$$
+L(\lambda \mid 3, 7, 19) = \frac{e^{-\lambda} \lambda^3}{3!} \cdot \frac{e^{-\lambda} \lambda^7}{7!} \cdot \frac{e^{-\lambda} \lambda^{19}}{19!}
+$$
+
+Simplify the expression:
+
+$$
+L(\lambda \mid 3, 7, 19) = e^{-3\lambda} \cdot \frac{\lambda^{3+7+19}}{3! \cdot 7! \cdot 19!} = e^{-3\lambda} \cdot \frac{\lambda^{29}}{3! \cdot 7! \cdot 19!}
+$$
+
+This is the **Poisson likelihood function** for the given data.
+
+::: {#big-text style="font-size: 110%"}
+**Log-Likelihood Function** 
+:::
+
+
+To facilitate maximization, take the natural logarithm:
+
+$$
+\ln L(\lambda \mid 3, 7, 19) = -3\lambda + 29 \ln \lambda - \ln(3! \cdot 7! \cdot 19!)
+$$
+
+
+
+This log-likelihood is maximized at $\hat{\lambda} = \frac{29}{3} \approx 9.67$, the sample mean. In detail:
+
+The `r glossary("MLE", "maximum likelihood estimate")` (MLE) of $\lambda$ for a Poisson distribution is the **sample mean**:
+
+$$
+\hat{\lambda} = \frac{1}{n} \sum_{i=1}^n y_i
+$$
+
+For the data $(y_1, y_2, y_3) = (3, 7, 19)$, compute:
+
+$$
+\hat{\lambda} = \frac{3 + 7 + 19}{3} = \frac{29}{3} \approx 9.67
+$$
+
+Thus, the MLE of $\lambda$ is **9.67**.
+
+
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-005-plot-poisson-likelihood-a}
+: Plot Poisson likelihood function for $(y_1, y_2, y_3) = (3, 7, 19)$
+::::::
+:::
+::::{.my-r-code-container}
+```{r}
+#| label: fig-005-plot-poisson-likelihood-a
+#| fig-cap: Poisson likelihood function for $(y_1, y_2, y_3) = (3, 7, 19)$
+#| fig-height: 3
+#| fig-width: 4
+
+bayesrules::plot_poisson_likelihood(y = c(3, 7, 19), lambda_upper_bound = 20)
+```
+
+::::
+:::::
+
+***
+
+::: {#big-text style="font-size: 125%"}
+**b) $(y_1, y_2, y_3, y_4) = (12, 12, 12, 0)$** 
+:::
+
+
+$$
+\hat{\lambda} = \frac{12, 12, 12, 0}{4} = \frac{36}{4} = 9
+$$
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-005-plot-poisson-likelihood-b}
+: Plot Poisson likelihood function for $(y_1, y_2, y_3, y_4) = (12, 12, 12, 0)$
+::::::
+:::
+::::{.my-r-code-container}
+```{r}
+#| label: fig-005-plot-poisson-likelihood-b
+#| fig-cap: Poisson likelihood function for $(y_1, y_2, y_3, y_4) = (12, 12, 12, 0)$
+#| fig-height: 3
+#| fig-width: 4
+
+bayesrules::plot_poisson_likelihood(y = c(12, 12, 12, 0), lambda_upper_bound = 25)
+```
+
+::::
+:::::
+
+***
+
+
+::: {#big-text style="font-size: 125%"}
+**c) $y_1 = 12$** 
+:::
+
+
+$$
+\hat{\lambda} = \frac{12}{1} = 12
+$$
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-005-plot-poisson-likelihood-c}
+: Plot Poisson likelihood function for $y = 12$
+::::::
+:::
+::::{.my-r-code-container}
+```{r}
+#| label: fig-005-plot-poisson-likelihood-c
+#| fig-cap: Poisson likelihood function for $y = 12$
+#| fig-height: 3
+#| fig-width: 4
+
+bayesrules::plot_poisson_likelihood(y = 12, lambda_upper_bound = 25)
+```
+
+::::
+:::::
+
+
+::: {#big-text style="font-size: 125%"}
+**d) $(y_1, y_2, y_3, y_4, y_5) = (16, 10, 17, 11, 11)$** 
+:::
+
+
+$$
+\hat{\lambda} = \frac{16, 10, 17, 11, 11}{5} = \frac{65}{5} = 13
+$$
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-005-plot-poisson-likelihood-d}
+: Plot Poisson likelihood function for $(y_1, y_2, y_3, y_4, y_5) = (16, 10, 17, 11, 11)$
+::::::
+:::
+::::{.my-r-code-container}
+```{r}
+#| label: fig-005-plot-poisson-likelihood-d
+#| fig-cap: Poisson likelihood function for $(y_1, y_2, y_3, y_4, y_5) = (16, 10, 17, 11, 11)$
+#| fig-height: 3
+#| fig-width: 4
+
+bayesrules::plot_poisson_likelihood(y = c(16, 10, 17, 11, 11), lambda_upper_bound = 25)
+```
 
 ::::
 :::::
 
 
 
+::::
+:::::
+
+#### Finding the Gamma-Poisson posterior: Take I
+
+:::::{.my-exercise}
+:::{.my-exercise-header}
+:::::: {#exr-005-find-gamma-poisson-posterior-I}
+: Finding the Gamma-Poisson posterior (Take I)
+::::::
+:::
+::::{.my-exercise-container}
+
+Assume a prior model of 
+
+$$\lambda \sim \text{Gamma}(24, 2)$$. 
+
+Specify the posterior models of λ corresponding to the data in each scenario of @exr-005-poisson-likelihood-functions.
+
+::: {#big-text style="font-size: 150%"}
+**General solution** 
+:::
+
+Given a Poisson likelihood with observed data and a conjugate Gamma prior $\lambda \sim \text{Gamma}(\alpha = 24, \beta = 2)$, the posterior distribution for $\lambda$ is also Gamma.
+
+The posterior parameters are calculated with @eq-005-gamma-poisson-model in @thm-005-gamma-poisson-model.
+
+$$
+\begin{align*}
+\lambda \mid \overrightarrow{\rm y} &\sim \text{Gamma}(s + \sum y_i, r + n) \\
+\text{Shape:} \quad \alpha_{\text{post}} &= \alpha + \sum y_i  \\
+\text{Rate:} \quad \beta_{\text{post}} &= \beta + n
+\end{align*}
+$$
+
+***
+
+::: {#big-text style="font-size: 110%"}
+**(a) $(y_1, y_2, y_3) = (3, 7, 19)$** 
+:::
+
+
+$$
+\begin{align*}
+\text{Shape:} \quad \alpha_{\text{post}} &= \alpha + \sum y_i = 24 + (3 + 7 + 19) = 53 \\
+\text{Rate:} \quad \beta_{\text{post}} &= \beta + n = 2 + 3 = 5
+\end{align*}
+$$ 
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-005-find-gamma-poisson-posterior-a}
+: Plot the posterior models of $\lambda \sim \text{Gamma}(24, 2)$ and $(y_1, y_2, y_3) = (3, 7, 19)$ 
+::::::
+:::
+::::{.my-r-code-container}
+```{r}
+#| label: fig-005-find-gamma-poisson-posterior-a
+#| fig-cap: Specify the posterior models of Gamma(24, 2) and samples of 3, 7, 19 
+#| results: hold
+
+bayesrules::summarize_gamma_poisson(24,2,29,3) |> 
+  knitr::kable(digits = 2)
+
+bayesrules::plot_gamma_poisson(
+  shape = 24,
+  rate = 2,
+  sum_y = 29,
+  n = 3,
+  prior = TRUE,
+  likelihood = TRUE,
+  posterior = TRUE
+)
+
+```
+
+::::
+:::::
+
+***
+
+
+::: {#big-text style="font-size: 110%"}
+**b) $(y_1, y_2, y_3, y_4) = (12, 12, 12, 0)$** 
+:::
+
+
+$$
+\begin{align*}
+\bf{\text{Shape:}} \quad \alpha_{\text{post}} &= \alpha + \sum y_i = 24 + (12 + 12 + 12 + 0) = 60 \\
+\bf{Rate:} \quad \beta_{\text{post}} &= \beta + n = 2 + 4 = 6
+\end{align*}
+$$ 
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-005-find-gamma-poisson-posterior-b}
+: Plot the posterior models of $\lambda \sim \text{Gamma}(24, 2)$ and $(y_1, y_2, y_3, y_4) = (12, 12, 12, 0)$ 
+::::::
+:::
+::::{.my-r-code-container}
+```{r}
+#| label: fig-005-find-gamma-poisson-posterior-b
+#| fig-cap: Specify the posterior models of Gamma(24, 2) and samples of 12, 12, 12, 0 
+#| results: hold
+
+bayesrules::summarize_gamma_poisson(24,2,36,4) |> 
+  knitr::kable(digits = 2)
+
+bayesrules::plot_gamma_poisson(
+  shape = 24,
+  rate = 2,
+  sum_y = 36,
+  n = 4,
+  prior = TRUE,
+  likelihood = TRUE,
+  posterior = TRUE
+)
+
+```
+
+::::
+:::::
+
+***
+
+
+::: {#big-text style="font-size: 110%"}
+**c) $y_1 = 12$** 
+:::
+
+
+$$
+\begin{align*}
+\text{Shape:} \quad \alpha_{\text{post}} &= \alpha + \sum y_i = 24 + 12 = 36 \\
+\text{Rate:} \quad \beta_{\text{post}} &= \beta + n = 2 + 1 = 3
+\end{align*}
+$$ 
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-005-find-gamma-poisson-posterior-c}
+: Plot the posterior models of $\lambda \sim \text{Gamma}(24, 2)$ and $(y) = 12$ 
+::::::
+:::
+::::{.my-r-code-container}
+```{r}
+#| label: fig-005-find-gamma-poisson-posterior-c
+#| fig-cap: Specify the posterior models of Gamma(24, 2) and samples of y = 12 
+#| results: hold
+
+bayesrules::summarize_gamma_poisson(24,2,12,1) |> 
+  knitr::kable(digits = 2)
+
+bayesrules::plot_gamma_poisson(
+  shape = 24,
+  rate = 2,
+  sum_y = 12,
+  n = 1,
+  prior = TRUE,
+  likelihood = TRUE,
+  posterior = TRUE
+)
+
+```
+
+::::
+:::::
+
+***
+
+::: {#big-text style="font-size: 110%"}
+**d) $(y_1, y_2, y_3, y_4, y_5) = (16, 10, 17, 11, 11)$** 
+:::
+
+
+$$
+\begin{align*}
+\bf{\text{Shape:}} \quad \alpha_{\text{post}} &= \alpha + \sum y_i = 24 + (16 + 10 + 17 + 11 + 11) = 89 \\
+\bf{Rate:} \quad \beta_{\text{post}} &= \beta + n = 2 + 5 = 7
+\end{align*}
+$$ 
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-005-find-gamma-poisson-posterior-a}
+: Plot the posterior models of $\lambda \sim \text{Gamma}(24, 2)$ and $(y_1, y_2, y_3, y_4, y_5) = (16 + 10 + 17 + 11 + 11)$ 
+::::::
+:::
+::::{.my-r-code-container}
+```{r}
+#| label: fig-005-find-gamma-poisson-posterior-d
+#| fig-cap: Specify the posterior models of Gamma(24, 2) and samples of 16, 10, 17, 11, 11 
+#| results: hold
+
+bayesrules::summarize_gamma_poisson(24,2,65,5) |> 
+  knitr::kable(digits = 2)
+
+bayesrules::plot_gamma_poisson(
+  shape = 24,
+  rate = 2,
+  sum_y = 65,
+  n = 5,
+  prior = TRUE,
+  likelihood = TRUE,
+  posterior = TRUE
+)
+
+```
+
+::::
+:::::
+
+
+::::
+:::::
+
+
+
+#### Finding the Gamma-Poisson posterior: Take II
+
+:::::{.my-exercise}
+:::{.my-exercise-header}
+:::::: {#exr-005-find-gamma-poisson-posterior-b}
+: 
+::::::
+:::
+::::{.my-exercise-container}
+Nothing new: Exercise skipped!
+::::
+:::::
+
+#### Text messages
+
+:::::{.my-exercise}
+:::{.my-exercise-header}
+:::::: {#exr-005-text-messages}
+: Text messages
+::::::
+:::
+::::{.my-exercise-container}
+
+Let random variable $\lambda$ represent the rate of text messages people receive in an hour. At first, you believe that the typical number of messages per hour is $5$ with a standard deviation of $0.25$ messages.  
+
+a) Tune and plot an appropriate $\text{Gamma}(s, r)$ prior model for $\lambda$. 
+
+Using @eq-005-tune-gamma-prior-mean-var:
+
+$$
+\begin{align*}
+&r = \frac{\mu}{\sigma^2}, \quad &s = \frac{\mu^2}{\sigma^2} \\
+&r = \frac{5}{0.5^2}, \quad &s = \frac{5^2}{0.5^2} \\
+&r = 80, \quad &s = 400
+\end{align*}
+$$ 
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-005-text-messages}
+: Text messages
+::::::
+:::
+::::{.my-r-code-container}
+
+::::: columns
+::: {.column width="50%"}
+
+```{r}
+#| label: tbl-005-text-messages
+#| tbl-cap: Summarize Gamma prior for 5 events per hour and 0.25 sd
+
+bayesrules::summarize_gamma(400, 80) |> 
+  knitr::kable()
+```
+:::
+
+::: {.column width="50%"}
+
+```{r}
+#| label: fig-005-text-messages
+#| fig-cap: Plot Gamma prior for 5 events per hour and 0.25 sd
+
+bayesrules::plot_gamma(400, 80)
+```
+:::
+:::::
+
+::::
+:::::
+
+
+
+
+
+b) What is the prior probability that the rate of text messages per hour is larger than 10? Hint: learn about `stats::pgamma()`.
+
+```{r}
+#| label: prior-prob-bigger-than-10
+#| code-fold: show
+
+stats::pgamma(10, 400, 80, lower.tail = FALSE)
+```
+
+
+The result is approximately $0$ (essentially zero), which makes sense given that our prior belief centers strongly around $5$ with very little variability.
+
+::: {.callout-note #nte-005-prior-prob-bigger-than-10}
+###### Alternate calcuation: Substract from 1
+
+Another possible calculation is:
+
+`1 - stats::pgamma(10, 400, 80)` = `r 1 - stats::pgamma(10, 400, 80)`
+
+We subtract `pgamma()` from 1 because **`pgamma(x, ...)` gives the cumulative probability that the random variable is *less than or equal to* `x`** — that is, $P(\lambda \leq x)$.
+
+Since we want the probability that $\lambda > 10$, we need:
+
+$$
+P(\lambda > 10) = 1 - P(\lambda \leq 10) = 1 - \text{pgamma}(10, \text{shape}, \text{rate})
+$$
+
+This is standard for any continuous distribution when we want the *upper tail* probability.
+
+**In short**: `pgamma()` calculates the left-tail area — subtracting it from 1 gives us the right-tail area, which is what we were asking for.
+
+
+:::
+
+
+
+
+
+
+::::
+:::::
+
+#### Women’s World Cup {#sec-005-wwc}
+
+:::::{.my-exercise}
+:::{.my-exercise-header}
+:::::: {#exr-005-world-cup}
+: Women’s World Cup (WWC)
+::::::
+:::
+::::{.my-exercise-container}
+
+Let $\lambda$ be the average number of goals scored in a Women’s World Cup game. We’ll analyze $\lambda$ by the following Gamma-Poisson model where data $Y_i$ is the observed number of goals scored in a sample of World Cup games:
+
+$$
+\begin{align*}
+Y_i \mid \lambda &\overset{\text{ind}}{\sim} \text{Pois}(\lambda) \\
+\lambda &\sim \text{Gamma}(1, 0.25)
+\end{align*}
+$$ 
+
+***
+
+**a) Plot and summarize our prior understanding of $\lambda$.**
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-005-world-cup}
+: WWC: Prior understanding
+::::::
+:::
+::::{.my-r-code-container}
+
+::::: columns
+::: {.column width="50%"}
+
+```{r}
+#| label: fig-005-world-cup-prior
+#| fig-cap: Women’s World Cup prior understanding of $\lambda$.
+
+bayesrules::plot_gamma(1, 0.25)
+```
+:::
+
+::: {.column width="50%"}
+
+```{r}
+#| label: tbl-005-world-cup-prior
+#| tbl-cap: Women’s World Cup prior understanding of $\lambda$.
+
+bayesrules::summarize_gamma(1, 0.25) |> 
+  knitr::kable()
+```
+:::
+:::::
+
+::::
+:::::
+
+The prior understanding from the book is that 4 goals are the average number of goals ($\lambda$) scored in a Women’s World Cup game.  Additionally with this prior related is the believe that in most of the matches no goals were scored but in some the number of goals can even surpass 15 goals. 
+
+::: {.callout-note #nte-005-exr-world-cup}
+###### An alternative --- more realistic? --- prior
+
+It seems to me that a mode with 0 goals is not a realistic assumption. I would argue that for scored goals a right-skewed prior distribution with a mode of perhaps 2 and mean with 4 would be more realistic.
+
+Let's try out and find the appropriate Gamma for this prior taking @eq-005-tune-gamma-prior-mean-mode:
+
+$$
+\begin{align*}
+r = \frac{1}{\mu - \lambda}, \quad &s = \frac{\mu}{\mu - \lambda} \\
+r = \frac{1}{4-2} = 0.5, \quad &s = \frac{4}{4-2} = 2
+\end{align*}
+$$ 
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-005-exr-alternative-world-cup}
+: Alternative prior for the Women’s World Cup Gamma distribution
+::::::
+:::
+::::{.my-r-code-container}
+
+::::: columns
+::: {.column width="50%"}
+
+```{r}
+#| label: fig-005-exr-alternative-world-cup
+#| fig-cap: Alternative prior for number of scored goals per game (Gamma(2. 0.5))
+#| fig-height: 3
+
+bayesrules::plot_gamma(2, 0.5) +
+  ggplot2::xlim(0, 20)
+```
+:::
+
+::: {.column width="50%"}
+
+```{r}
+#| label: tbl-005-exr-alternative-world-cup
+#| tbl-cap: Alternative prior for number of scored goals per game (Gamma(2. 0.5))
+
+bayesrules::summarize_gamma(2, 0.5) |> 
+  knitr::kable()
+```
+:::
+:::::
+
+::::
+:::::
+
+:::
+
+
+**b) Why is the Poisson model a reasonable choice for our data $Y_i$?**
+
+The Poisson model is a reasonable choice for scored goals in football games because goals are a number of independent events that occur. in a fixed amount of time (2 $\times$ 45 min.). The number of goals is a random count that can go from 0 to a (theoretically) really big number.
+
+***
+
+
+The `wwc_2019_matches` data in the {**fivethirtyeight**} package includes the number of goals scored by the two teams in each 2019 Women’s World Cup match. 
+
+**c) Define, plot, and discuss the total number of goals scored per game**
+
+
+```{r}
+#| label: fig-005-exr-world-cup
+#| fig-cap: Goals scored per game
+#| fig-height: 3
+#| fig-width: 4
+
+data("wwc_2019_matches", package = "fivethirtyeight")
+wwc_2019_matches <- wwc_2019_matches |> 
+  dplyr::mutate(total_goals = score1 + score2)
+
+ggplot2::ggplot(wwc_2019_matches,
+                ggplot2::aes(x = total_goals)) +
+  ggplot2::geom_histogram(binwidth = 1, color = "white") +
+  ggplot2::scale_x_continuous(breaks = 0:15, minor_breaks = 0) +
+  ggplot2::scale_y_continuous(
+    breaks = 0:20, 
+    labels = ifelse(0:20 %% 2 == 0, as.character(0:20), ""),
+    minor_breaks = 0)
+```
+
+
+By far the most common number of goals per match is 3. Normally the scored goals  range between 0 and 6 goals per match. But in some extraordinary matches, especially if the playing strength of teams is very different, there could be also a much higher number of goals per match. 
+
+Additionally it seems to me that my own prior developed in @nte-005-exr-world-cup matches somewhat better the data.
+
+***
+
+**d) Plot the prior pdf, likelihood function, and posterior pdf of $lambda$. Describe the evolution in your understanding of $lambda$λ from the prior to the posterior.**
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-005-exr-5-7d-plot-posterior}
+: Plot the prior pdf, likelihood function, and posterior pdf of Gamma(1, 0.25) with the data from `wwc_2019_matches`.
+::::::
+:::
+::::{.my-r-code-container}
+
+- Number of events (matches): `base::nrow(wwc_2019_matches)` = `r base::nrow(wwc_2019_matches)`
+- Number of goals: `base::sum(wwc_2019_matches$total_goals)` = `r base::sum(wwc_2019_matches$total_goals)`
+
+```{r}
+#| label: fig-005-exr-5-7d-plot-posterior
+#| fig-cap: Prior pdf, likelihood function, and posterior pdf of Gamma(1, 0.25) with `wwc_2019_matches` data.
+#| fig-height: 3
+
+bayesrules::plot_gamma_poisson(
+  shape = 1,
+  rate = 0.25,
+  sum_y = base::sum(wwc_2019_matches$total_goals),
+  n = base::nrow(wwc_2019_matches)
+)
+```
+
+
+```{r}
+#| label: tbl-005-exr-5-7d-plot-posterior
+#| tbl-cap: Summarize Prior and posterior pdf of Gamma(1, 0.25) with `wwc_2019_matches` data 
+#| fig-height: 3
+
+bayesrules::summarize_gamma_poisson(
+  shape = 1,
+  rate = 0.25,
+  sum_y = base::sum(wwc_2019_matches$total_goals),
+  n = base::nrow(wwc_2019_matches)
+) |> 
+  knitr::kable(digits = 4)
+```
+
+
+::::
+:::::
+
+Although I knew that with many data the posterior is mostly influenced by the data, it still was a surprise to me how much the data dominated the outcome and how small the posterior variance is. When data are so overwhelming then the chosen prior is of minor importance (as long it is a vage prior). 
+
+
+::: {.callout-note #nte-005-exr-5-7d-plot-posterior-alternative}
+When data are so overwhelming then the chosen prior is of minor importance (as long it is a vage prior). 
+
+In this case my different prior didn't have any effect on the posterior outcome.
+
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-005-exr-5-7d-plot-posterior}
+: Plot prior pdf, likelihood function, and posterior pdf of Gamma(2, 0.5)
+::::::
+:::
+::::{.my-r-code-container}
+
+
+```{r}
+#| label: fig-005-exr-5-7d-plot-posterior2
+#| fig-cap: Prior pdf, likelihood function, and posterior pdf of Gamma(2, 0.5) with `wwc_2019_matches` data.
+#| fig-height: 3
+
+bayesrules::plot_gamma_poisson(
+  shape = 2,
+  rate = 0.5,
+  sum_y = base::sum(wwc_2019_matches$total_goals),
+  n = base::nrow(wwc_2019_matches)
+)
+```
+
+
+```{r}
+#| label: tbl-005-exr-5-7d-plot-posterior2
+#| tbl-cap: Summarize Prior and posterior pdf of Gamma(1, 0.25) with `wwc_2019_matches` data 
+#| fig-height: 3
+
+bayesrules::summarize_gamma_poisson(
+  shape = 2,
+  rate = 0.5,
+  sum_y = base::sum(wwc_2019_matches$total_goals),
+  n = base::nrow(wwc_2019_matches)
+) |> 
+  knitr::kable(digits = 4)
+```
+
+
+::::
+:::::
+
+***
+
+With 52 matches the posterior mean is nearly identical to the frequentist `r glossary("MLE")` (2.81), because the data overwhelms the prior.
+
+::: {#big-text style="font-size: 125%"}
+**Key differences** 
+:::
+
+| Category                | Frequentist                                                                                    |  Bayesian                                                                           |
+|----------------------------|---------------------------------------------------------------------------------------------|---------------------------------------------------------------------------|
+| λ is...                    | Fixed unknown constant                                                                      | Random variable with a distribution                                       |
+| Estimate                   | MLE: sum_y / n = 2.81                                                                       | Posterior mean: (shape + sum_y) / (rate + n) ≈ 2.813                      |
+| Uncertainty                | 95% CI via qgamma()                                                                         | 95% credible interval from posterior                                      |
+| Prior                      | None                                                                                        | Gamma(1, 0.25) — your belief before seeing data                           |
+| Interpretation of interval | "If we repeated this experiment many times, 95% of such intervals would contain the true λ" | "Given the data, there is a 95% probability that λ lies in this interval" |
+
+::: {#big-text style="font-size: 125%"}
+**Why are the results so similar here?** 
+:::
+
+With n = 52 and total_goals = 146, the data strongly dominate the prior. The prior only contributes shape = 1 and rate = 0.25 — equivalent to having observed roughly 1 goal in 0.25 matches — which is negligible compared to 146 goals in 52 matches. **This prior washing out by large samples is a general property: Bayesian and frequentist estimates converge as n grows.**
+
+:::::{.my-resource}
+:::{.my-resource-header}
+:::::: {#lem-005-exr-diff-freq-bayes}
+: Differences between Frequentist and Bayesian Approach
+::::::
+:::
+::::{.my-resource-container}
+
+With the result of @exr-005-world-cup I wondered in which situations there might be a decisive difference between a Frequentist and a Bayesian approach. I asked the Positron Assistant and recorded the answers under @sec-910-advantages-bayes.
+
+::::
+:::::
+
+:::
+
+::::
+:::::
+
+### Practice Normal-Normal
+
+#### Normal Likelihood Functions
+
+:::::{.my-exercise}
+:::{.my-exercise-header}
+:::::: {#exr-005-normal-likelihood-functions}
+: Normal Likelihood Functions
+::::::
+:::
+::::{.my-exercise-container}
+In each situation below, we observe the outcomes for a Normal random sample, $Y_i \mid μ \overset{\text{ind}}{\sim} N (\mu, \sigma^2)$ with known $\sigma$. Specify and plot the corresponding likelihood function of $\mu$.
+
+***
+
+**a) $\bf{(y_1, y_2, y_3) = (−4.3, 0.7, −19.4)}$ and $\bf{\sigma = 10}$**
+
+The sample mean is $\bar{y} = (-4.3 + 0.7 - 19.4) / 3 \approx -7.67$ and $n = 3$.
+The likelihood function is:
+
+$$
+L(\mu \mid \vec{y}) \propto \exp\left(-\frac{3(\bar{y} - \mu)^2}{2 \cdot 10^2}\right) \text{ for } \mu \in (-\infty, \infty)
+$$
+
+This is maximized at $\hat{\mu} = \bar{y} \approx -7.67$.
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-005-normal-likelihood-a}
+: Plot Normal likelihood for $(y_1, y_2, y_3) = (-4.3, 0.7, -19.4)$, $\sigma = 10$
+::::::
+:::
+::::{.my-r-code-container}
+```{r}
+#| label: fig-005-normal-likelihood-a
+#| fig-cap: Normal likelihood function for $\mu$ given $(y_1, y_2, y_3) = (-4.3, 0.7, -19.4)$ and $\sigma = 10$.
+#| fig-height: 3
+
+bayesrules::plot_normal_likelihood(
+  y     = c(-4.3, 0.7, -19.4),
+  sigma = 10
+)
+```
+::::
+:::::
+
+
+**b) $\bf{(y1, y2, y3, y4) = (−12, 1.2, −4.5, 0.6)}$ and $\bf{σ = 6}$**
+
+The sample mean is $\bar{y} = (−12, 1.2, −4.5, 0.6) / 4 = -3.675$ and $n = 4$.
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-005-normal-likelihood-b}
+: Plot Normal likelihood for $(y_1, y_2, y_3, y_4) = (−12, 1.2, −4.5, 0.6)$ and $\sigma = 6$
+::::::
+:::
+::::{.my-r-code-container}
+```{r}
+#| label: fig-005-normal-likelihood-b
+#| fig-cap: Normal likelihood function for $\mu$ given $(y_1, y_2, y_3, y_4) = (−12, 1.2, −4.5, 0.6)$ and $\sigma = 6$.
+#| fig-height: 3
+
+bayesrules::plot_normal_likelihood(
+  y     = c(-12, 1.2, -4.5, 0.6),
+  sigma = 6
+)
+```
+::::
+:::::
+
+c) $(y_1, y_2) = (12.4, 6.1)$ and $\sigma = 5$: skipped, nothing new.  
+d) $(y_1, y_2, y_3, y_4, y_5) = (1.6, 0.09, 1.7, 1.1, 1.1)$ and $\sigma = 0.6$: skipped nothing new.
+
+::::
+:::::
+
+
+#### Investing in stock
+
+:::::{.my-exercise}
+:::{.my-exercise-header}
+:::::: {#exr-005-investing-in-stock}
+: Investing in stock
+::::::
+:::
+::::{.my-exercise-container}
+You just bought stock in FancyTech. Let random variable $\mu$ be the average dollar amount that your FancyTech stock goes up or down in a one-day period. At first, you believe that $\mu$ is 7.2 dollars with a standard deviation of 2.6 dollars.
+
+**a) Tune and plot an appropriate Normal prior model for $\mu$.**
+
+Prior = $\mu \sim N(7.2, 2.6^2)$: mean belief is: +$7.2 per day, with sd of $2.6.
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-005-investing-in-stock}
+: Investing in stock
+::::::
+:::
+::::{.my-r-code-container}
+```{r}
+#| label: fig-005-investing-in-stock
+#| fig-cap: "Normal prior about stock developments with μ = 7.2 and sd = 2.6 dollars"
+#| fig-height: 3
+
+bayesrules::plot_normal(7.2, 2.6)
+```
+
+
+
+::::
+:::::
+
+**b) According to your plot, does it seem plausible that the *FancyTech* stock would increase by an average of 7.6 dollars in a day?**
+
+Yes, 7.6 is very close to the prior mean of 7.2
+
+**c) Does it seem plausible that the *FancyTech* stock would increase by an average of 4 dollars in a day?**
+
+Again yes, because 4 is within 2 standard deviations $(7.2 \pm 2 \times (2.6) = [2.0, 12.4])$
+
+**d) What is the prior probability that, on average, the stock price goes down? Hint: `pnorm()`.**
+
+`stats::pnorm(q, mean, sd)` computes $P(\mu \leq q)$ --- the cumulative probability up to the value of `q`.
+
+"Stock goes down" means $\mu < 0$, i.e., the average daily change is **negative** (= a loss). Zero is the boundary between going up and going down, so
+
+$$
+P(\text{stock goes down}) = P(\mu < 0) = P(\mu leq 0)
+$$
+
+Setting `q = 0` in `pnorm(q, mean = 0, sd = 1, lower.tail = TRUE, log.p = FALSE)` gives exactly the left-tail probability under the $N(7.2, 2.6^2)$ prior, because the default value is `lower.tail = TRUE` returns the value of the left side of the mean.
+
+So we have: `stats::pnorm(0, mean = 7.2, sd = 2.6, lower.tail = TRUE)` = `r stats::pnorm(0, mean = 7.2, sd = 2.6)`.
+
+The result will be approximately `r round(stats::pnorm(0, mean = 7.2, sd = 2.6), 4)` — there's only a ~`r round(stats::pnorm(0, mean = 7.2, sd = 2.6), 4) * 100`% prior probability that the stock goes down on average. This makes sense: 0 is almost 2.8 standard deviations below the prior mean $(\frac{0 - 7.2}{2.6} \approx -2.77)$, so it's very unlikely under our prior beliefs.
+
+**e) What is the prior probability that, on average, your stock price goes up by more than 8 dollars per day?**
+
+Again I will use `stats::pnorm(q, mean, sd)` but this time for computing $P(\mu \geq q)$, with `lower.tail = FALSE`:
+
+`stats::pnorm(8, mean = 7.2, sd = 2.6, lower.tail = FALSE)` = `r stats::pnorm(8, mean = 7.2, sd = 2.6, lower.tail = FALSE)`.
+
+The result will be approximately `r round(stats::pnorm(8, mean = 7.2, sd = 2.6, lower.tail = FALSE), 4)` — there's only a ~`r round(stats::pnorm(8, mean = 7.2, sd = 2.6, lower.tail = FALSE), 4) * 100`% prior probability that the stock goes higher on average. This makes sense: 8 is near the mean only $(\frac{8 - 7.2}{2.6} \approx 0.31)$ standard deviation above the prior mean, so it's very likely under our prior beliefs that on average the stock price goes up by more than 8 dollars per day.
+
+::::
+:::::
+
+#### Investing in stock with data
+
+Continuing with @exr-005-investing-in-stock, it’s reasonable to assume that the daily changes in *FancyTech* stock value are Normally distributed around an unknown mean of $\mu$ with a known standard deviation of $\sigma = 2$ dollars. On a random sample of $4$ days, you observe changes in stock value of $-0.7, 1.2, 4.5, \text{and} -4$ dollars.
+
+:::::{.my-exercise}
+:::{.my-exercise-header}
+:::::: {#exr-005-stock-data}
+: Investing in stock with data
+::::::
+:::
+::::{.my-exercise-container}
+**a) Plot the corresponding likelihood function of $\mu$.**
+
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-005-stock-data-a}
+: Investing in stock with data
+::::::
+:::
+::::{.my-r-code-container}
+
+
+
+
+```{r}
+#| label: fig-005-stock-data-a
+#| fig-cap: Normal likelihood function for $\mu$ given $(y_1, y_2, y_3, y_4) = -0.7, 1.2, 4.5, \text{and} -4$ dollars and $\sigma = 2$ US dollars.
+#| fig-height: 3
+
+bayesrules::plot_normal_likelihood(
+  y     = c(-0.7, 1.2, 4.5, -4),
+  sigma = 2
+)
+```
+
+::::
+:::::
+
+**b) Plot the prior pdf, likelihood function, and the posterior pdf for $\mu$.**
+
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-fig-005-stock-data-b}
+: Plot the prior pdf, likelihood function, and the posterior pdf for $\mu$.
+::::::
+:::
+::::{.my-r-code-container}
+
+
+```{r}
+#| label: fig-005-stock-data-b
+#| fig-cap: Prior pdf, likelihood function, and the posterior pdf for $\bf{\mu}$ given $\bf{(y_1, y_2, y_3, y_4) = -0.7, 1.2, 4.5, -4}$ dollars and $\bf{\sigma = 2}$ US dollars.
+#| fig-height: 3
+
+bayesrules::plot_normal_normal(
+  mean = 7.2,
+  sd = 2.6,
+  sigma = 2,
+  y_bar = mean(c(-0.7, 1.2, 4.5, -4)),
+  n = 4
+)
+```
+
+**c) Use summarize_normal_normal() to calculate descriptive statistics for the prior and the posterior models.**
+
+```{r}
+#| label: tbl-005-stock-data-b
+#| tbl-cap: Prior pdf, likelihood function, and the posterior pdf for $\bf{\mu}$ given $\bf{(y_1, y_2, y_3, y_4) = -0.7, 1.2, 4.5, -4}$ dollars and $\bf{\sigma = 2}$ US dollars.
+
+bayesrules::summarize_normal_normal(
+  mean = 7.2,
+  sd = 2.6,
+  sigma = 2,
+  y_bar = mean(c(-0.7, 1.2, 4.5, -4)),
+  n = 4
+) |> 
+  knitr::kable()
+```
+
+
+::::
+:::::
+
+
+**d) Comment on how your understanding about μ evolved from the prior (in the previous exercise) to the posterior based on the observed data.**
+
+The prior was way too optimistic. The stock prices didn't center around \$7.2 but only around \$1.15 with the possibility that it could be even a loss (< \$0). The big uncertainty has vanished from $(7.2 \pm 2 \times (2.6) = [2.0, 12.4])$ to $(1.15 \pm 2 \times (0.93) = [-0.97, 3.01])$.
+
+**e) What is the posterior probability that, on average, the stock price goes *down*? Hint: `pnorm()`.**
+
+`stats::pnorm(0, mean = 0.25, sd = 2, lower.tail = TRUE)` = `r stats::pnorm(0, mean = 0.25, sd = 2, lower.tail = TRUE)`.
+
+The result will be approximately `r round(stats::pnorm(0, mean = 0.25, sd = 2), 4)` — there's a relatively high probability of ~`r round(stats::pnorm(0, mean = 0.25, sd = 2), 4) * 100`% of posterior probability that the stock goes down on average. This makes sense if you look at @fig-005-stock-data-b where you can see that a considerable proportions is under 0.
+
+**f) What is the posterior probability that, on average, your stock price goes *up* by more than 8 dollars per day?**
+
+`stats::pnorm(8, mean = 0.25, sd = 2, lower.tail = FALSE)` = `r stats::pnorm(8, mean = 0.25, sd = 2, lower.tail = FALSE)`.
+
+There's practically no chance (~`r round(stats::pnorm(8, mean = 0.25, sd = 2, lower.tail = FALSE), 4) * 100`%) of posterior probability that the stock goes above 8 US dollars on average. This makes sense if you look at @fig-005-stock-data-b where you can see that only a very tiny fraction of the right tail is over 8. Remember that the normal distribution has no discrete borders and goes from $-\infty$ to $+\infty$. There will *never* be a probability of exactly 0.
+
+::::
+:::::
+
+
+#### Normal-Normal calculation
+
+Prof. Abebe and Prof. Morales both recently finished their PhDs and are teaching their first statistics classes at Bayesian University. Their colleagues told them that the *average* final exam score across all students, $\mu$, varies Normally from year to year with a mean of 80 points and a standard deviation of 4. Further, individual students’ scores Y vary Normally around $\mu$ with a known standard deviation of 3 points.
+
+:::::{.my-theorem}
+:::{.my-theorem-header}
+:::::: {#thm-005-derivation-posterior-variance-mean}
+: Step-by-Step Derivation of Posterior Variance and Mean
+::::::
+:::
+::::{.my-theorem-container}
+
+
+::: {#big-text style="font-size: 125%"}
+**1. Starting Point: Bayes' Theorem for Normal Data** 
+:::
+
+When we observe data $y_1, y_2, \ldots, y_n$ from a Normal distribution, Bayes' theorem gives us:
+
+$$p(\mu \mid \text{data}) \propto p(\text{data} \mid \mu) \cdot p(\mu)$$
+
+For the Normal-Normal model:
+
+- **Prior:** $p(\mu) = \mathcal{N}(\theta, \tau^2)$
+- **Likelihood:** $p(y_i \mid \mu) = \mathcal{N}(\mu, \sigma^2)$ for each observation
+
+***
+
+::: {#big-text style="font-size: 125%"}
+**Step 1: Write Out the Proportionality** 
+:::
+
+The posterior is proportional to the product of the prior and likelihood:
+
+$$p(\mu \mid \text{data}) \propto \exp\left(-\frac{(\mu - \theta)^2}{2\tau^2}\right) \cdot \prod_{i=1}^{n} \exp\left(-\frac{(y_i - \mu)^2}{2\sigma^2}\right)$$
+
+Combining the exponentials:
+
+$$p(\mu \mid \text{data}) \propto \exp\left(-\frac{(\mu - \theta)^2}{2\tau^2} - \sum_{i=1}^{n}\frac{(y_i - \mu)^2}{2\sigma^2}\right)$$
+
+***
+
+::: {#big-text style="font-size: 125%"}
+**Step 2: Expand the Exponent** 
+:::
+
+
+Let's expand both squared terms in the exponent:
+
+$$-\frac{(\mu - \theta)^2}{2\tau^2} - \sum_{i=1}^{n}\frac{(y_i - \mu)^2}{2\sigma^2}$$
+
+$$= -\frac{\mu^2 - 2\mu\theta + \theta^2}{2\tau^2} - \sum_{i=1}^{n}\frac{y_i^2 - 2y_i\mu + \mu^2}{2\sigma^2}$$
+
+$$= -\frac{\mu^2}{2\tau^2} + \frac{2\mu\theta}{2\tau^2} - \frac{\theta^2}{2\tau^2} - \frac{n\mu^2}{2\sigma^2} + \frac{2\mu\sum y_i}{2\sigma^2} - \frac{\sum y_i^2}{2\sigma^2}$$
+
+***
+
+::: {#big-text style="font-size: 125%"}
+**Step 3: Collect Terms by Powers of $\mu$** 
+:::
+
+
+Group by $\mu^2$, $\mu^1$, and $\mu^0$ (constants):
+
+$$= -\frac{\mu^2}{2}\left(\frac{1}{\tau^2} + \frac{n}{\sigma^2}\right) + \mu\left(\frac{\theta}{\tau^2} + \frac{\sum y_i}{\sigma^2}\right) - \left(\frac{\theta^2}{2\tau^2} + \frac{\sum y_i^2}{2\sigma^2}\right)$$
+
+The last term (constants) doesn't affect the shape of the posterior, so we drop it:
+
+$$\propto -\frac{\mu^2}{2}\left(\frac{1}{\tau^2} + \frac{n}{\sigma^2}\right) + \mu\left(\frac{\theta}{\tau^2} + \frac{\sum y_i}{\sigma^2}\right)$$
+
+***
+
+::: {#big-text style="font-size: 125%"}
+**Step 4: Recognize the Normal Form** 
+:::
+
+This is the exponent of a Normal distribution. Recall that a Normal with mean $\mu_n$ and variance $\tau_n^2$ has the form:
+
+$$\propto \exp\left(-\frac{(\mu - \mu_n)^2}{2\tau_n^2}\right) = \exp\left(-\frac{\mu^2 - 2\mu\mu_n + \mu_n^2}{2\tau_n^2}\right)$$
+
+$$\propto \exp\left(-\frac{\mu^2}{2\tau_n^2} + \frac{\mu\mu_n}{\tau_n^2}\right)$$
+
+***
+
+::: {#big-text style="font-size: 125%"}
+**Step 5: Match Coefficients** 
+:::
+
+
+We have from Step 3:
+
+$$\propto -\frac{\mu^2}{2}\left(\frac{1}{\tau^2} + \frac{n}{\sigma^2}\right) + \mu\left(\frac{\theta}{\tau^2} + \frac{\sum y_i}{\sigma^2}\right)$$
+
+And from the standard Normal form:
+
+$$\propto -\frac{\mu^2}{2\tau_n^2} + \frac{\mu\mu_n}{\tau_n^2}$$
+
+***
+
+::: {#big-text style="font-size: 110%"}
+**Match Coefficient of $\mu^2$:** 
+:::
+
+
+$$\frac{1}{\tau_n^2} = \frac{1}{\tau^2} + \frac{n}{\sigma^2}$$
+
+This gives us the **posterior precision** (inverse variance). Solving for posterior variance:
+
+$$\boxed{\tau_n^2 = \frac{1}{\dfrac{1}{\tau^2} + \dfrac{n}{\sigma^2}}}$$
+
+::: {#big-text style="font-size: 110%"}
+**Match Coefficient of $\mu$:** 
+:::
+
+
+$$\frac{\mu_n}{\tau_n^2} = \frac{\theta}{\tau^2} + \frac{\sum y_i}{\sigma^2}$$
+
+Now solve for $\mu_n$:
+
+$$\mu_n = \tau_n^2 \left( \frac{\theta}{\tau^2} + \frac{\sum y_i}{\sigma^2} \right)$$
+
+But since $\sum y_i = n \bar{y}$, we can write:
+
+$$\boxed{\mu_n = \tau_n^2 \left( \frac{\theta}{\tau^2} + \frac{n \bar{y}}{\sigma^2} \right)}$$
+
+***
+
+::: {#big-text style="font-size: 125%"}
+**Step 6: Alternative Form — Weighted Average** 
+:::
+
+
+We can also write the posterior mean as a **precision-weighted average** of prior mean and sample mean:
+
+Let’s define:
+
+- Prior precision: $P_0 = \frac{1}{\tau^2}$
+- Data precision: $P_n = \frac{n}{\sigma^2}$
+
+Then:
+$$\mu_n = \frac{P_0 \cdot \theta + P_n \cdot \bar{y}}{P_0 + P_n}$$
+
+This shows the posterior mean is a **weighted average** of the prior mean and the sample mean, where weights are the respective precisions.
+
+***
+
+::: {#big-text style="font-size: 125%"}
+**Summary of Final Formulas** 
+:::
+
+
+| Quantity | Formula |
+|----------|---------|
+| **Posterior variance** | $\tau_n^2 = \dfrac{1}{\dfrac{1}{\tau^2} + \dfrac{n}{\sigma^2}}$ |
+| **Posterior mean** | $\mu_n = \tau_n^2 \left( \dfrac{\theta}{\tau^2} + \dfrac{n \bar{y}}{\sigma^2} \right)$ |
+| **Alternative mean** | $\mu_n = \dfrac{\dfrac{\theta}{\tau^2} + \dfrac{n \bar{y}}{\sigma^2}}{\dfrac{1}{\tau^2} + \dfrac{n}{\sigma^2}}$ |
+
+
+
+
+::::
+:::::
+
+:::::{.my-exercise}
+:::{.my-exercise-header}
+:::::: {#exr-005-normal-normal-cacluation}
+: Normal-Normal calculation
+::::::
+:::
+::::{.my-exercise-container}
+
+
+
+**a) Prof. Abebe** conducts the final exam and observes that his 32 students scored an average of 86 points. Calculate the posterior mean and variance of $\mu$ using the data from Prof. Abebe’s class.
+
+Specify the posterior model of $\mu$:  
+
+- our Normal prior model of $\mu$ had mean $\theta = 80$ and standard deviation $\tau = 4$; 
+- our $n = 32$ students taking the final exam scored at average 86 points; 
+- individual students’ scores $Y$ vary Normally around $\mu$ with a known standard deviation of 3 points.
+
+***
+
+::: {#big-text style="font-size: 150%"}
+**Bayesian Updating for Prof. Abebe's Class** 
+:::
+
+::: {#big-text style="font-size: 125%"}
+**Setting Up the Model** 
+:::
+
+This is a classic **Normal-Normal conjugate model**. We have:
+
+| Component | Distribution | Mean | Std / Variance |
+|-----------|-------------|------|----------------|
+| Prior on $\mu$ | $\mu \sim \mathcal{N}(\theta, \tau^2)$ | $\theta = 80$ | $\tau = 4$, $\tau^2 = 16$ |
+| Likelihood (individual scores) | $Y_i \mid \mu \sim \mathcal{N}(\mu, \sigma^2)$ | $\mu$ | $\sigma = 3$, $\sigma^2 = 9$ |
+| Observed data | $n = 32$ students | $\bar{y} = 86$ | — |
+
+***
+
+::: {#big-text style="font-size: 125%"}
+**The Normal-Normal Posterior Formula** 
+:::
+
+
+When the prior on $\mu$ is Normal and the likelihood is Normal with **known** $\sigma^2$, the posterior is also Normal (conjugacy). The general formulas are:
+
+$$\mu \mid \bar{y} \sim \mathcal{N}\!\left(\mu_n,\, \tau_n^2\right)$$
+
+**Posterior variance:**
+
+$$\tau_n^2 = \frac{1}{\dfrac{1}{\tau^2} + \dfrac{n}{\sigma^2}}$$
+
+**Posterior mean:**
+
+$$\mu_n = \tau_n^2 \left(\frac{\theta}{\tau^2} + \frac{n\bar{y}}{\sigma^2}\right)$$
+
+***
+
+::: {#big-text style="font-size: 125%"}
+**Step 1 — Compute the Posterior Variance** 
+:::
+
+
+The posterior precision is the **sum of the prior precision and the data precision**:
+
+
+
+$$
+\begin{align*}
+\frac{1}{\tau_n^2} &= \frac{1}{\tau^2} + \frac{n}{\sigma^2} \\
+&= \frac{1}{16} + \frac{32}{9} \\
+&= 0.0625 + 3.5\overline{5} = 3.618\overline{05} \\
+\tau_n^2 &= \frac{1}{3.618\overline{05}} \\
+&=\boxed{ 0.276392}
+\end{align*}
+$$ {#eq-005-exr-exams-posterior-variance}
+
+
+> **Intuition:** The posterior variance is *much* smaller than the prior variance ($\tau^2 = 16$), because 32 observations carry a lot of information, sharply concentrating our beliefs about $\mu$.
+
+***
+
+::: {#big-text style="font-size: 125%"}
+**Step 2 — Compute the Posterior Mean** 
+:::
+
+
+The posterior mean is a **precision-weighted average** of the prior mean and the sample mean:
+
+$$
+\begin{align*}
+&\mu_n = \tau_n^2 \left(\frac{\theta}{\tau^2} + \frac{n\bar{y}}{\sigma^2}\right) \\ &= 0.2764\left(\frac{80}{16} + \frac{32 \times 86}{9}\right) \\
+&= 0.276422 \left(5 + 305.777778\right) \\ 
+&= 0.276422 \times 310.777778 \\
+&\boxed{\approx 85.8964}
+\end{align*}
+$$ {#eq-005-exr-exams-posterior-mean}
+
+
+***
+
+::: {#big-text style="font-size: 125%"}
+**Step 3 — Intuition: Shrinkage Toward the Prior** 
+:::
+
+
+The posterior mean can be rewritten as a **weighted blend** of the prior mean and the data:
+
+$$\mu_n = (1-w)\,\theta + w\,\bar{y}$$
+
+where the weight on the data is:
+
+$$w = \frac{n/\sigma^2}{1/\tau^2 + n/\sigma^2} = \frac{3.5\overline{5}}{3.618\overline{05}} \approx 0.9827$$
+
+So:
+
+$$
+\begin{align*}
+\mu_n &= ((1 - 0.9827255) \cdot 80) + (0.9827255 \cdot 86) \\
+&= 1.38196 + 84.51439 \\
+&=\boxed{ 85.89635}
+\end{align*}
+$$ {#eq-005-exr-shrinkage-toward-prior}
+
+$$\mu_n = (1 - 0.9827)(80) + (0.9827)(86) = 0.1396 + 85.70 \approx 85.84 ✓$$
+
+> **Intuition:** With 32 students and a tight likelihood ($\sigma=3$), the data dominate (~98.3% weight). The posterior mean of **85.84** is pulled only slightly from the observed $\bar{y} = 86$ back toward the prior mean of 80 — this *shrinkage* is a hallmark of Bayesian inference.
+
+***
+
+::: {#big-text style="font-size: 125%"}
+**Summary** 
+:::
+
+
+| Quantity | Value |
+|----------|-------|
+| Prior mean $\theta$ | 80 |
+| Observed sample mean $\bar{y}$ | 86 |
+| **Posterior mean** $\mu_n$ | **85.89644** |
+| **Posterior variance** $\tau_n^2$ | **0.276392** |
+| Posterior std $\tau_n$ | ≈ 0.526 |
+
+
+::: {#big-text style="font-size: 125%"}
+**Bayesian updating with `bayesrules::summarize_normal_normal()`** 
+:::
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-005-exr-bayesian-updating-abebe}
+: Bayesian updating for Prof. Abebe’s class
+::::::
+:::
+::::{.my-r-code-container}
+
+```{r}
+#| label: tbl-005-exr-prof-abebe
+#| tbl-cap: "Bayesian updating for Prof. Abebe’s class"
+
+
+bayesrules::summarize_normal_normal(
+  mean = 80, 
+  sd = 4, 
+  sigma = 3, 
+  y_bar = 86, 
+  n = 32) |> 
+  knitr::kable(digits = 4)
+
+```
+
+
+::::
+:::::
+
+**Calculating manually and via bayesrules::summarize_normal_normal() gives the same results.**
+
+***
+
+**b) Prof. Morales** conducts the final exam and observes that her 32 students scored an average of 82 points. Calculate the posterior mean and variance of $\mu$ using the data from Prof. Morales’ class. (This time only with the {**bayesrules**} function.)
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-005-exr-bayesian-updating-morales}
+: Bayesian updating of Prof. Morales class
+::::::
+:::
+::::{.my-r-code-container}
+```{r}
+#| label: tbl-005-exr-prof-morales
+#| tbl-cap: "Bayesian updating for Prof. Abebe’s class"
+
+
+bayesrules::summarize_normal_normal(
+  mean = 80, 
+  sd = 4, 
+  sigma = 3, 
+  y_bar = 82, 
+  n = 32) |> 
+  knitr::kable(digits = 4)
+
+```
+
+::::
+:::::
+
+**d) Using Prof. Abebe and Prof. Morales’ combined exams** to calculate the posterior mean and variance of $\mu$.
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-005-exr-bayesian-updating-abebe-morales-combined}
+: Bayesian updating of Prof. Abebe and Prof. Morales class combined
+::::::
+:::
+::::{.my-r-code-container}
+```{r}
+#| label: tbl-005-exr-prof-abebe-morales
+#| tbl-cap: "Bayesian updating of Prof. Abebe’s and Morales’ class combined"
+
+
+bayesrules::summarize_normal_normal(
+  mean = 80, 
+  sd = 4, 
+  sigma = 3, 
+  y_bar = mean(c(85, 82)), 
+  n = 32 + 32) |> 
+  knitr::kable(digits = 4)
+
+```
+
+::::
+:::::
+
+::::
+:::::
+
+#### Control brains
+
+In this chapter we used the `r glossary("Normal-Normal Conjugate Family", "Normal-Normal model")` to analyze the mean hippocampal volume among people who have sustained concussions. In this exercise we will explore the mean volume, $\mu$, for people who *have not* been diagnosed with a concussion. As before, we’ll assume that the hippocampal volumes of individuals in this group, $Y$ , vary Normally around $\mu$ with a standard deviation of $\sigma = 0.5$ cubic centimeters. We’ll also start with the same prior as before: $\mu$ has a Normal prior with mean $\theta = 6.5$ and standard deviation $\tau = 0.4$.
+
+:::::{.my-exercise}
+:::{.my-exercise-header}
+:::::: {#exr-005-exr-control-brains}
+: Control brains
+::::::
+:::
+::::{.my-exercise-container}
+
+**a) Use the `football` data to calculate the sample mean hippocampal volume and sample size of the control subjects who have *not* been diagnosed with a concussion.**
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-005-exr-calculate-not-concussion}
+: Sample mean hippocampal volume and sample size for no concussion
+::::::
+:::
+::::{.my-r-code-container}
+```{r}
+#| label: tbl-005-exr-calculate-not-concussion
+#| tbl-cap: "Sample mean hippocampal volume and sample size for football player with no concussion"
+#| results: hold
+
+data("football", package = "bayesrules")
+
+football_no_concuss <- football |> 
+  dplyr::filter(group == "fb_no_concuss")
+
+n <- base::nrow(football_no_concuss)
+mean_no_concussion <- base::mean(football_no_concuss$volume)
+
+glue::glue("**Sample size n = {n}; Mean = {mean_no_concussion}**")
+  
+```
+
+
+::::
+:::::
+
+**b) Identify the posterior model of $\mu$ and verify your answer using bayesrules::summarize_normal_normal().**
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-005-exr-posterior-model-no-concussion}
+: Posterior model of football player with have had no concussions
+::::::
+:::
+::::{.my-r-code-container}
+```{r}
+#| label: tbl-005-exr-posterior-model-no-concussion
+#| tbl-cap: Prior & Posterior of football players with have had no concussions
+
+bayesrules::summarize_normal_normal(
+  mean = 6.5,
+  sd = 0.4,
+  sigma = 0.5,
+  y_bar = mean_no_concussion,
+  n = n
+)
+```
+
+::::
+:::::
+
+**c) Plot the prior pdf, likelihood function, and posterior pdf of $\mu$. Describe the evolution in your understanding of $\mu$ from the prior to the posterior.**
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-005-exr-plot-posterior-no-concussion}
+: Plot the prior pdf, likelihood function, and posterior pdf of $\mu$.
+::::::
+:::
+::::{.my-r-code-container}
+```{r}
+#| label: fig-005-exr-plot-posterior-no-concussion
+#| fig-cap: "Prior pdf, likelihood function, and posterior pdf of football players with no concussions"
+#| fig-height: 3
+
+bayesrules::plot_normal_normal(
+  mean = 6.5,
+  sd = 0.4,
+  sigma = 0.5,
+  y_bar = mean_no_concussion,
+  n = n
+)
+```
+
+::::
+:::::
+
+The hippocampal mean volume of football players with a concussion history is `r round(mean_hyppocampal_volume, 2)`$\text{cm}^3$ (see: @tbl-005-load-skim-football-data). This value is much smaller than the mean volume of `r round(mean_no_concussion, 2)`$\text{cm}^3$ for football players who did not have concussions.
+
+The assumed hippocampal mean volume of the prior model taken from research literature is in the posterior analysis for our sample subjects only slightly smaller. It is also much more concentrated around the mean, so that we are pretty sure that no hippocampal mean volume for football players without concussions is under $6\text{cm}^3$.
+
+::::
+:::::
+
+#### Australia {#sec-005-exr-australia}
+
+Let $\mu$ be the average 3 p.m. temperature in Perth, Australia. Not knowing much about Australian weather, your friend’s prior understanding is that the average temperature is likely around 30 degrees Celsius, though might be anywhere between 10 and 50 degrees Celsius. To learn about $\mu$, they plan to analyze 1000 days of temperature data. Letting $Y_i$ denote the 3 p.m. temperature on day $i$, they’ll assume that daily temperatures vary Normally around $\mu$ with a standard deviation of 5 degrees: $Y_i \mid \mu \sim \mathcal{N} (\mu, 5^2)$.
+
+:::::{.my-exercise}
+:::{.my-exercise-header}
+:::::: {#exr-005-australia}
+: Weather in Australia
+::::::
+:::
+::::{.my-exercise-container}
+
+**a) Tune and plot a Normal prior for $\mu$ that reflects your friend’s understanding.**
+
+**Prior calculation**: 
+
+We have $\mu$ = 30°C but how to calculate the variance and standard deviation? 
+
+Our friend says $\mu$ is **"likely around 30°C"** and **"might be anywhere between 10 and 50°C"**. We can translate this into a Normal prior by using the **empirical rule (`r glossary("rule-68–95–99", "68-95-99.7 rule")`)**.
+
+The range of 10 to 50°C is **symmetric around 30°C**, spanning **±20°C** from the mean:
+
+$$\theta = 30, \quad \text{range} = [10, 50]$$
+
+The most natural interpretation of *"anywhere between 10 and 50"* is that this represents **virtually all** of the prior probability mass, i.e., **~4 standard deviations on each side (99.99% rule):**
+
+$$
+\begin{align*}
+\theta \pm 4\sigma &= [10, 50] \\
+4\sigma &= 20 \implies \boxed{\sigma = 5}
+\end{align*}
+$$ 
+
+Depending on how strictly you read *"anywhere between"*, you could also use:
+
+| Rule | Interpretation | Equation | $\sigma$ |
+|------|---------------|----------|----------|
+| $\pm 2\sigma$ | 95% of values | $2\sigma = 20$ | 10 |
+| $\pm 3\sigma$ | 99.7% of values | $3\sigma = 20$ | 6.67 |
+| **$\pm 4\sigma$** | **~99.99% of values** | **$4\sigma = 20$** | **5** |
+
+The **$\pm 4\sigma$ rule ($\sigma = 5$)** is the standard choice here because it treats the stated range as containing **nearly all** plausible values, which best matches the phrase *"might be anywhere between"*.
+
+So our prior model is 
+
+$$\boxed{Y_i \mid \mu \sim \mathcal{N} (30, 5^2)}$$.
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-005-exr-prior-model-australia}
+: Normal prior for $\mu$ reflecting our friend’s understanding of Australian weather
+::::::
+:::
+::::{.my-r-code-container}
+```{r}
+#| label: fig-005-exr-prior-model-australia
+#| fig-cap: "Normal prior for μ reflecting our friend’s understanding of Australian weather"
+#| fig-height: 3
+
+bayesrules::plot_normal(mean = 30, sd = 5)
+```
+
+::::
+:::::
+
+**b) The `weather_perth` data in the {bayesrules} package includes 1000 daily observations of 3 p.m. temperatures in Perth (`temp3pm`). Plot this data and discuss whether it’s reasonable to assume a Normal model for the temperature data.**
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-005-exr-weather-perth-normal-model}
+: Temperature data at 3 p.m. in Perth (Australia)
+::::::
+:::
+::::{.my-r-code-container}
+```{r}
+#| label: fig-005-exr-weather-perth-normal-model
+#| fig-cap: "Temperature data at 3 p.m. in Perth (Australia)"
+#| fig-height: 3
+
+data("weather_perth", package = "bayesrules")
+
+weather_perth |> 
+  ggplot2::ggplot(ggplot2::aes(temp3pm)) +
+    ggplot2::geom_density()
+```
+
+
+**mean_perth: `mean(weather_perth$temp3pm)` = `r mean(weather_perth$temp3pm)`**
+
+
+::::
+:::::
+
+Even if the data is right-skewed and has a buckling on its right side it is reasonable to assume a Normal model for the temperature data. 
+
+**c) Identify the posterior model of $\mu$ and verify your answer using bayesrules::summarize_normal_normal().**
+
+::: {.callout-note #nte-005-exr-perth-weather-posterior-model}
+###### Take the standard deviation from the data or from the model?
+
+I had great problems to understand which value I should take for the standard deviation of the posterior model? At first I thought I should take `sd(weather_perth$temp3pm)` = `r sd(weather_perth$temp3pm)`. I saw a discrepancy arising because we're working with **two different sources of variability**: 
+
+
+| Component | Standard Deviation | What It Measures |
+|-----------|-------------------|-----------------|
+| **Prior assumption** $\sigma$ | 5°C | Daily variation *around* the true mean $\mu$ |
+| **Sample sd** | 5.8298°C | Observed variation in the 1000 daily temperatures |
+
+After a conversation with `r glossary("Claude Haiku")` I understood that I have to take the **standard deviation of the model: sd = 5**
+
+The **sample standard deviation of 5.8298°C** is an *estimate* of the **population standard deviation** $\sigma$ (the daily variation around the true mean). It differs from our assumed $\sigma = 5$ for several reasons:
+
+1. **Sampling variability:** The sample sd is computed from 1000 observations and will naturally fluctuate around the true population value.
+
+2. **Our assumption may be slightly off:** We assumed $\sigma = 5$ based on the model specification, but the actual daily variation in Perth temperatures might be slightly higher (5.83°C).
+
+3. **The sample sd is not used in the posterior calculation:** In the Bayesian model with **known** $\sigma$, we treat $\sigma = 5$ as **fixed and given**, not estimated from the data. The posterior depends only on:
+   - The prior ($\theta = 30$, $\tau = 5$)
+   - The sample mean ($\bar{y} = 24.0009$)
+   - The assumed likelihood sd ($\sigma = 5$, treated as known)
+
+**The sample sd of 5.8298 is informative but serves a different purpose:**
+
+- **If we were uncertain about $\sigma$:** We could use the sample sd to estimate it or construct a credible interval for $\sigma$.
+- **For model checking:** A sample sd of 5.83 vs. our assumed 5 suggests the model assumption is reasonable but slightly conservative (the data show slightly more daily variation than assumed).
+- **For sensitivity analysis:** We could re-run the posterior with $\sigma = 5.83$ to see how robust our conclusions are.
+
+
+1. The posterior calculation has to be $\sigma = 5$ because it is a **model assumption** (the likelihood standard deviation), not something we estimate from the data. 
+2. The sample sd of 5.8298 is a **descriptive statistic** that validates our assumption is in the right ballpark, but it doesn't change the posterior under the Normal-Normal conjugate model with known $\sigma$.
+
+So the answer which sd to use lies in the provided **model specification**:
+
+
+
+> “… they’ll assume that daily temperatures vary Normally around $\mu$ with a standard deviation of 5 degrees: $Y_i \mid \mu \sim \mathcal{N}(\mu, 5^2)$.”
+
+This means:  
+✅ **$\sigma = 5$ is a fixed, known parameter** in the model — **not estimated from the data**.
+
+
+In Bayesian inference, when we say “known $\sigma$”, we are assuming:
+
+- The variability of daily temperatures around the true mean $\mu$ is **exactly 5°C**.
+- We are **not using the sample standard deviation (5.8298)** to estimate $\sigma$.
+- The posterior for $\mu$ is computed **conditional on this fixed $\sigma = 5$**.
+
+This is called the **Normal-Normal conjugate model with known variance** — a standard textbook setup.
+
+The sample standard deviation of 5.8298 is:
+
+- An **empirical estimate** of the population $\sigma$ based on 1000 observations.
+- A **descriptive statistic** — it tells us what the data *actually* show.
+- **Not used in the posterior calculation** under the assumption that $\sigma$ is known.
+
+We could use sd = 5.8298 instead --- but that would be a **different model**:
+
+- We would need to treat $\sigma$ as **unknown** and estimate it (e.g., using a Normal-Gamma model).
+- Or, we could do a **sensitivity analysis** and recompute the posterior with $\sigma = 5.8298$ to see how much it changes.
+
+But **under the model that was specified**, $\sigma = 5$ is fixed — so we use it.
+
+
+:::
+
+
+Taking the result of @nte-005-exr-perth-weather-posterior-model we get for the posterior model of $\mu$:  
+
+- our Normal prior model of $\mu$ had mean $\theta = 30$ and standard deviation $\tau = 5$; 
+- our $n = 1000$ data points shows an average temperature at Perth of 24,0009 degrees. 
+- individual temperature $Y$ vary Normally around $\mu$ with a standard deviation of 5 degrees.
+
+***
+
+**Manual calculation of the posterior standard deviation** 
+
+
+$$
+\begin{align*}
+\frac{1}{\tau_n^2} &= \frac{1}{\tau^2} + \frac{n}{\sigma^2} \\
+&= \frac{1}{5^2} + \frac{1000}{5^2} \\
+&= 0.04 + 40 = 40.04 \\
+\tau_n^2 &= \frac{1}{40.04} \\
+&=\boxed{0.02497502} \\
+\tau_n &= \boxed{0.1580349}
+\end{align*}
+$$ {#eq-005-exr-perth-weather-posterior-variance}
+
+
+***
+
+**Manual calculation of the posterior mean** 
+
+
+$$
+\begin{align*}
+&\mu_n = \tau_n^2 \left(\frac{\theta}{\tau^2} + \frac{n\bar{y}}{\sigma^2}\right) \\ &= 0.02497502\left(\frac{30}{25} + \frac{1000 \times 24.0009}{25}\right) \\
+&= 0.02497502 \left(1.2 + 960.036\right) \\ 
+&= 0.02497502 \times 961.236 \\
+&\boxed{\approx 24.00689}
+\end{align*}
+$$ {#eq-005-exr-perth-weather-posterior-mean}
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-005-exr-verify-calculation-mena-variance}
+: Verify calculation of posterior mean and variance using `bayesrules::summarize_normal_normal()`
+::::::
+:::
+::::{.my-r-code-container}
+```{r}
+#| label: tbl-005-exr-verify-calculation-mean-variance
+#| tbl-cap: Posterior mean and variance of temperature in Perth at 3 p.m.
+
+bayesrules::summarize_normal_normal(
+  mean = 30,
+  sd = 5,
+  sigma = 5,
+  y_bar = mean(weather_perth$temp3pm),
+  n = 1000
+) |> 
+  knitr::kable()
+
+
+```
+
+
+::::
+:::::
+
+In the manual calculation and in using the `bayesrules::summarize_normal_normal()`function we got exactly the same values!
+
+
+**d) Plot the prior pdf, likelihood function, and posterior pdf of μ. Describe the evolution in your understanding of μ from the prior to the posterior.**
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-005-exr-plot-perth-weather-posterior}
+: Perth weather prior pdf, likelihood function and posterior pdf of $\mu$
+::::::
+:::
+::::{.my-r-code-container}
+```{r}
+#| label: fig-005-exr-plot-perth-weather-posterior
+#| fig-cap: The prior pdf, likelihood function and posterior pdf of $\mu$ for the waether in Perth (Australia)
+#| fig-height: 3
+
+bayesrules::plot_normal_normal(
+  mean = 30,
+  sd = 5,
+  sigma = 5,
+  y_bar = mean(weather_perth$temp3pm),
+  n = 1000
+)
+```
+
+::::
+:::::
+
+**Dramatic Shift from Prior**
+
+The summary and the plot not only show how dramatically the data shifted our beliefs from the prior mean of 30°C down to a posterior mean of ~24°C but also that we are pretty sure of the mean temperature.
+
+Prior: $\mu \sim \mathcal{N}(30, 25)$ — centered at 30°C with wide uncertainty
+Posterior: $\mu \sim \mathcal{N}(24.01, 0.0250)$ — centered at 24°C with very tight uncertainty
+The data revealed that Perth's average 3 p.m. temperature is ~6°C cooler than our friend initially believed.
+
+Extreme Precision
+The posterior standard deviation is only 0.158°C this is an extreme precision, meaning we're now 95% confident that $\mu$ lies in:
+
+$$24.01 \pm 1.96(0.158) = 24.01 \pm 0.31 = [23.70, 24.32] \text{ degrees}$$
+
+With 1000 observations, the sample mean (24.0009) nearly equals the posterior mean (24.01), with only minimal shrinkage toward the prior mean of 30. 
+
+The weight on the data is ~99.9%, while the prior receives ~0.1% weight!
+
+:::::{.my-theorem}
+:::{.my-theorem-header}
+:::::: {#thm-005-exr-calculate-weight-and-data-prior}
+: Calculating the weight of the data in comparison with the prior pdf
+::::::
+:::
+::::{.my-theorem-container}
+
+::: {#big-text style="font-size: 110%"}
+**The Weighted Average Formula**
+:::
+
+
+
+Recall from the derivation that the posterior mean can be written as a **precision-weighted average**:
+
+$$
+\begin{align*}
+\mu_n = (1-w)\,\theta + w\,\bar{y} \\
+\text{where w is the weight on the data} \\
+w = \frac{n/\sigma^2}{1/\tau^2 + n/\sigma^2}
+\end{align*}
+$$ {#eq-005-exr-precision-weighted-average}
+
+
+::: {#big-text style="font-size: 110%"}
+**Plugging In the Numbers** 
+:::
+
+
+**Numerator** (data precision):
+$$\frac{n}{\sigma^2} = \frac{1000}{25} = 40$$
+
+**Denominator** (total precision = prior precision + data precision):
+$$\frac{1}{\tau^2} + \frac{n}{\sigma^2} = \frac{1}{25} + \frac{1000}{25} = \frac{1001}{25} = 40.04$$
+
+**Weight on the data:**
+$$w = \frac{40}{40.04} \approx 0.99900 \approx 99.9\%$$
+
+**Weight on the prior:**
+$$1 - w = \frac{0.04}{40.04} \approx 0.00100 \approx 0.1\%$$
+
+::: {#big-text style="font-size: 110%"}
+**The weight of the data in comparison with the prior pdf for the weather in Perth** 
+:::
+
+| Component | Weight |
+|-----------|--------|
+| **Data** $\bar{y}$ | **~99.9%** |
+| **Prior** $\theta$ | **~0.1%** |
+
+**Verification**
+
+$$
+\begin{align*}
+\mu_n &= (1-w)\,\theta + w\,\bar{y} \\
+&= 0.001(30) + 0.999(24.0009) \\
+&= 0.030 + 23.977 \\
+&= 24.007 ✓
+\end{align*}
+$$ {#eq-005-exr-verification-precision-weighted-average}
+
+This confirms that with 1000 observations and equal $\tau = \sigma = 5$, the data almost completely dominate the posterior.
+
+
+::::
+:::::
+
+::::
+:::::
+
+::: {.callout-note #nte-005-exr-bayesian-advantages}
+
+###### When Bayesian Inference Shines
+
+
+
+Given the dominate role data plays the question arose for me: What is the advantage of using the Bayesian approach? Frequentist statistics would get almost the same result.
+
+::: {#big-text style="font-size: 140%"}
+**Advantages of the Bayesian approach** 
+:::
+
+::: {#big-text style="font-size: 120%"}
+**1. Small Sample Sizes** 
+:::
+
+
+With only **10 or 50 days** of data instead of 1000, the prior would carry meaningful weight:
+
+**Example: $n = 50$ days**
+
+$$w = \frac{50/25}{1/25 + 50/25} = \frac{2}{2.04} \approx 0.98 \text{ (98% data)}$$
+
+Weight on prior: **~2%** — now the prior actually matters!
+
+The Bayesian posterior would be:
+$$\mu_n \approx 0.02(30) + 0.98(\bar{y})$$
+
+This **regularizes** the estimate when data are scarce, preventing wild swings from small samples. Frequentist confidence intervals would be much wider and less informative.
+
+::: {#big-text style="font-size: 120%"}
+**2. Incorporating Prior Knowledge** 
+:::
+
+Our friend's prior belief (30°C, sd = 5) encodes real information:
+- Perth is in the Southern Hemisphere (warmer than many places)
+- 3 p.m. is afternoon (warmer than morning)
+- The range [10, 50] reflects reasonable bounds
+
+**Frequentist approach:** Ignores this entirely. If the first 50 observations happened to average 18°C due to sampling variability, the frequentist estimate would be 18°C with no skepticism.
+
+**Bayesian approach:** Would say "18°C is implausibly cold given what we know about Perth" and pull the estimate back toward 30°C.
+
+::: {#big-text style="font-size: 120%"}
+**3. Decision-Making Under Uncertainty** 
+:::
+
+Suppose your friend needs to decide: *"Should I bring a light jacket (assume μ ≥ 22°C) or a heavy coat (assume μ < 22°C)?"*
+
+**Bayesian:** Directly answers: $P(\mu \geq 22 \mid \text{data}) = ?$
+
+With posterior $\mu \mid \text{data} \sim \mathcal{N}(24.01, 0.158^2)$:
+$$P(\mu \geq 22 \mid \text{data}) = P\left(Z \geq \frac{22 - 24.01}{0.158}\right) = P(Z \geq -12.7) \approx 1.0$$
+
+**Frequentist:** Cannot directly answer this. A 95% CI is [23.70, 24.32], but that doesn't directly tell you $P(\mu \geq 22)$ in a frequentist framework.
+
+::: {#big-text style="font-size: 120%"}
+**4. Hierarchical/Complex Models** 
+:::
+
+
+With multiple professors, multiple cities, or temporal trends, Bayesian methods naturally handle:
+
+- Sharing information across groups
+- Partial pooling of estimates
+- Uncertainty propagation through layers
+
+Frequentist approaches become awkward or require ad-hoc methods.
+
+::: {#big-text style="font-size: 120%"}
+**5. Sequential Analysis** 
+:::
+
+Suppose you observe data on Day 1, then Day 2, then Day 3...
+
+**Bayesian:** Today's posterior becomes tomorrow's prior. You naturally update beliefs as new data arrive — no multiple testing corrections needed.
+
+**Frequentist:** Each new test inflates Type I error; you need corrections (Bonferroni, etc.), making inference less efficient.
+
+::: {#big-text style="font-size: 140%"}
+**Why This Exercise Didn't Show Bayesian Advantage** 
+:::
+
+In the Perth temperature problem:
+
+- ✅ Large sample size ($n = 1000$) → data overwhelm the prior
+- ✅ Prior and likelihood have equal information ($\tau = \sigma$)
+- ✅ Simple one-parameter model
+- ✅ No sequential or hierarchical structure
+
+In this setting, Bayesian and frequentist methods converge — and that's **expected and fine**.
+
+**Bayesian inference adds the most value when:**
+
+- Data are limited
+- Prior knowledge is informative and relevant
+- You need probability statements about parameters (not just intervals)
+- You're making sequential decisions
+- You have complex hierarchical structures
+
+**When data are abundant and prior is weak, Bayesian and frequentist results converge** — which is reassuring, not a weakness!
+:::
+
+
+
+
+#### Normal-Normal Simulation
+
+:::::{.my-exercise}
+:::{.my-exercise-header}
+:::::: {#exr-005-exr-normal-normal-simulation}
+: Normal-Normal Simulation
+::::::
+:::
+::::{.my-exercise-container}
+
+**a) Your friend Alex has read @sec-chap-004 of this book, but not this chapter. Explain to Alex why it’s difficult to simulate a Normal-Normal posterior using the simulation methods we have learned thus far.**
+
+Simulating the Normal-Normal example with the methods learned so far is not possible. We have seen in @prp-005-steps-of-simulations that we must follow four steps to simulate the Normal-Normal model. The problem arises with step 3: 
+
+> Filter out only those of the $10000$ simulated sets of $(θ, Y )$ for which the simulated $Y$ data matches the data we actually observed.
+
+This doesn't work with the Normal-Normal model: We won't have any match, because our data values $Y_i$ are continuous!
+
+**b) To prove your point, try (and fail) to simulate the posterior of μ for the following model upon observing a single data point $Y = 1.1$:
+
+$$
+\begin{align*}
+Y \mid \mu &\sim \mathcal{N} (\mu, 1^2) \\
+\mu &\sim \mathcal{N} (0.1^2)
+\end{align*}
+$$ {#eq-005-exr-normal-normal-example}
+
+::: {#big-text style="font-size: 125%"}
+**Why This Simulation Method Fails for Normal-Normal Models** 
+:::
+
+
+The fundamental problem is **the curse of continuous data**: when you simulate data from a continuous distribution, the probability of generating data that *exactly matches* your observed value is essentially **zero**.
+
+::: {#big-text style="font-size: 110%"}
+**The Core Issue** 
+:::
+
+
+In step 3, you're filtering for simulated $Y$ values that match your observed $Y = 1.1$ *exactly*. But since $Y$ is continuous:
+
+$$P(Y_{\text{simulated}} = 1.1 \text{ exactly}) \approx 0$$
+
+This means virtually **none** of your 10,000 simulated ($\theta$, $Y$) pairs will pass the filter, leaving you with an empty (or nearly empty) posterior sample.
+
+***
+
+::: {#big-text style="font-size: 110%"}
+**Demonstration: Attempting to Simulate the Posterior** 
+:::
+
+Let me show why this fails with the following model:
+
+**Prior:** $\mu \sim \mathcal{N}(0, 0.1^2)$  
+**Likelihood:** $Y \mid \mu \sim \mathcal{N}(\mu, 1^2)$  
+**Observed:** $Y = 1.1$
+
+:::::{.my-assessment}
+:::{.my-assessment-header}
+:::::: {#cor-005-exr-simulate-posterior}
+: Simulate the Posterior pdf 
+::::::
+:::
+::::{.my-assessment-container}
+
+- **Step 1**: Simulate 10,000 theta values from prior
+- **Step 2**: Simulate data Y from each theta
+- **Step 3**: Filter for exact match to observed Y = 1.1
+- **Step 4**: Extract posterior theta values
+::::
+:::::
+
+
+
+**R Code (tidyverse style)**
+
+```{r}
+#| label: tbl-005-failed-simulation-1
+#| tbl-cap: "Failed simulation with 0 matches"
+#| results: hold
+
+base::set.seed(84735)
+Y_observed <- 1.1
+n_sims <- 10000
+
+posterior_attempt <- tibble::tibble(
+  sim_id = 1:n_sims,
+# Step 1: Simulate 10,000 theta values from prior ###########
+  theta = stats::rnorm(n_sims, mean = 0, sd = 0.1)
+  ) |> 
+  dplyr::mutate(
+# Step 2: Simulate data Y from each theta ###################
+    Y_simulated = stats::rnorm(n_sims, mean = theta, sd = 1.0)
+  )  |> 
+  
+# Step 3: Filter for exact match to observed Y = 1.1 ########  
+  dplyr::filter(Y_simulated == Y_observed) |> 
+  dplyr::select(theta)
+
+
+# Step 4: Extract posterior theta values ############
+base::cat("Number of matches:", nrow(posterior_attempt), "\n")
+base::cat("Posterior sample size:", nrow(posterior_attempt), "\n")
+```
+
+**You get nothing.** Even with 10,000 simulations, you'll have zero (or perhaps one or two by extreme luck) matches.
+
+::: {#big-text style="font-size: 110%"}
+**Why This Happens Mathematically** 
+:::
+
+
+The probability of a match in any single simulation is:
+
+$$P(\text{match}) = \int P(Y_{\text{sim}} = 1.1 \mid Y_{\text{sim}} \sim \mathcal{N}(\theta, 1)) \, dP(\theta)$$
+
+For continuous distributions, this integral is **zero** because the probability density at a single point is infinitesimal.
+
+Even with a small tolerance (e.g., $|Y_{\text{sim}} - 1.1| < 0.01$), you'd need an astronomically large number of simulations to get a reasonable posterior sample.
+
+::: {#big-text style="font-size: 110%"}
+**Attempting a Fix: Adding a Tolerance Window** 
+:::
+
+To illustrate the problem more clearly, here's what happens if you add a small tolerance:
+
+:::::{.my-r-code}
+:::{.my-r-code-header}
+:::::: {#cnj-005-exr-unreliable-simulation}
+: Unreliable simulation with only few matches
+::::::
+:::
+::::{.my-r-code-container}
+
+```{r}
+#| label: tbl-005-failed-simulation-2
+#| tbl-cap: "Unreliable simulation with just a few matches"
+#| results: hold
+
+base::set.seed(100)
+Y_observed <- 1.1
+n_sims <- 10000
+tolerance <- 0.01  # Accept values within ±0.01
+
+posterior_with_tolerance <- tibble::tibble(
+  sim_id = 1:n_sims,
+# Step 1: Simulate 10,000 theta values from prior ##########
+  theta = stats::rnorm(n_sims, mean = 0, sd = 0.1)
+  ) |> 
+  dplyr::mutate(
+# Step 2: Simulate data Y from each theta ###################
+    Y_simulated = stats::rnorm(n_sims, mean = theta, sd = 1.0)
+  ) |> 
+# Step 3: Filter for exact match to observed Y = 1.1# tolerance  ########  
+  dplyr::filter(abs(Y_simulated - Y_observed) < tolerance) |> 
+  dplyr::select(theta)
+
+# Step 4a: Number of posterior theta values ############
+base::cat("Number of matches with tolerance:", nrow(posterior_with_tolerance), "\n")
+
+# Step 4a: Extract posterior theta values ############
+if (base::nrow(posterior_with_tolerance) > 0) {
+  posterior_with_tolerance |> 
+    dplyr::summarize(
+      mean_theta = mean(theta),
+      sd_theta = sd(theta),
+      .groups = "drop"
+    ) |> 
+    print()
+}
+
+```
+
+::::
+:::::
+
+
+Even with a tolerance of 0.01, you'll likely get only few matches (30-50 matches), making the posterior estimate unreliable.
+
+**There are three different solutions: For details see: @sec-910-solution-continuous-distribution}** 
+
+
+
+::::
+:::::
+
+
+### General Practice Exercises
+
+#### Which model?
+
+:::::{.my-assessment}
+:::{.my-assessment-header}
+:::::: {#cor-005-exr-which-model}
+: Which model?
+::::::
+:::
+::::{.my-assessment-container}
+Below are kernels for Normal, Poisson, Gamma, Beta, and Binomial models. Identify the appropriate model with specific parameter values.
+
+$$
+\begin{align*}
+\text{a)}\quad f (\theta) &\propto 0.3^{\theta}0.7^{16− \theta} \text{ for } \theta \in \{0, 1, 2, \cdots, 16\} \\
+\text{b)}\quad f (\theta) &\propto 1/\theta! \text{ for } \theta \in \{0, 1, 2, \cdots, \infty \} \\
+\text{c)}\quad f (\theta) &\propto \theta^4(1 − \theta)^7 \text{ for } \theta \in [0, 1] \\
+\text{d)}\quad f (\theta) &\propto e^{−θ^2} \text{ for } \theta \in (−\infty, \infty) 
+\end{align*}
+$$ {#eq-005-exr-which-model}
+
+
+Which model represents the kernel form of @eq-005-exr-which-model?
+
+a) `r mcq(c("Normal", "Poisson", "Gamma", "Beta", answer = "Binomial"))`
+b) `r mcq(c("Normal", answer = "Poisson", "Gamma", "Beta", "Binomial"))`
+c) `r mcq(c("Normal", "Poisson", "Gamma", answer = "Beta", "Binomial"))`
+d) `r mcq(c(answer = "Normal", "Poisson", "Gamma", "Beta", "Binomial"))`
+
+::::
+:::::
+
+:::::{.my-exercise}
+:::{.my-exercise-header}
+:::::: {#exr-005-which-model}
+: Identify the appropriate model from the kernels in @eq-005-exr-which-model with specific parameter values
+::::::
+:::
+::::{.my-exercise-container}
+
+
+
+The key is to match each kernel to a known distribution's **kernel form** (dropping constants).
+
+::: {#big-text style="font-size: 125%"}
+**Quick Reference: Kernel Forms for different models** 
+:::
+
+| Distribution | Full PDF | Kernel |
+|---|---|---|
+| **Binomial$(n,p)$** | $\binom{n}{\theta} p^\theta (1-p)^{n-\theta}$ | $p^\theta (1-p)^{n-\theta}$ |
+| **Poisson$(\lambda)$** | $\frac{e^{-\lambda}\lambda^\theta}{\theta!}$ | $\frac{\lambda^\theta}{\theta!}$ |
+| **Beta$(\alpha,\beta)$** | $\frac{\Gamma(\alpha+\beta)}{\Gamma(\alpha)\Gamma(\beta)}\theta^{\alpha-1}(1-\theta)^{\beta-1}$ | $\theta^{\alpha-1}(1-\theta)^{\beta-1}$ |
+| **Normal$(\mu,\sigma^2)$** | $\frac{1}{\sigma\sqrt{2\pi}}e^{-\frac{(\theta-\mu)^2}{2\sigma^2}}$ | $e^{-\frac{(\theta-\mu)^2}{2\sigma^2}}$ |
+| **Gamma$(\alpha,\beta)$** | $\frac{\beta^\alpha}{\Gamma(\alpha)}\theta^{\alpha-1}e^{-\beta\theta}$ | $\theta^{\alpha-1}e^{-\beta\theta}$ |
+: Kernel Forms for different models {#tbl-005-exr-kernel-forms}
+
+***
+
+::: {#big-text style="font-size: 125%"}
+**Part a)** 
+:::
+
+
+$$f(\theta) \propto 0.3^{\theta} \cdot 0.7^{16-\theta}, \quad \theta \in \{0,1,\ldots,16\}$$
+
+- Discrete support with finite upper bound → **Binomial**
+- Match to kernel $p^\theta(1-p)^{n-\theta}$:
+  - $p = 0.3$, $1-p = 0.7$ ✓
+  - $n = 16$ ✓
+
+$$\boxed{\theta \sim \text{Binomial}(n=16,\ p=0.3)}$$
+
+::: {#big-text style="font-size: 125%"}
+**Part b)** 
+:::
+
+$$f(\theta) \propto \frac{1}{\theta!}, \quad \theta \in \{0,1,2,\ldots\}$$
+
+- Discrete support with infinite upper bound → **Poisson**
+- Match to kernel $\frac{\lambda^\theta}{\theta!}$:
+  - $\lambda^\theta$ is missing, meaning $\lambda^\theta = 1 \Rightarrow \lambda = 1$
+
+$$\boxed{\theta \sim \text{Poisson}(\lambda=1)}$$
+
+::: {#big-text style="font-size: 125%"}
+**Part c)** 
+:::
+
+$$f(\theta) \propto \theta^4(1-\theta)^7, \quad \theta \in [0,1]$$
+
+- Continuous support on $[0,1]$ → **Beta**
+- Match to kernel $\theta^{\alpha-1}(1-\theta)^{\beta-1}$:
+  - $\alpha - 1 = 4 \Rightarrow \alpha = 5$
+  - $\beta - 1 = 7 \Rightarrow \beta = 8$
+
+$$\boxed{\theta \sim \text{Beta}(\alpha=5,\ \beta=8)}$$
+
+::: {#big-text style="font-size: 125%"}
+**Part d)** 
+:::
+
+$$f(\theta) \propto e^{-\theta^2}, \quad \theta \in (-\infty, \infty)$$
+
+- Continuous support on $\mathbb{R}$ → **Normal**
+- Match to kernel $e^{-\frac{(\theta - \mu)^2}{2\sigma^2}}$:
+  - $\mu = 0$ (no linear term in the exponent)
+  - $\frac{1}{2\sigma^2} = 1 \Rightarrow \sigma^2 = \frac{1}{2}$
+
+$$\boxed{\theta \sim \mathcal{N}\!\left(\mu=0,\ \sigma^2=\frac{1}{2}\right)}$$
+
+::::
+:::::
+
+#### Which model: Back for more!
+
+
+
+
+:::::{.my-assessment}
+:::{.my-assessment-header}
+:::::: {#cor-005-exr-which-model-2}
+: Which model: Back for more!
+::::::
+:::
+::::{.my-assessment-container}
+Below are kernels for Normal, Poisson, Gamma, Beta, and Binomial models. Identify the appropriate model with specific parameter values.
+
+$$
+\begin{align*}
+\text{a)}\quad f (\theta) &\propto e^{−2θ}θ^{15} \text{ for } \theta > 0\\
+\text{b)}\quad f (\theta) &\propto e \frac{−(θ−12)^2}{18} \text{ for } \theta \in (-\infty, \infty) \\ 
+\text{c)}\quad f (\theta) &\propto 0.3^{θ}/θ! \text{ for } \theta \in \{0, 1, 2, \cdots, \infty \}
+\end{align*}
+$$ {#eq-005-exr-which-model-2}
+
+Which model represents the kernel form of @eq-005-exr-which-model-2?
+
+a) `r mcq(c("Normal", "Poisson", answer = "Gamma", "Beta", "Binomial"))`
+b) `r mcq(c(answer = "Normal", "Poisson", "Gamma", "Beta", "Binomial"))`
+c) `r mcq(c("Normal", answer = "Poisson", "Gamma", "Beta", "Binomial"))`
+
+
+::::
+:::::
+
+
+:::::{.my-exercise}
+:::{.my-exercise-header}
+:::::: {#exr-005-which-model-2}
+: Which model: Back for more!
+::::::
+:::
+::::{.my-exercise-container}
+
+Again the key is to match each kernel to a known distribution’s kernel form by dropping the constants. See @tbl-005-exr-kernel-forms.
+
+::: {#big-text style="font-size: 125%"}
+**Part a)** 
+:::
+
+
+$$f(\theta) \propto e^{-2\theta}\theta^{15}, \quad \theta > 0$$
+
+- Continuous support on $(0, \infty)$ → **Gamma**
+- Match to kernel $\theta^{\alpha-1}e^{-\beta\theta}$:
+  - $\alpha - 1 = 15 \Rightarrow \alpha = 16$
+  - $\beta = 2$
+
+$$\boxed{\theta \sim \text{Gamma}(\alpha=16,\ \beta=2)}$$
+
+::: {#big-text style="font-size: 125%"}
+**Part b)** 
+:::
+
+$$f(\theta) \propto e^{-\frac{(\theta-12)^2}{18}}, \quad \theta \in (-\infty, \infty)$$
+
+- Continuous support on $\mathbb{R}$ → **Normal**
+- Match to kernel $e^{-\frac{(\theta-\mu)^2}{2\sigma^2}}$:
+  - $\mu = 12$ (center of the exponent)
+  - $\frac{1}{2\sigma^2} = \frac{1}{18} \Rightarrow 2\sigma^2 = 18 \Rightarrow \sigma^2 = 9$
+
+$$\boxed{\theta \sim \mathcal{N}(\mu=12,\ \sigma^2=9)}$$
+
+::: {#big-text style="font-size: 125%"}
+**Part c)** 
+:::
+
+
+$$f(\theta) \propto \frac{0.3^{\theta}}{\theta!}, \quad \theta \in \{0, 1, 2, \ldots\}$$
+
+- Discrete support with infinite upper bound → **Poisson**
+- Match to kernel $\frac{\lambda^\theta}{\theta!}$:
+  - $\lambda = 0.3$
+
+$$\boxed{\theta \sim \text{Poisson}(\lambda=0.3)}$$
+
+::::
+:::::
+
+
+#### Weighted average
+
+In Section 4.3.2, we expressed the Beta-Binomial posterior mean of proportion $\pi$ as a weighted average of the prior mean and the observed sample proportion. In @sec-005-normal-normal-conjugacy, we expressed the Normal-Normal posterior mean of $\mu$ as a weighted average of the prior mean $\theta$ and the observed sample mean $y$. Similarly, express the Gamma-Poisson posterior mean of rate $\lambda, E(\lambda \mid \overrightarrow{\rm y})$, as a weighted average of the prior mean $E(\lambda)$ and sample mean $y$.
+
+:::::{.my-exercise}
+:::{.my-exercise-header}
+:::::: {#exr-005-gamma-poisson-average}
+: Gamma-Poisson posterior mean as weighted average
+::::::
+:::
+::::{.my-exercise-container}
+
+
+::: {#big-text style="font-size: 125%"}
+**Setup** 
+:::
+
+- **Prior:** $\lambda \sim \text{Gamma}(\alpha, \beta)$  
+- **Likelihood:** $Y_i \mid \lambda \sim \text{Poisson}(\lambda)$ for $i = 1, \ldots, n$  
+- **Posterior:** $\lambda \mid \vec{y} \sim \text{Gamma}(\alpha + \sum y_i, \beta + n)$
+
+::: {#big-text style="font-size: 125%"}
+**Posterior mean** 
+:::
+
+The posterior mean is:
+
+$$E(\lambda \mid \vec{y}) = \frac{\alpha + \sum_{i=1}^n y_i}{\beta + n}$$
+
+Rearranging:
+
+$$E(\lambda \mid \vec{y}) = \frac{\alpha}{\beta + n} + \frac{\sum_{i=1}^n y_i}{\beta + n}$$
+
+$$E(\lambda \mid \vec{y}) = \frac{\beta}{\beta + n} \cdot \frac{\alpha}{\beta} + \frac{n}{\beta + n} \cdot \frac{\sum_{i=1}^n y_i}{n}$$
+
+::: {#big-text style="font-size: 125%"}
+**Weighted Average Form** 
+:::
+
+
+$$\boxed{E(\lambda \mid \vec{y}) = \frac{\beta}{\beta + n} \cdot E(\lambda) + \frac{n}{\beta + n} \cdot \bar{y}}$$
+
+where:
+
+- **$E(\lambda) = \frac{\alpha}{\beta}$** = prior mean
+- **$\bar{y} = \frac{1}{n}\sum_{i=1}^n y_i$** = sample mean
+- **$\frac{\beta}{\beta + n}$** = prior weight
+- **$\frac{n}{\beta + n}$** = data weight
+
+::: {#big-text style="font-size: 125%"}
+**Interpretation** 
+:::
+
+The posterior mean is a **convex combination** of:
+
+1. **Prior mean** ($E(\lambda)$), weighted by $\frac{\beta}{\beta + n}$
+2. **Sample mean** ($\bar{y}$), weighted by $\frac{n}{\beta + n}$
+
+**Key insights:**
+
+- As $n \to \infty$: posterior mean → sample mean (data dominates)
+- As $\beta \to \infty$: posterior mean → prior mean (strong prior belief)
+- As $\beta \to 0$: posterior mean → sample mean (weak prior)
+
+::::
+:::::
+
+#### Counting insects
+
+A biologist hires you to study the density of a certain insect in the local region. Their prior idea about $\theta$, the number of insects per $m^2$ area, is well captured by a `r glossary("Gamma-Model", "Gamma model")` with an expected value of 0.5 insects per $m^2$ and a standard deviation of 0.25 insects per $m^2$ You then go out to inspect 20 separate $m^2$ areas of a nearby field. You count 3, 2, 5, 1, 2 insects in the first five square meters, and then do not encounter the insect in the next $15m^2$.
+
+:::::{.my-exercise}
+:::{.my-exercise-header}
+:::::: {#exr-005-gamma-from-mean-and-sd}
+: Tuning Gamma model given mean and standard deviation
+::::::
+:::
+::::{.my-exercise-container}
+
+
+::: {#big-text style="font-size: 125%"}
+**Given Information** 
+:::
+
+
+- **Prior distribution:** $\theta \sim \text{Gamma}(s, r)$
+- **Expected value:** $E[\theta] = 0.5$
+- **Standard deviation:** $\text{SD}[\theta] = 0.25$
+
+
+***
+
+
+::: {#big-text style="font-size: 125%"}
+**Gamma Distribution Properties** 
+:::
+
+See @eq-005-gamma-central-measures in @sec-005-gamma-formulas:
+
+For $\theta \sim \text{Gamma}(r, s)$:
+
+$$
+\begin{align*}
+E[\theta] &= \frac{s}{r} \\
+\text{Var}[\theta] &= \frac{s}{r^2} \\
+\text{SD}[\theta] &= \sqrt{\frac{s}{r^2}} = \frac{\sqrt{s}}{r}
+\end{align*}
+$$ 
+***
+
+
+
+::: {#big-text style="font-size: 125%"}
+**Solving for $s$ and $r$** 
+:::
+
+::: {#big-text style="font-size: 110%"}
+**From the variance relationship:** 
+:::
+
+
+$$\text{Var}[\theta] = (\text{SD}[\theta])^2 = (0.25)^2 = 0.0625$$
+
+Using $\text{Var}[\theta] = \dfrac{s}{r^2}$:
+
+$$\frac{s}{r^2} = 0.0625 \quad \Rightarrow \quad s = 0.0625 r^2 \quad \cdots (1)$$
+
+
+::: {#big-text style="font-size: 110%"}
+**From the mean relationship:** 
+:::
+
+$$\frac{s}{r} = 0.5 \quad \Rightarrow \quad s = 0.5r \quad \cdots (2)$$
+
+::: {#big-text style="font-size: 110%"}
+**Equate (1) and (2):** 
+:::
+
+$$0.0625 r^2 = 0.5r$$
+
+$$0.0625 r = 0.5$$
+
+$$r = \frac{0.5}{0.0625} = 8$$
+
+::: {#big-text style="font-size: 110%"}
+**Solve for $r$:** 
+:::
+
+
+$$s = 0.5 \cdot r = 0.5 \cdot 8 = 4$$
+
+***
+
+::: {#big-text style="font-size: 125%"}
+**Answer** 
+:::
+
+
+$$\boxed{s = 4, \quad r = 8}$$
+
+::: {#big-text style="font-size: 125%"}
+**Verification** 
+:::
+
+
+- $E[\theta] = \dfrac{4}{8} = 0.5$ ✓
+- $\text{SD}[\theta] = \dfrac{\sqrt{4}}{8} = \dfrac{2}{8} = 0.25$ ✓
+
+So the biologist's prior is: $\theta \sim \text{Gamma}(4, 8)$
+
+```{r}
+#| label: fig-005-exr-plot-gamma-prior-insects
+#| fig-cap: Plotting the biologist’s Gamma prior for the insect study
+#| fig-height: 3
+#| fig-width: 4
+
+my_plot_gamma(4, 8, TRUE, TRUE)
+```
+
+
+
+```{r}
+#| label: tbl-005-exr-summarize-insect-posterior
+#| tbl-cap: Summarizing the biologist’s Gamma-Poisson posterior for the insect study
+
+bayesrules::summarize_gamma_poisson(
+  shape = 4,
+  rate = 8,
+  sum_y = sum(c(3, 2, 5, 1, 2)),
+  n = 20
+) |> 
+  knitr::kable(digits = 4)
+```
+
+
+
+```{r}
+#| label: fig-005-exr-summarize-insect-posterior
+#| fig-cap: The biologist’s Gamma-Poisson posterior for the insect study
+#| fig-height: 3
+
+bayesrules::plot_gamma_poisson(
+  shape = 4,
+  rate = 8,
+  sum_y = sum(c(3, 2, 5, 1, 2)),
+  n = 20
+)
+```
+
+::: {#big-text style="font-size: 125%"}
+**Interpretation** 
+:::
+
+- The posterior mean of 0.607 insects/m² is pulled upward from the prior mean (0.5) toward the data signal.
+- The posterior SD of 0.147 is notably smaller than the prior SD (0.250), reflecting the reduction in uncertainty after observing 20 areas.
+
+::::
+:::::
+
+#### Beta-Geometric model
+
+Consider the following new Bayesian model: 
+
+$$
+\begin{align*}
+Y \mid \theta &\sim \text{Geometric}(\theta) \\
+\theta &\sim \text{Beta}(\alpha, \beta) 
+\end{align*}
+$$ 
+  
+where the Geometric model has pmf $f (y \mid \theta) = \theta(1 − θ)y−1 \text{ for } y \in \{1, 2, \cdots\}$.
+
+:::::{.my-exercise}
+:::{.my-exercise-header}
+:::::: {#exr-005-beta-geometric-model}
+: Beta-Geometric model
+::::::
+:::
+::::{.my-exercise-container}
+
+::: {#big-text style="font-size: 125%"}
+**a) Derive the posterior model for $\theta$ given observed data $Y = y$. If possible, identify the name of the posterior model and its parameters.**
+:::
+
+
+
+::: {#big-text style="font-size: 110%"}
+**Bayes’ Theorem Setup** 
+:::
+
+The posterior is proportional to the likelihood times the prior:
+
+$$p(\theta \mid y) \propto f(y \mid \theta) \cdot p(\theta)$$
+
+::: {#big-text style="font-size: 110%"}
+**Likelihood** 
+:::
+
+Given $Y = y$ with the Geometric distribution:
+
+$$f(y \mid \theta) = \theta(1-\theta)^{y-1}$$
+
+::: {#big-text style="font-size: 110%"}
+**Prior** 
+:::
+
+The Beta prior:
+
+$$p(\theta) = \frac{\Gamma(\alpha + \beta)}{\Gamma(\alpha)\Gamma(\beta)} \theta^{\alpha-1}(1-\theta)^{\beta-1}$$
+
+::: {#big-text style="font-size: 110%"}
+**Deriving the Posterior** 
+:::
+
+
+Applying Bayes' theorem (keeping only terms involving $\theta$):
+
+$$p(\theta \mid y) \propto \theta(1-\theta)^{y-1} \cdot \theta^{\alpha-1}(1-\theta)^{\beta-1}$$
+
+Combining the powers of $\theta$ and ($1-\theta$):
+
+$$p(\theta \mid y) \propto \theta^{1+\alpha-1}(1-\theta)^{y-1+\beta-1}$$
+
+$$p(\theta \mid y) \propto \theta^{\alpha}(1-\theta)^{y+\beta-2}$$
+
+::: {#big-text style="font-size: 110%"}
+**Posterior Model** 
+:::
+
+
+This is the kernel of a **Beta distribution**. Specifically:
+
+$$\boxed{\theta \mid y \sim \text{Beta}(\alpha + 1, \beta + y - 1)}$$
+
+::: {#big-text style="font-size: 110%"}
+**Summary** 
+:::
+
+
+| Component | Distribution | Parameters |
+|-----------|--------------|-----------|
+| Prior | Beta | $\alpha, \beta$ |
+| Likelihood | Geometric | θ |
+| Posterior | Beta | $\alpha + 1, \beta + y - 1$ |
+
+***
+
+::: {#big-text style="font-size: 125%"}
+**b) Is the Beta model a conjugate prior for the Geometric data model?** 
+:::
+
+
+
+
+
+**Key insight:** The Beta distribution is the **conjugate prior** for the Geometric likelihood, meaning the posterior remains in the same Beta family. The posterior parameters show that observing a single geometric trial with outcome y increases the first parameter by $1$ and the second parameter by $y - 1$.
+
+::::
+:::::
 
 ## Glossary Entries {.unnumbered}
 
@@ -2884,11 +5625,13 @@ bayesrules::summarize_gamma(
 glossary_table()
 ```
 
+
+
 ------------------------------------------------------------------------
 
 ## Session Info {.unnumbered}
 
-::::: my-r-code
+::: my-r-code
 ::: my-r-code-header
 Session Info
 :::
@@ -2900,4 +5643,4 @@ Session Info
 sessioninfo::session_info()
 ```
 :::
-:::::
+:::

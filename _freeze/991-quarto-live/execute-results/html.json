@@ -1,0 +1,15 @@
+{
+  "hash": "ca3abf380e1b15cc9023d1222126df24",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Quarto Live Exercises\"\nformat: \n    live-html:\n        theme: cosmo\n        highlight-style: atom-one\n        css:\n         - include/quarto.css\n         - include/glossary.css\n         - include/webex.css\n        number-sections: true\n        toc-depth: 5\n        toc-expand: 4\n        toc_float: true\n        code-fold: true\n        code-summary: \"Show/hide the code\"\n        code-tools: true\n        code-link: true\n        code-overflow: scroll\n        df-print: default\n        link-external-newwindow: true\n        link-external-icon: true\n        include-after-body: include/webex.js\nengine: knitr\n---\n\n\n::: {.cell}\n\n:::\n\n\n\n\n\n\n\n\n::::: {#obj-chap-006}\n:::: {.my-objectives}\n::: {.my-objectives-header}\nObjectives\n:::\n\n::: {.my-objectives-container}\n\n- Implement and examine the limitations of using grid approximation to simulate a posterior model. \n- Explore the fundamental properties of <a class='glossary' title='Markov chain Monte Carlo (MCMC) methods comprise a class of algorithms for sampling from a probability distribution. By constructing a [markov chain] that has the desired distribution as its equilibrium distribution, one can obtain a sample of the desired distribution by recording states from the chain. The more steps that are included, the more closely the distribution of the sample matches the actual desired distribution. Various algorithms exist for constructing chains. (Wikipedia)'>MCMC</a> posterior simulation techniques and how these differ from grid approximation. \n- Implement MCMC simulation in R. \n- Learn several <a class='glossary' title='Markov chain is a stochastic model describing a sequence of possible events in which the probability of each event depends only on the state attained in the previous event.  This defining property is known as the Markov property or memorylessness, meaning the future state depends solely on the current state and not on the sequence of events that preceded it. (Brave-AI)'>Markov chain</a> diagnostics for examining the quality of an MCMC posterior simulation.\n\n\n:::\n::::\n:::::\n\n\nFill in the blank so that the result of the sum is 10.\n\n\n::: {.cell exercise='ex_1'}\n```{webr}\n#| exercise: ex_1\n1 + 2 + 3 + ______\n```\n:::\n\n\n\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

@@ -18,16 +18,24 @@ book:
 
   chapters:
     - index.qmd
-    - part: "I Bayesian Foundations"
+    - part: "I: Bayesian Foundations"
       chapters:
         - 001-big-picture.qmd
         - 002-bayes-rule.qmd
         - 003-beta-binomial.qmd
         - 004-balance-sequentiality.qmd
         - 005-conjugate-families.qmd
+    - part: "II: Posterior Simulation and Analysis"
+      chapters:
+        - 006-approximating-posterior.qmd
+        - 007-mcmc.qmd
   appendices:
       - 900-used-packages.qmd
+      - 905-rstan-tutorial.qmd
+      - 906-markov-chain-diagnostics.qmd
+      - 910-my-own-remarks.qmd
       - 990-webexercises.qmd
+      - 991-quarto-live.qmd
 
 
 bibliography:

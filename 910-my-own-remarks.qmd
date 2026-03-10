@@ -1,0 +1,399 @@
+# My Own Remarks {#sec-chap-910}
+
+```{r}
+#| label: setup
+#| results: hold
+#| include: false
+
+base::source(file = "R/helper.R")
+ggplot2::theme_set(ggplot2::theme_bw())
+```
+
+
+
+::::: {#obj-chap-910}
+:::: {.my-objectives}
+::: {.my-objectives-header}
+Objectives
+:::
+
+In this annex I collect personal notes about my learning during reading the "Bayes Rules!" book. Notes that do not have direct relation to sections of the book but are on more general level.
+
+::: {.my-objectives-container}
+
+
+:::
+::::
+:::::
+
+## Examples of Bayesian advantages {#sec-910-advantages-bayes}
+
+In @nte-005-exr-5-7d-plot-posterior-alternative I saw that there is no much difference between the results of Frequentist and Bayesian approaches when there is much enough data.
+
+So I wanted to see an example where the difference between these two approaches are decisive. The Positron AI with the `r glossary("Claude Sonnet 4.6")` gave me the following examples:
+
+### Medical screening for rare diseases
+
+A classic real-world example where the difference is decisive is medical screening for rare diseases.
+
+#### Scenario: Cancer Screening Test
+Suppose a test for a rare cancer has:
+
+- **Prevalence**: 1 in 1,000 people have the cancer (0.1%)
+- **Sensitivity**: 99% (true positive rate)
+- **Specificity**: 95% (true negative rate)
+
+You test positive. What is the probability you actually have cancer?
+
+#### Frequentist answer
+
+A frequentist reports only the test's properties: sensitivity = 99%, specificity = 95%. **There is no probability statement about whether you personally have the disease** — because in the frequentist framework, you either have it or you don't. It's a fixed fact, not a random variable.
+
+The best a frequentist can offer is: "This test has a 5% false positive rate."
+
+#### Bayesian answer
+
+Using Bayes' theorem with the prior prevalence of 0.1%:
+
+| Result | Has Cancer             | No Cancer              |
+|--------|------------------------|------------------------|
+| Test + | 0.99 × 0.001 = 0.00099 | 0.05 × 0.999 = 0.04995 |
+| Test − | 0.01 × 0.001           | 0.95 × 0.999           |
+
+
+Posterior probability of cancer given a positive test:
+
+$$
+P(\text{cancer} \mid +) = \frac{0.00099}{0.00099 + 0.04995} \approx 1.94%
+$$ 
+
+**Despite a 99% accurate test, you have less than a 2% chance of actually having cancer.**
+
+::: {#big-text style="font-size: 125%"}
+**Why this difference is decisive** 
+:::
+
+This is the base rate neglect problem. The Bayesian approach forces you to incorporate the prior (disease prevalence), which is crucial for rare events. The frequentist framework has no natural mechanism to include it.
+
+In practice this matters enormously:
+
+- **Over-treatment**: Patients who test positive for rare conditions are sometimes treated aggressively (surgery, chemotherapy) when the true probability of disease is tiny
+- **Policy**: Mass screening programmes for rare diseases can produce thousands of false positives for every true positive, causing unnecessary harm
+- **Legal**: The "Prosecutor's Fallacy" is exactly this error — confusing $P(\text{evidence} \mid \text{innocent})$ with $P(\text{innocent} \mid \text{evidence})$.
+
+This is why in the Women’s Word Cup (WWC) example in @exr-005-world-cup the two approaches gave nearly identical results — with n = 52 matches the prior is washed out. But with rare events and small samples, the prior dominates and the approaches diverge dramatically.
+
+### Other examples
+
+It seemed to me that only with sparse data the Bayesian approach has advantages. So why bother with when there are many data available? So I asked for other real world example where the difference between the two approaches is decisive.
+
+Here are several less commonly cited areas where the difference is decisive:
+
+#### 1. Earthquake / Flood Risk Assessment
+
+Historical data on major earthquakes or 100-year floods is extremely sparse — sometimes only 2–3 events recorded. A frequentist estimate from 3 data points is nearly meaningless. Bayesian methods allow engineers to formally incorporate geological expert knowledge as a prior (fault type, soil composition, historical records from other regions) and update it with the sparse local data. Insurance pricing and building codes depend on this.
+
+#### 2. Clinical Trials with Adaptive Designs
+
+In a frequentist trial you fix the sample size upfront and cannot "peek" at interim results without inflating the false positive rate. Bayesian adaptive trials update the posterior continuously — allowing early stopping if a drug is clearly working or clearly harmful, or reallocating patients to the better-performing arm. This is ethically important: fewer patients receive the inferior treatment.
+
+#### 3. Spam Filtering (Naïve Bayes)
+
+The prior probability that any given email is spam (base rate) is crucial. A frequentist classifier asks "what is P(this word | spam)?". A Bayesian classifier asks "given I see this word, what is P(spam | this word)?" — which is what you actually need. Gmail's original spam filter was Bayesian for exactly this reason.
+
+#### 4. Archaeology / Radiocarbon Dating
+
+A radiocarbon measurement gives a probability distribution over dates, not a single date. Bayesian methods combine this with stratigraphic priors (layer A must be older than layer B), written historical records, and dendrochronology. The OxCal software used by virtually all archaeologists worldwide is explicitly Bayesian. Frequentist point estimates without this context can be off by centuries.
+
+#### 5. Sports Analytics with Small Samples
+
+A baseball player goes 4-for-10 at the start of a season (.400 average). A frequentist estimate is .400. A Bayesian estimate shrinks this toward the league average (~.250) because the prior — built from thousands of player-seasons — is very informative. This shrinkage estimation is why Bayesian hierarchical models dominate modern sports analytics: they outperform frequentist estimates in prediction throughout the season.
+
+#### 6. A/B Testing in Tech Companies
+
+Frequentist A/B testing requires a fixed sample size decided before the experiment. In practice, product teams check results daily and stop when p < 0.05 — which is statistically invalid and inflates false positives dramatically. Bayesian A/B testing (used by Google, Microsoft, VWO) gives a direct probability statement — "variant B is better with 95% probability" — and allows stopping at any time without invalidating the inference.
+
+## When Bayesian Inference Shines
+
+Given the dominate role data plays in @sec-005-exr-australia the question arose for me: What is the advantage of using the Bayesian approach when data are abundant? Frequentist statistics would get almost the same result.
+
+### Small Sample Sizes
+
+
+With only **10 or 50 days** of data instead of 1000, the prior would carry meaningful weight:
+
+**Example: $n = 50$ days**
+
+$$w = \frac{50/25}{1/25 + 50/25} = \frac{2}{2.04} \approx 0.98 \text{ (98% data)}$$
+
+Weight on prior: **~2%** — now the prior actually matters!
+
+The Bayesian posterior would be:
+$$\mu_n \approx 0.02(30) + 0.98(\bar{y})$$
+
+This **regularizes** the estimate when data are scarce, preventing wild swings from small samples. Frequentist confidence intervals would be much wider and less informative.
+
+### Incorporating Prior Knowledge
+
+Our friend's prior belief (30°C, sd = 5) encodes real information:
+- Perth is in the Southern Hemisphere (warmer than many places)
+- 3 p.m. is afternoon (warmer than morning)
+- The range [10, 50] reflects reasonable bounds
+
+**Frequentist approach:** Ignores this entirely. If the first 50 observations happened to average 18°C due to sampling variability, the frequentist estimate would be 18°C with no skepticism.
+
+**Bayesian approach:** Would say "18°C is implausibly cold given what we know about Perth" and pull the estimate back toward 30°C.
+
+### Decision-Making Under Uncertainty
+
+Suppose your friend needs to decide: *"Should I bring a light jacket (assume μ ≥ 22°C) or a heavy coat (assume μ < 22°C)?"*
+
+**Bayesian:** Directly answers: $P(\mu \geq 22 \mid \text{data}) = ?$
+
+With posterior $\mu \mid \text{data} \sim \mathcal{N}(24.01, 0.158^2)$:
+$$P(\mu \geq 22 \mid \text{data}) = P\left(Z \geq \frac{22 - 24.01}{0.158}\right) = P(Z \geq -12.7) \approx 1.0$$
+
+**Frequentist:** Cannot directly answer this. A 95% CI is [23.70, 24.32], but that doesn't directly tell you $P(\mu \geq 22)$ in a frequentist framework.
+
+### Hierarchical/Complex Models 
+
+
+With multiple professors, multiple cities, or temporal trends, Bayesian methods naturally handle:
+
+- Sharing information across groups
+- Partial pooling of estimates
+- Uncertainty propagation through layers
+
+Frequentist approaches become awkward or require ad-hoc methods.
+
+### 5. Sequential Analysis
+
+Suppose you observe data on Day 1, then Day 2, then Day 3...
+
+**Bayesian:** Today's posterior becomes tomorrow's prior. You naturally update beliefs as new data arrive — no multiple testing corrections needed.
+
+**Frequentist:** Each new test inflates Type I error; you need corrections (Bonferroni, etc.), making inference less efficient.
+
+### Why did @sec-005-exr-australia not show Bayesian advantages?
+
+In the Perth temperature problem:
+
+- 👉 Large sample size ($n = 1000$) → data overwhelm the prior
+- 👉 Prior and likelihood have equal information ($\tau = \sigma$)
+- 👉 Simple one-parameter model
+- 👉 No sequential or hierarchical structure
+
+In this setting, Bayesian and frequentist methods converge — and that's **expected and fine**.
+
+
+
+### Summary
+
+The common thread: Bayesian methods are decisive when 
+
+- data is sparse, 
+- stopping rules are flexible, 
+- prior knowledge is strong, or 
+- a direct probability statement about the parameter is needed. 
+
+Frequentist methods work well when data is abundant, the experimental design is fixed upfront, and the goal is long-run error rate control.
+
+**Bayesian inference adds the most value when:**
+
+- ✅ Data are limited
+- ✅ Prior knowledge is informative and relevant
+- ✅ You need probability statements about parameters (not just intervals)
+- ✅ You're making sequential decisions
+- ✅ You have complex hierarchical structures
+
+**When data are abundant and prior is weak, Bayesian and frequentist results converge** — which is reassuring, not a weakness!
+
+## Bayesian approach even with abundant data
+
+The Bayesian approach has even advantages when there data are abundant. This is especially the case when probability statements about parameters matter, e.g. whenever you need probability statements that a parameter exceeds a threshold — rather than just estimating the parameter.
+
+
+| | Frequentist CI | Bayesian Credible Interval |
+|--|----------------|---------------------------|
+| **Statement** | "95% of such intervals would contain the true $\mu$" | "There is a 95% probability that $\mu$ lies in this interval" |
+| **Parameter** | Fixed, unknown constant | Random variable with a distribution |
+| **Probability about $\mu$?** | ❌ Not directly | ✅ Yes, directly |
+
+
+::: {.callout-important #imp-910-compare-frequentist-bayesian}
+
+###### Frequentist and Bayesian interval
+
+The frequentist interval is a statement about the **procedure**, not about $\mu$ itself. The Bayesian interval is a direct **probability statement about $\mu$**.
+:::
+
+
+
+### Real-World Scenarios Where This Matters
+
+#### Medical & Clinical Decision-Making
+
+> *"What is the probability that this drug reduces mortality by at least 10%?"*
+
+- **Frequentist:** Can only say "we reject $H_0$ at $\alpha = 0.05$" — a binary decision.
+- **Bayesian:** Directly computes $P(\text{effect} \geq 10\% \mid \text{data}) = 0.94$, which is actionable for doctors and patients.
+
+Even with thousands of patients in a trial, doctors need **direct probability statements** to weigh risks and benefits.
+
+
+#### Legal & Policy Thresholds
+
+> *"What is the probability that pollution levels exceed the legal safety threshold of 50 ppm?"*
+
+- **Frequentist:** Tests whether $\mu = 50$ — but cannot say $P(\mu > 50 \mid \text{data})$.
+- **Bayesian:** Directly answers $P(\mu > 50 \mid \text{data}) = 0.97$, which is exactly what regulators need.
+
+A regulator doesn't care about long-run frequency properties — they need to make **a single decision today**.
+
+
+#### Finance & Risk Management
+
+> *"What is the probability that the expected return on this portfolio exceeds 5%?"*
+
+- **Frequentist:** Provides a confidence interval, but $P(\mu > 5\% \mid \text{data})$ is not directly available.
+- **Bayesian:** Directly computes this probability, enabling precise **Value at Risk (VaR)** calculations and portfolio decisions.
+
+With millions of transactions (abundant data), you still need $P(\mu > \text{threshold})$ for risk management.
+
+
+#### Weather & Climate Forecasting
+
+> *"What is the probability that the average temperature exceeds 35°C on a given day?"*
+
+- **Frequentist:** Estimates $\mu$ with a CI, but cannot directly say $P(\mu > 35 \mid \text{data})$.
+- **Bayesian:** Directly computes this, which is exactly what **public warnings and emergency planning** require.
+
+Even with 1000 days of Perth temperature data, you still need direct probability statements for actionable forecasts.
+
+
+#### A/B Testing in Industry
+
+> *"What is the probability that Version A of our website converts better than Version B?"*
+
+- **Frequentist:** Reports a p-value — "we reject $H_0$ that A = B" — but cannot say $P(A > B \mid \text{data})$.
+- **Bayesian:** Directly computes $P(\mu_A > \mu_B \mid \text{data}) = 0.98$, which is what product teams need to **ship a feature**.
+
+Tech companies (Google, Netflix, Spotify) increasingly use Bayesian A/B testing for this reason, even with millions of users.
+
+
+#### Comparing Multiple Parameters
+
+> *"What is the probability that Perth is hotter than Melbourne AND cooler than Darwin?"*
+
+- **Frequentist:** Requires multiple tests with corrections (Bonferroni), losing power and interpretability.
+- **Bayesian:** Directly computes $P(\mu_{\text{Melbourne}} < \mu_{\text{Perth}} < \mu_{\text{Darwin}} \mid \text{data})$ in one coherent framework.
+
+
+### Summary
+
+| Scenario | Why Bayesian Wins Even With Big Data |
+|----------|--------------------------------------|
+| Medical decisions | Need $P(\text{effect} \geq \text{threshold})$ |
+| Legal/regulatory | Need $P(\mu > \text{limit})$ |
+| Finance/risk | Need $P(\text{return} > \text{target})$ |
+| Climate/weather | Need $P(\mu > \text{danger level})$ |
+| A/B testing | Need $P(\mu_A > \mu_B)$ |
+| Multiple comparisons | Need joint probability statements |
+
+::: {.callout-important #imp-910-key-insight-frequentist-bayesian}
+
+###### Bayesian advantage even data are abundant
+
+**The key insight:** Whenever you need to make a **single, specific decision** based on the probability that a parameter exceeds a threshold — rather than just estimating the parameter — the Bayesian framework is the natural and appropriate choice, **regardless of sample size**.
+:::
+
+## Solutions for continuous distributions {#sec-910-solution-continuous-distribution}
+
+For continuous distribution e.g., for the Normal-Normal model (cf. @eq-005-exr-normal-normal-example) there are three different solution:
+
+### Analytical Solution
+
+For Normal-Normal models, analytical solutions are far superior. The posterior is:
+
+$$\mu \mid Y=1.1 \sim \mathcal{N}\left(\frac{\sigma_0^{-2} \cdot 0 + \sigma_Y^{-2} \cdot 1.1}{\sigma_0^{-2} + \sigma_Y^{-2}}, \frac{1}{\sigma_0^{-2} + \sigma_Y^{-2}}\right)$$
+
+### Approximate Bayesian Computation (ABC)
+
+Another solution for continuous distributions is the Approximate Bayesian Computation (ABC). It is a *simulation-based* method for Bayesian inference when the likelihood function is **intractable or too complex to compute directly**. It approximates the posterior distribution by comparing simulated data to observed data, using a tolerance threshold rather than requiring exact matches.
+
+To make this work, you'd need to:
+
+1. **Use a tolerance window**: Accept $Y$ values within $\epsilon$ of the observed value (e.g., $|Y_{\text{sim}} - 1.1| < 0.01$)
+2. **Increase simulations dramatically**: Use millions or billions of simulations instead of thousands
+3. **Weight the results**: Apply importance weighting to account for the tolerance
+
+However, this becomes inefficient quickly. For Normal-Normal models, **analytical solutions** are far superior.
+
+:::::{.my-assessment}
+:::{.my-assessment-header}
+:::::: {#cor-910-abc}
+: Simplified procedure for Approximate Bayesian Computation (ABC)
+::::::
+:::
+::::{.my-assessment-container}
+1. **Sample** parameter values from the prior.
+2. **Simulate** data from each parameter.
+3. **Compare** simulated data to observed data using a distance metric.
+4. **Accept** parameters if distance < tolerance ε.
+5. **Repeat** to build posterior approximation.
+::::
+:::::
+
+
+### Likelihood-based
+
+If you coded the likelihood, you could use `r glossary("MCMC")` (e.g., `r glossary("Metropolis Algorithm", "Metropolis-Hastings")`. This strategy is explained in detail in Unit II: "Posterior Simulation & Analysis" starting with @sec-chap-006.
+
+
+### Key Differences:
+
+| Feature | ABC | Analytical Methods | Likelihood-Based Methods |
+|---------|-----|-------------------|--------------------------|
+| **Likelihood Required?** | No (or approximated) | Yes (exact form needed) | Yes (must be computable) |
+| **Computation** | Simulation-heavy | Closed-form formulas | Optimization/MCMC |
+| **Accuracy** | Approximate (depends on tolerance) | Exact (if model allows) | Exact (given sufficient computation) |
+| **Use Case** | Complex models (e.g., population genetics, ecology) | Simple conjugate models (e.g., Normal-Normal) | Models with computable likelihoods |
+
+### Summary
+
+- **1. Analytical Solution**: Exact posterior = Normal (easy!)
+- **2. Approximate Bayesian Computation (ABC)**: Overkill — you’d simulate 10,000s of datasets, accept only those close to Y=1.1, then estimate posterior from accepted θ values.
+- **3. Likelihood-based** using for instance `r glossary("MCMC")` (e.g., `r glossary("Metropolis Algorithm", "Metropolis-Hastings")`.
+
+ABC shines when you *can’t write down the likelihood* — e.g., in complex agent-based models or systems biology.  — It’s a *fallback* when analytical or likelihood-based methods aren’t feasible.
+
+**In short**: ABC ≈ simulation + tolerance; Analytical/Likelihood = math + computation.
+
+
+## Glossary Entries {.unnumbered}
+
+```{r}
+#| label: glossary-table
+#| echo: false
+
+glossary_table()
+```
+
+------------------------------------------------------------------------
+
+## Session Info {.unnumbered}
+
+::: my-r-code
+::: my-r-code-header
+Session Info
+:::
+
+::: my-r-code-container
+```{r}
+#| label: session-info
+
+sessioninfo::session_info()
+```
+:::
+:::
+

@@ -239,6 +239,25 @@ See [Using plot arithmetic functions with `::` syntax](https://github.com/thomas
 | /        | `patchwork:::"/.ggplot"()`  | stacked      |
 | \*       | `patchwork:::"*.gg"()`      |              |
 | &        | `patchwork:::"&.gg"()`      |              |
+
+For instance: `patchwork:::"-.ggplot"(p1, p2)` or more detailed and included the graphs directly:
+
+```{r}
+#| label: fig-900-patchwork-side-by-side
+#| fig-cap: Using patchwork without `library()` command for figures side-by-side
+#| fig-height: 3
+#| code-fold: false
+
+patchwork:::"-.ggplot"(
+  ggplot2::ggplot(iris) +
+      ggplot2::geom_point(ggplot2::aes(Petal.Length, Petal.Width)),
+  ggplot2::ggplot(iris) +
+      ggplot2::geom_point(ggplot2::aes(Sepal.Length, Sepal.Width))
+)
+```
+
+
+
 :::
 :::::
 :::::::
