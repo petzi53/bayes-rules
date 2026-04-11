@@ -71,15 +71,123 @@ convergence and mixing behavior of MCMC chains.
     often seen in models with difficult geometry (e.g., hierarchical
     models with small variance parameters) and is a sign of poor
     exploration.
+    
+```{r}
+#| label: fig-skyline-effect
+
+# Define target distribution: standard normal
+target <- function(x) {
+  dnorm(x, mean = 0, sd = 1, log = FALSE)
+}
+
+# Metropolis-Hastings sampler
+metropolis <- function(niter, start, prop_sd) {
+  x <- numeric(niter)
+  x[1] <- start
+  accepted <- 0
+  
+  for (i in 2:niter) {
+    current <- x[i - 1]
+    proposed <- rnorm(1, mean = current, sd = prop_sd)
+    A <- target(proposed) / target(current)  # Acceptance ratio
+    
+    if (runif(1) < A) {
+      x[i] <- proposed
+      accepted <- accepted + 1
+    } else {
+      x[i] <- current
+    }
+  }
+  
+  list(chain = x, acceptance_rate = accepted / (niter - 1))
+}
+
+# Run chains with different proposal sds
+set.seed(123)
+chain_small <- metropolis(5000, start = 0, prop_sd = 0.05)  # Too small
+chain_large <- metropolis(5000, start = 0, prop_sd = 10)    # Too large
+chain_good  <- metropolis(5000, start = 0, prop_sd = 1)     # Well-tuned
+
+# Plot trace plots
+plot(chain_small$chain, type = "l", main = "Trace Plot (Small Proposals, SD=0.05)", xlab = "Iteration", ylab = "x")
+plot(chain_large$chain, type = "l", main = "Trace Plot (Large Proposals, SD=10)", xlab = "Iteration", ylab = "x")
+plot(chain_good$chain,  type = "l", main = "Trace Plot (Good Mixing, SD=1)", xlab = "Iteration", ylab = "x")
+
+# Print acceptance rates
+cat("Acceptance rate (small SD):", chain_small$acceptance_rate, "\n")
+cat("Acceptance rate (large SD):", chain_large$acceptance_rate, "\n")
+cat("Acceptance rate (good SD):", chain_good$acceptance_rate, "\n")   
+```
+
+```{r}
+# Simulate a chain with slow drift (high autocorrelation, poor mixing)
+set.seed(123)
+n <- 5000
+chain_drift <- numeric(n)
+chain_drift[1] <- 0
+
+for (i in 2:n) {
+  # Very small step size creates slow drift
+  proposed <- chain_drift[i - 1] + rnorm(1, mean = 0, sd = 0.01)
+  # Artificially high autocorrelation
+  chain_drift[i] <- 0.99 * chain_drift[i - 1] + rnorm(1, sd = 0.01)
+}
+
+# Create trace plot with ggplot
+df <- data.frame(iteration = 1:n, value = chain_drift)
+ggplot2::ggplot(df, ggplot2::aes(x = iteration, y = value)) +
+  ggplot2::geom_line(color = "steelblue", linewidth = 0.8) +
+  ggplot2::labs(title = "MCMC Trace Plot with Slow Drift",
+       subtitle = "Indicates poor mixing and slow exploration",
+       x = "Iteration", y = "Parameter Value") +
+  ggplot2::theme_minimal()   
+```
+
+```{r}
+
+# Simulate a stuck MCMC chain (very small proposal SD)
+set.seed(123)
+n <- 5000
+chain_stuck <- numeric(n)
+chain_stuck[1] <- 0
+
+for (i in 2:n) {
+  # Tiny proposal steps → chain barely moves
+  proposed <- chain_stuck[i - 1] + rnorm(1, mean = 0, sd = 0.01)
+  ratio <- dnorm(proposed, mean = 0, sd = 1) / dnorm(chain_stuck[i - 1], mean = 0, sd = 1)
+  if (runif(1) < ratio) {
+    chain_stuck[i] <- proposed
+  } else {
+    chain_stuck[i] <- chain_stuck[i - 1]  # Stays stuck
+  }
+}
+
+# Create data frame for ggplot
+df <- data.frame(iteration = 1:n, value = chain_stuck)
+
+# Plot trace with ggplot
+ggplot2::ggplot(df, ggplot2::aes(x = iteration, y = value)) +
+  ggplot2::geom_line(color = "darkred", linewidth = 0.8) +
+  ggplot2::labs(title = "MCMC Trace Plot: Chain Gets Stuck Near Zero",
+       subtitle = "Very small proposal SD causes long flat segments",
+       x = "Iteration", y = "Parameter Value") +
+  ggplot2::theme_minimal()   
+```
+
+
 
 ### Examples of good and poor mixing trace plots
 
-::: {#nte-906-reference-trace-plots .callout-note}
-The following notes in this section on trace plots is quoted from
-Taboga, M. (n.d.). Markov Chain Monte Carlo (MCMC) diagnostics.
-[StatLek](https://www.statlect.com/fundamentals-of-statistics/Markov-Chain-Monte-Carlo-diagnostics).
-[@taboga]
+:::::{.my-resource}
+:::{.my-resource-header}
+:::::: {#lem-906-mcmc-diagnostics-examples}
+: MCMC: Examples of good and poor mixing trace plots
+::::::
 :::
+::::{.my-resource-container}
+Taboga, M. (2021). Markov Chain Monte Carlo (MCMC) diagnostics: Lectures on probability theory and mathematical statistics. (3rd ed.). Kindle Direct Publishing (KDP). https://www.statlect.com/fundamentals-of-statistics/Markov-Chain-Monte-Carlo-diagnostics://www.statlect.com/fundamentals-of-statistics/Markov-Chain-Monte-Carlo-diagnostics. [@taboga]
+::::
+:::::
 
 ![Trace plot examples with good and poor
 mixing](img/906-trace-plots.png){#fig-906-trace-plots

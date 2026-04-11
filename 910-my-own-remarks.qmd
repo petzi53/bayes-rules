@@ -166,7 +166,7 @@ With multiple professors, multiple cities, or temporal trends, Bayesian methods 
 
 Frequentist approaches become awkward or require ad-hoc methods.
 
-### 5. Sequential Analysis
+### Sequential Analysis
 
 Suppose you observe data on Day 1, then Day 2, then Day 3...
 
@@ -208,9 +208,9 @@ Frequentist methods work well when data is abundant, the experimental design is 
 
 **When data are abundant and prior is weak, Bayesian and frequentist results converge** — which is reassuring, not a weakness!
 
-## Bayesian approach even with abundant data
+## Bayesian approach has advantages even with abundant data
 
-The Bayesian approach has even advantages when there data are abundant. This is especially the case when probability statements about parameters matter, e.g. whenever you need probability statements that a parameter exceeds a threshold — rather than just estimating the parameter.
+The Bayesian approach has even advantages when data are abundant. This is especially the case when probability statements about parameters matter, e.g. whenever you need probability statements that a parameter exceeds a threshold — rather than just estimating the parameter.
 
 
 | | Frequentist CI | Bayesian Credible Interval |
@@ -302,7 +302,7 @@ Tech companies (Google, Netflix, Spotify) increasingly use Bayesian A/B testing 
 
 ::: {.callout-important #imp-910-key-insight-frequentist-bayesian}
 
-###### Bayesian advantage even data are abundant
+###### Bayesian advantage even with a high sample size
 
 **The key insight:** Whenever you need to make a **single, specific decision** based on the probability that a parameter exceeds a threshold — rather than just estimating the parameter — the Bayesian framework is the natural and appropriate choice, **regardless of sample size**.
 :::

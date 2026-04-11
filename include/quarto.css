@@ -49,11 +49,18 @@ iframe {
     opacity: 85%;
     font-size: 1.1rem;
     padding-top: .5em;
-    padding-bottom .5em;
+    padding-bottom: .5em;
     padding-left: .5em;
     padding-right: .5em;
     border-top-right-radius: calc(0.25rem + -1px);
 }
+
+/* ############## CSS workaround for toc-expand###########################  */
+
+.sidebar nav[role="doc-toc"] ul {
+  display: block;
+}
+
 
 /* #######################################################################  */
 /*                                                                          */
@@ -399,7 +406,7 @@ iframe {
   background-size: 40px;
   background-repeat: no-repeat;
   background-position: 15px center;
-  background-image: url("icons8/definition-64.png");
+  background-image: url("icons8/experiment-53.png");
 }
 
 .my-experiment-container {

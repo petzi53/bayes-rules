@@ -31,7 +31,7 @@ book:
         - 007-mcmc.qmd
   appendices:
       - 900-used-packages.qmd
-      - 905-rstan-tutorial.qmd
+      - 905-stan-first-contact.qmd
       - 906-markov-chain-diagnostics.qmd
       - 910-my-own-remarks.qmd
       - 990-webexercises.qmd
@@ -53,8 +53,8 @@ format:
      - include/glossary.css
      - include/webex.css
     number-sections: true
-    toc-depth: 5
-    toc-expand: 4
+    toc-expand: 3
+    toc-depth: 6
     toc_float: true
     code-fold: true
     code-summary: "Show/hide the code"
@@ -136,6 +136,9 @@ crossref:
     - kind: float
       reference-prefix: Paragraph
       key: par
+    - kind: float
+      reference-prefix: Experiment
+      key: exp
 
 tip-cap-location: top
 pak-cap-location: top
@@ -145,7 +148,7 @@ bul-cap-location: bottom
 language:
    crossref-cnj-title: "R Code"             # replaces "Conjecture"  num-r-code
    crossref-cor-title: "Quiz Yourself!"     # replaces "Corollary    num-assessment
-   crossref-def-title: "Definition"         # remains  "Definition"  num-experiment
+   crossref-def-title: "Experiment"         # replaces "Definition"  num-experiment
    crossref-exm-title: "Code Collection"    # replaces "Example"     num-code-collection
    crossref-exr-title: "Exercise"           # remains  "Exercise"    num-exercise
    crossref-fig-title: "Figure"             # remains  "Figure"      fig

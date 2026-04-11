@@ -1,0 +1,1101 @@
+# First Contact with Stan {#sec-chap-905}
+
+```{r}
+#| label: setup
+#| results: hold
+#| include: false
+
+base::source(file = "R/helper.R")
+ggplot2::theme_set(ggplot2::theme_bw())
+```
+
+:::::: {#obj-chap-905}
+::::: my-objectives
+::: my-objectives-header
+Objectives
+:::
+
+::: my-objectives-container
+
+This chapter experiments with [RStan: the R interface to
+Stan](https://cran.r-project.org/web/packages/rstan/vignettes/rstan.html) and [CmdStanR: R interface to 'CmdStan'](https://mc-stan.org/cmdstanr/).
+My aim is to get a better understanding of the underlying functionality
+of **RStan** using {**rstan**}, and of **CmdStanR** using (**cmdstanr**). I look into both packages and investigate especially their connections to the `r glossary("Stan platform")`.
+
+After applying the books recommendation to use the `rstan::stan()` function several times, especially
+during working of the Exercises in @sec-006-exercises, I came up with
+some questions such as:
+
+-   How to use `.stan` files for applying the Stan modelling language?
+-   What do the MCMC sampling messages mean?
+-   How to minimize execution time for the simulations?
+
+This appendix collects my experiments and gives answer to the questions
+above. In the end I decided during the exercises for @sec-chap-006 to use the CmdStanR approach instead of RStan. To compare both packages I have used as a central example --- functioning as an
+`r glossary("advanced organizer")`. I applied the
+`r glossary("Beta-Binomial-Model", "Beta-Binomial model")` in
+@sec-006-beta-binomial-example to demonstrate the code differences.
+
+:::
+:::::
+::::::
+
+## Introduction
+
+::: {#nte-905-terminology-using-leo .callout-note}
+
+###### Using LLMs for clarification of terminology and procedures
+
+The book "Bayes rules!" aims to reduce complexity by honing the process
+of Bayesian modeling, sampling, and inference to the bare bones. But
+this reduction in complexity comes at the expense of conceptual clarity
+and modeling flexibility.
+
+The following content is my own summary of conversations with
+`r glossary("Brave Leo AI")`. It took me several days to gradually build
+my understanding of flexible Bayesian understanding.
+
+In @sec-chap-006, I had my first contact with the {**rstan**} package.
+After applying the code snippets guided by the book examples, at least
+since working on the exercises, I became aware that I did not understand
+the whole picture:
+
+-   What is the relationship of {**rstan**} to the
+    [Stan](https://mc-stan.org/), (another?) software for Bayesian Data
+    Analysis?
+-   What are the relationships to other software packages, like
+    {**cmdstanr**} (R Interface to 'CmdStan'), {**rstanarm**} (Bayesian
+    Applied Regression Modeling via Stan), {**brms**} (Bayesian
+    Regression Models using 'Stan').
+
+These questions are not only important conceptually but also
+practically. It needs a deeper understanding to guide efficient
+practice:
+
+-   How to minimize execution time for statistical modeling and
+    sampling?
+-   How do the two steps (defining the model and sampling) work
+    together?
+-   When to use which package?
+
+**Naming conventions:**
+
+-   When I refer in prose to the package names I am going to use
+    capitalization like `RStan` or `CmdStanR.`
+-   When I refer to the package names formally I use {**rstan**} resp.
+    {**cmdstanr**}.
+-   When I use the package names in R code I write `rstan::<function_name>` or `cmdstanr::<function_name>`
+
+
+:::
+
+:::::: my-resource
+:::: my-resource-header
+::: {#lem-905-stan-resources}
+: Used RStan resources
+:::
+::::
+
+::: my-resource-container
+-   The most authoritative resource is the manual [Stan: Software for
+    Bayesian Data Analysis](https://mc-stan.org/). But I have to confess
+    that many parts I do not understand currently (2026-03-17).
+-   The next session draws therefore from the vignette [RStan: the R
+    interface to
+    Stan](https://cran.r-project.org/web/packages/rstan/vignettes/rstan.html),
+    an introduction to using {**RStan**}, the R interface to
+    [Stan](https://mc-stan.org/). Even the majority of the introductory
+    vignette content is still too complex for my understanding. But to
+    get a better understanding for the interaction between RStan and
+    Stan software is exactly the goal of the exerpiments in this annex.
+-   Additionally I have addressed my questions one by one asking
+    `r glossary("LLMs")`. Many of my questions were about details and
+    adaptions of the modeling procedure covered in [Bayes
+    Rules!](https://www.bayesrulesbook.com/).
+:::
+::::::
+
+
+## Different Software for Bayesian Analysis {#sec-905-software-for-bayesian-analysis}
+
+
+### Stan ≠ R
+
+Stan is **not** an R package. It's a separate probabilistic programming
+language with its own syntax. RStan and CmdStanR are just **interfaces**
+between R and Stan. When you write a Stan model, you're writing in a
+language that R cannot execute directly.
+
+-   **Stan** is the core probabilistic programming language and
+    inference engine that performs Bayesian computation using algorithms
+    like `r glossary("NUTS")` (No-U-Turn Sampler), optimization
+    (`r glossary("BFGSx", "BFGS")`/`r glossary("L-BFGS")`), and
+    variational inference (`r glossary("ADVI")`).
+-   **CmdStan** is the command-line interface to Stan. It doesn’t add
+    new functionality; it’s just a way to execute Stan models without
+    needing R or Python wrappers. It’s how you run Stan programs from
+    the terminal or via other interfaces like
+    -   **CmdStanR** is an R package that provides a lightweight
+        interface to Stan calling the command-line interface CmdStan for
+        compilation and running algorithms. It avoids direct C++
+        integration via {**Rcpp**}. This approach provides benefits like
+        compatibility with the latest Stan versions, fewer installation
+        errors, active maintenance, lower memory overhead, and a more
+        permissive license. It's the appropriate choice for users who
+        want to use the latest Stan features or work with custom Stan
+        models. It’s also ideal for modular workflows where Stan handles
+        computation and downstream R packages (like {**posterior**} or
+        {**bayesplot**}) handle analysis. CmdStanR is currently
+        generally recommended for new projects.
+    -   **RStan** is an R package {**rstan**} that provides an in-memory
+        interface relying on R packages like {**Rcpp**} and inline to
+        call C++ code from R. While it offers familiar R syntax, it may
+        lag behind in supporting the latest Stan features due to the
+        complexity of maintaining compatibility with Stan releases.
+
+### Different layers:
+
+#### The car analogy
+
+Think of the different terms and packages this way:
+
+-   **Hardware (Processor)** = The actual physical engine that does
+    computation — the CPU executing machine code .
+-   **Operating System** = The mechanic's shop that manages how the
+    engine runs, allocates resources, handles communication between
+    components .
+-   **Stan** = The engine design and fuel (the probabilistic programming
+    language and algorithms like NUTS).
+-   **RStan** = You hire a mechanic (Rcpp) to bolt Stan's engine
+    directly into your R car's chassis. The mechanic must rebuild the
+    engine for your specific shop (OS) and car model (R version). If
+    Stan releases a new engine design, the mechanic must rebuild
+    everything — this takes time and often breaks things .
+-   **CmdStan** = A standalone engine factory that produces ready-made
+    Stan engines. The factory handles all OS and processor details
+    internally. --- Your R car sends a messenger (command-line
+    interface) to the factory, orders a Stan engine run, and the factory
+    delivers results via files. The factory (CmdStan) handles
+    OS/processor compatibility — your R car doesn't need to know the
+    details.
+
+#### The place of R in the car analogy
+
+Think of the role of R this way:
+
+You’re the driver — you tell the car *where to go* (specify the model),
+and the car’s systems (R + CmdStanR + Stan) handle *how to get there*
+(computation) without you needing to know engine mechanics.
+
+**R (or Python)** = The driver’s cockpit and dashboard — it’s where you
+sit, steer, and interact with the car. R is your control panel. You
+don’t need to understand the engine (Stan), the factory (CmdStan), or
+the mechanic (Rcpp) to drive — you just use the controls (functions like
+`brms::brm()` or `rstanarm::stan_glm()`).
+
+-   **R/Python** provides the *user interface* — the commands, data
+    structures, and visualization tools you use to specify models, run
+    analyses, and interpret results.
+-   It’s the *glue* that connects you to the engine (Stan) via
+    interfaces like CmdStanR or RStan.
+-   It handles data preprocessing, model diagnostics, plotting, and
+    integration with tidyverse/tidymodels — all the “applied statistics”
+    work you care about.
+
+### Stan, RStan, CmdStanR and brms
+
+#### RStan versus CmdStanR
+
+**Stan is the core engine**, and all other packages are interfaces to
+it. The key difference between **RStan** and **CmdStanR** lies in how
+they connect to Stan:
+
+-   **RStan** uses Rcpp to call C++ code directly from R, which can lead
+    to installation issues and compatibility problems with newer Stan
+    versions (see: [CmdStanR: the R interface to
+    CmdStan](https://mc-stan.org/cmdstanr/reference/cmdstanr-package.html)).
+    It may also be slower for some tasks due to overhead in reading
+    output files (see: [Google
+    Groups](https://groups.google.com/g/stan-dev/c/BujPDKpUDp0/m/zmImoHyNacYJ)).
+-   **CmdStanR** calls the command-line interface (CmdStan) instead,
+    avoiding direct C++ integration. This results in fewer installation
+    errors, better compatibility with the latest Stan releases, and a
+    more permissive license (see: [Package
+    {cmdstanr}](https://stan-dev.r-universe.dev/cmdstanr)). CmdStanR is
+    not hosted on `r glossary("CRAN")`, but available at
+    <https://stan-dev.r-universe.dev/cmdstanr>. However, it may be
+    slower for simple models due to file I/O overhead. But this
+    performance difference (e.g., 1s vs 3s for a simple model) is
+    negligible for my work. My focus is on stability and ease of use
+    rather than micro-optimizations.
+
+See also the summary section [Comparison with
+RStan](https://mc-stan.org/cmdstanr/articles/cmdstanr.html#comparison-with-rstan)
+of the vignette "Getting started with CmdStanR.
+
+#### Using CmdStanR from the beginning
+
+For learning Bayesian statistics, `r glossary("Claude Haiku")` recommends to **start
+with cmdstanr from the beginning**:
+
+**Easier installation**: {**cmdstanr**} avoids the C++ compiler
+configuration issues that often plague {**rstan**}
+setup[^905-rstan-tutorial-1]. This lets you focus on learning statistics
+rather than troubleshooting installation problems.
+
+[^905-rstan-tutorial-1]: Some of the installation complexities is
+    explained in the [FAQ for the Aalto course
+    2025](https://avehtari.github.io/BDA_course_Aalto/FAQ.html).
+
+**Modern design**: {**cmdstanr}** is the newer, actively developed
+interface. It doesn't directly call C++ from R like {**rstan**} does;
+instead, it uses CmdStan behind the scenes for compilation and running
+algorithms[^905-rstan-tutorial-2]. This separation actually makes
+{**cmdstanr}** more reliable and easier to maintain.
+
+[^905-rstan-tutorial-2]: See the vignette: [Getting started with
+    CmdStanR](https://mc-stan.org/cmdstanr/articles/cmdstanr.html)
+
+**Better for teaching**: {**cmdstanr}** provides a similar user
+experience across different programming languages. So if you ever learn
+Stan in other languages, the concepts transfer directly.
+
+**Performance advantages**: {**cmdstanr}** supports within-chain
+multithreading more intelligently and tends to compile models faster
+with better detection of when recompilation is
+needed[^905-rstan-tutorial-3].
+
+[^905-rstan-tutorial-3]: See documentation for
+    [parallelization](https://mc-stan.org/docs/cmdstan-guide/parallelization.html).
+
+The only reason to learn {**rstan**} first would be if one is working with
+legacy code or packages that specifically require it. Since I am
+starting fresh, {**cmdstanr**} is the better choice.
+
+::: {#nte-905-cmdstanr-over-rstan .callout-note}
+
+###### Applying CmdStanR instad of Rstan
+
+Brave Leo AI and other sources recommend CmdStanR {**cmdstanr**} over
+RStan {**rstan**}. Summarized the reasons that matters me most are threefold:
+
+-   speed,
+-   stability,
+-   and up-to-date integration with Stan.
+
+Instead following "Bayes rules!" approach with {**rstan**} I will therefore apply
+in this text mainly {**cmdstanr**}.
+
+:::
+
+#### And what about {**brms**}?
+
+The only disadvantage of CmdStanR is that I have to learn Stan syntax.
+There is the possibility of using {**brms**} as an even higher-level
+interface on top of CmdStanR and Stan for standard models, without
+learning Stan syntax.
+
+{**brms**} is an R package that provides a flexible interface for
+fitting **Bayesian generalized (non-)linear multivariate multilevel
+models** using **Stan**, the most widely used probabilistic programming
+language for full Bayesian inference.
+
+-   It supports a wide range of response distributions and link
+    functions, enabling users to fit models for **linear, robust linear,
+    count data, survival, response times, ordinal, zero-inflated,
+    hurdle, and mixture models** within a multilevel framework.
+-   The package uses a formula syntax similar to {**lme4**,} making it
+    accessible to users familiar with frequentist mixed models.
+-   Key features include:
+    -   **Distributional regression**: All parameters of the response
+        distribution (e.g., mean, variance, shape) can be modeled as
+        functions of predictors.
+    -   **Non-linear and smooth terms**: Supports theory-driven and
+        data-driven non-linear effects.
+    -   **Advanced modeling options**: Auto-correlation structures,
+        censoring, truncation, meta-analytic standard errors, missing
+        data imputation, and spatial models (e.g., CAR structures).
+    -   **Flexible prior specification**: Encourages the use of
+        informative priors that reflect prior knowledge.
+    -   **Model evaluation**: Offers tools for posterior predictive
+        checks, leave-one-out cross-validation (LOO), WAIC, and Bayesian
+        R-squared.
+
+The package is actively maintained, with version **2.23.1** as of
+January 2026, and is available on `r glossary("CRAN")` and `r glossary("GitHub")`. {**brms**} is widely used in social sciences,
+biostatistics, and other fields requiring robust, flexible Bayesian
+modeling.
+
+#### Andvantages of starting with {**brms**}
+
+- {**brms**} has the major advantage that I **don't need to learn Stan syntax** at all. The package uses familiar R formula notation (like `y ~ x1 + x2`), making Bayesian modeling accessible without Stan knowledge.
+- {**brms**} is not "advanced only" — it is actually suited **for beginners and practitioners who want to fit standard Bayesian models quickly**. One can do serious applied work without touching Stan code. One gets Bayesian inference without the Stan learning curve.
+- {**brms**} original **documentation is excellent** and comprehensive. Additionally there are many other tutorials to learn this package. 
+- With `brms::stancode(<model>)` one can **inspect generated Stan code**. Learning through inspection (seeing what {**brms**} generates) is often more efficient than learning Stan syntax from scratch.
+- Bayesian diagnostics (trace plots, Rhat, effective sample size) work the same way regardless of interface. They catch problems which is another learning possibility to apply {**brms**} correctly.
+
+For all these advantages `r glossary("Claude Haiku")` stated: **Start with {brms}, learn {cmdstanr} only if needed.**
+
+**When to learn CmdStanR:**
+
+- When {**brms**} can't express your model (e.g., custom likelihood, complex hierarchical structures)
+- After I have internalized Bayesian thinking through {**brms**} workflows
+- To deepen conceptual understanding of what's happening "under the hood"
+
+#### Looking into brms sporadically
+
+In contrast to Claude Haiku’s recommendation, I will start with {**cmdstanr**}. The reason is that I am afraid I will digress too much from the book content on "Bayes rules!" This annex already gives me a headache, because I have to learn everything from scratch. It is correct that `r glossary("LLMs")` like `r glossary("Brave LEO AI")` or `r glossary("Positron Assistant")` are very helpful. But their role as tutors is limited for three reasons:
+
+- Sometimes they are simply inaccurate or even wrong.
+- Sometimes they misinterpret my questions.
+- But above all: **I myself** have to ask the right questions and to determine the direction. There is no guidance from a domain expert on the next step in my learning career.
+
+I am therefore planning three consecutive learning steps:
+
+1. Understanding Bayesian modeling by reading "Bayes rules!" Especially trying to solve the exercises are very helpful in this respect.
+2. Translating the book's code into {**cmdstanr**} functions and writing it down as notes following the structure of the book.
+3. Looking into {**brms**} and trying to develop the book models with {**brms**} syntax. But my text to this part will perhaps not be complete and I will therefore write these kind of notes separately in annex chapters.
+
+::: {.callout-note #nte-905-future-plans}
+
+###### Future Plans
+
+After I have finished "Bayes rules!" [@johnson2022] I plan to foster my understanding of Bayesian analysis with "Statistical Rethinking" [@mcelreath2023] followed by "Bayesian Data Analysis" [@gelman2013].
+
+:::
+
+## Compilation & MCMC Sampling
+
+The function used in the book `rstan::stan()` combines these two process phases into "# STEP 2: SIMULATE the posterior". But using the nomenclature of the book there are actually three steps:
+
+### Defining the model
+
+Writing the data, parameters, model, and generated quantities blocks in Stan, a probabilistic programming language with its own syntax (Step 1 in the book). There are two options: Writing a character string as done in the book, or recommended -- especially with complex models -- writing the definition into a file.
+- Compilation:
+- Sampling
+
+### Compilation
+
+The compilation step translates your Stan model through **multiple
+layers**:
+
+#### Stan ->  C++ -> Machine Code
+
+1.  **Stan → C++**: The Stan compiler (*stanc*) parses your `.stan`
+    model and translates it into C++ code. This includes:
+    -   Parsing the `data`, `parameters`, `model`, and
+        `generated quantities` blocks
+    -   Performing **automatic differentiation** setup — Stan needs
+        gradients of your log-posterior for its samplers, so the C++
+        code is structured to compute these efficiently
+    -   Type-checking and validating the model structure
+2.  **C++ → Machine code**: The generated C++ is compiled by your local
+    C++ compiler (e.g., `g++` via `Rtools` on Windows) into a **native
+    shared library** (`.so` / `.dll`). This is binary code your CPU can
+    execute directly.
+
+The result is a compiled model object in R — essentially a
+self-contained, highly optimized executable.
+
+#### Why This Design?
+
+-   **Performance**: Native machine code runs orders of magnitude faster
+    than interpreted code. Bayesian sampling requires evaluating the
+    log-posterior and its **gradients thousands to millions of times** —
+    speed is critical.
+-   **Automatic differentiation**: The C++ translation sets up the
+    *autodiff* tape, enabling exact gradient computation (not numerical
+    approximation) needed by HMC/NUTS.
+
+#### Relationship to the Sampling Step
+
+The two steps have a clean **compile-once, sample-many** relationship:
+
+| Step | What happens | Analogy |
+|------------------------|------------------------|------------------------|
+| **Compilation** | Translates + optimizes the model into machine code | Building a specialized calculator |
+| **Sampling** | Runs HMC/NUTS using the compiled code, feeding in your data | Using that calculator repeatedly |
+
+### Sampling (MCMC with HMC/NUTS)
+
+There are several conceptual and computation layers in the sampling step.
+
+#### Layer 1: **MCMC Iteration Level** (Top Layer)
+
+- Each iteration = one proposal → acceptance/rejection decision
+- You control this with `iter_sampling` (e.g., 1000 iterations)
+- Each iteration generates **one posterior sample** (after warmup)
+- Multiple chains run independently → better convergence diagnostics
+
+> *Example: 4 chains × 1000 iterations = 4,000 posterior samples*
+
+#### Layer 2: **Trajectory Construction** (HMC/NUTS Core)
+
+- Within each iteration, Stan builds a **Hamiltonian trajectory** using **leapfrog steps**
+- NUTS automatically chooses how many steps to take (avoids manual tuning)
+- Each leapfrog step:
+  - Updates position (parameters: e.g., `pi`)
+  - Updates momentum (auxiliary variable)
+  - Uses gradient of log-posterior
+
+> *This is where the “simulation” happens — the sampler explores the parameter space*
+
+#### Layer 3: **Gradient Evaluation** (Computational Core)
+
+- At each leapfrog step, Stan computes:
+  - **Log-posterior**: `log(p(data | parameters) × p(parameters))`
+  - **Gradient**: ∇ log-posterior (via automatic differentiation)
+- This is where the **compiled C++ code** runs — fast and exact
+- The `r glossary("gradient")` tells the sampler which direction to move for efficient exploration
+
+> *This is the “engine” — the reason Stan is so fast and accurate*
+
+#### Layer 4: **Model Evaluation** (Lowest Layer)
+- The compiled model evaluates:
+  - Likelihood: `Y ~ binomial(n_trials, pi)`
+  - Prior: `pi ~ beta(2, 2)`
+  - Generated quantities (if any)
+- All this is pre-compiled into C++ → runs at machine speed
+
+> *This is the “model structure” you defined — now being executed millions of times*
+
+
+
+#### Sampling summary
+
+| Layer | What Happens | Controlled By | Frequency |
+|-------|--------------|-------------|---------|
+| 1. MCMC Iteration | One sample per iteration | `iter_sampling` | 1,000–10,000× |
+| 2. Leapfrog Steps | Trajectory construction | NUTS (automatic) | 10–100× per iteration |
+| 3. Gradient Eval | Compute log-posterior + gradient | Compiled model | 10–100× per iteration |
+| 4. Model Eval | Evaluate likelihood + prior | Stan code | 10–100× per iteration |
+
+
+### Key implications
+
+The whole process is also called **simulating the posterior**
+
+- An flexible defined model **does not contain data**
+- The compiled object **knows nothing about your data yet** 
+— Data is passed at sampling time 
+- You can **reuse the compiled model** with different datasets or priors without recompiling 
+- Sampling calls the compiled log-posterior + gradient function **at every leapfrog step** of HMC, which is why having it in fast native code matters so much
+
+Compilation is a **one-time translation cost** that makes the repeated,
+expensive work of sampling as fast as possible. The sampler is
+essentially a tight loop calling the compiled C++ function millions of
+times — without compilation, this would be prohibitively slow in
+interpreted R or Python.
+
+## CmdStanR versus RStan
+
+In "Different Software for Bayesian Analysis" @sec-905-software-for-bayesian-analysis I decided to change from RStan {**rstan**} to CmdStanR {**cmdstanr**}. The next step is to transfer the RStan "Beta-Binomial example" @sec-006-beta-binomial-example into CmdRStanR and to compare the two approaches.
+
+The model definition written in Stan is by and large in both approaches the same. Nevertheless I found five possible improvements.
+
+
+
+Here is a detailed comparison of the **modern CmdStanR code** with the **"Bayes Rules!" code**:
+
+### Model definition
+
+The model definition written in Stan is by and large in both approaches the same. Nevertheless I found several improvements.
+
+#### **Integration approach:** `.stan` file vs. character string
+
+::: {.callout-note #nte-905-writelines-to-stan-file}
+##### Generating `.stan` file programmatically
+
+What follows was my first solution. I wrote the `.stan` file and included it later in the MCMC simulation.
+
+But there is a better approach: Writing in an R chunk the model definition and store it programmatically into the `.stan` file. For the details of this approach see: @lst-exr-612-define-and-write-bb-model-to-file.
+:::
+
+
+The first improvement does not address the content of the model definition but the mode of integration. In contrast to the "Bayes rules!" book which uses a character string within R to describe the model, the recommended approach is to use a separate file with a `.stan` extension.
+
+To make the comparison between the book and my version I will show in the first part of the following experiment the code from "Bayes rules!".
+
+:::::: my-experiment
+:::: my-experiment-header
+::: {#def-905-stan-file}
+: Display `.stan` file with model code in Quarto document
+:::
+::::
+
+::: my-experiment-container
+There are two options:
+
+1.  Using R `base::cat(base::readLines())` function: You need to apply the `#| class-output: stan` chunk option. The following code lines would the `.stan` file include into the Quarto document:
+
+```r
+#| class-output: stan
+
+cat(readLines("include/stan/905-exp-rstan-beta-binomial.stan"), sep = "\n")
+
+```
+
+The final `\n` is necessary, because when a Quarto file is missing a trailing empty line the R parser may issue an "incomplete final line" warning or fail to read the last row correctly, as the parser expects the file to end with a newline character.
+
+The above code results in the following code snippet.
+
+
+```{r}
+#| class-output: stan
+#| label: rstan-beta-binomial
+#| lst-label: lst-rstan-beta-binomial
+
+cat(readLines("include/stan/905-exp-rstan-beta-binomial.stan"), sep = "\n")
+```
+
+
+2.  Using the
+    [include-code-files](https://github.com/quarto-ext/include-code-files)
+    filter extension. This method renders the Stan code with syntax
+    highlighting, treating it as a Stan code block. It supports other
+    features too, like line numbers, or not inserting the whole file, but a range of lines.  (This time I refer to the file with the improved version)
+
+````
+``` {.stan include="include/stan/905-exp-cmdstanr-beta-binomial.stan" code-line-numbers="true"}
+```
+````
+
+The above code results in the following code snippet:
+
+```{.stan include="include/stan/905-exp-cmdstanr-beta-binomial.stan" code-line-numbers="true"}
+
+```
+
+
+
+:::
+::::::
+
+
+
+#### **Side-by-Side Comparison:** CmdStanR vs. RStan
+
+| Aspect | Modern Code (CmdStanR) | "Bayes Rules!" Code |
+|--------|------------------------|-------------------|
+| **Data block structure** | Parameterized with `n`, `n_trials` | Hardcoded with `upper = 10` |
+| **Array syntax** | `array[n] int<lower=0, upper=n_trials> Y` | `int<lower = 0, upper = 10> Y` |
+| **Flexibility** | Reusable for any number of trials | Fixed for 10 trials only |
+| **Likelihood** | `Y ~ binomial(n_trials, pi)` | `Y ~ binomial(10, pi)` |
+| **Prior/Likelihood order** | Prior first, then likelihood | Likelihood first, then prior |
+| **Spaces in syntax** | No spaces around `=` and `<` | Spaces around `=` and `<` |
+
+
+#### **Data Block:** Flexibility vs. Simplicity
+
+**Modern Code:**
+```stan
+data {
+  int<lower=0> n;             // number of observations
+  int<lower=0> n_trials;      // number of trials
+  array[n] int<lower=0, upper=n_trials> Y;
+}
+```
+
+**"Bayes Rules!" Code:**
+```stan
+data {
+  int<lower = 0, upper = 10> Y;
+}
+```
+
+**Difference:**
+
+- Modern code is **parameterized** — you can pass `n_trials` as data, making the model reusable.
+- "Bayes Rules!" is **hardcoded** — the number of trials (10) is fixed in the model definition.
+- Modern code declares `n` (number of observations) for potential multiple observations.
+
+
+#### **Array Syntax:** Modern vs. Legacy
+
+**Modern Code:**
+```stan
+array[n] int<lower=0, upper=n_trials> Y;
+```
+
+**"Bayes Rules!" Code:**
+```stan
+int<lower = 0, upper = 10> Y;
+```
+
+**Difference:**
+
+- Modern uses **`array[n]` syntax** (Stan 2.26+) — more intuitive, size comes first.
+- "Bayes Rules!" uses **scalar declaration** — only one observation `Y`.
+- Modern code scales to multiple observations; "Bayes Rules!" is single-observation only.
+
+
+#### **Model order:** Prior first, then Likelihood
+
+**Modern Code:**
+```stan
+model {
+  // Prior
+  pi ~ beta(2, 2);
+
+  // Likelihood
+  Y ~ binomial(n_trials, pi);
+}
+```
+
+**"Bayes Rules!" Code:**
+```stan
+model {
+  Y ~ binomial(10, pi);
+  pi ~ beta(2, 2);
+}
+```
+
+**Difference:**
+
+- Modern code lists **prior first, then likelihood** (pedagogically clearer for Bayesian thinking).
+- "Bayes Rules!" lists **likelihood first, then prior** (mathematically equivalent, but less intuitive).
+- **Functionally identical** — Stan doesn't care about order.
+
+
+#### **Spacing Convention:** No spaces around operators
+
+**Modern Code:**
+```stan
+int<lower=0, upper=n_trials> Y;
+```
+
+**"Bayes Rules!" Code:**
+```stan
+int<lower = 0, upper = 10> Y;
+```
+
+**Difference:**
+
+- Modern code uses **no spaces** around `=` and `<` (modern Stan style).
+- "Bayes Rules!" uses **spaces** (older style, still valid).
+- **Functionally identical** — both are valid syntax.
+
+
+#### **Processing:** Separate steps vs. combined call
+
+**Modern Code uses CmdStanR:**
+
+```r
+model <- cmdstan_model("model.stan")
+fit <- model$sample(data = data_list, chains = 4, ...)
+```
+
+**"Bayes Rules!" likely uses RStan:**
+```r
+fit <- stan(file = "model.stan", data = data_list, chains = 4, ...)
+```
+
+**Difference:**
+
+- **CmdStanR** — separate compilation and sampling steps: more explicit, and faster.
+- **RStan** — combined in one `rstan::stan()` call: simpler, but less transparent. (But one could in Rstan also separate compilation and sampling with `rstan::stan_model()` and `rstan::sampling()`.)
+
+
+#### **Summary Table:** CmdStanR vs. RStan
+
+| Feature | Modern Code | "Bayes Rules!" |
+|---------|------------|----------------|
+| **Generalizability** | ✅ Reusable for any `n_trials` | ❌ Fixed to 10 trials |
+| **Multiple observations** | ✅ Supports `n > 1` | ❌ Single observation only |
+| **Stan version** | ✅ Modern (2.26+) | ✅ Works in all versions |
+| **Readability** | ✅ Clear prior/likelihood structure | ✅ Simple and concise |
+| **Production use** | ✅ Flexible and scalable | ❌ Limited to specific case |
+
+
+::: {.callout-important #imp-905-lesson-learned-model-definition}
+
+###### Model definition: Lesson learned
+
+- **For learning** (like "Bayes Rules!") — The simple version is fine; it's easier to understand.
+- **For research/production** — Use the modern, parameterized version for flexibility and reusability.
+- **Best practice** — Always parameterize fixed values like `n_trials` so your model generalizes.
+
+:::
+
+
+## Compilation Caching with CmdStanR
+
+It was important for my understanding to separate compilation and sampling. Beside of the conceptual reason separating compilation from sampling has another advantage: You can `r glossary("cache")` the compiled model and run it many times with different data without repeating the time-consuming compilation step.
+
+### Why This Matters
+
+| Aspect | CmdStanR | rstan |
+|--------|----------|-------|
+| **Compilation** | Once per session | Every `stan()` call |
+| **Time saved** | Significant (especially for complex models) | None |
+| **Efficiency** | ✅ Excellent for multiple analyses | ❌ Wasteful |
+| **Use case** | Fitting same model to different data | Single fit |
+
+
+For instance I could run my Beta-Binomial example model with a different number of trials. See as an example the following `r glossary("pseudocode")`: 
+
+
+```r
+## Pseudocode Snippet
+
+library(cmdstanr)
+
+# Compile once
+model <- cmdstan_model("model.stan")
+
+# Fit to different datasets without recompilation
+fit_10_trials <- model$sample(data = list(n = 1, n_trials = 10, Y = array(9)), ...)
+fit_20_trials <- model$sample(data = list(n = 1, n_trials = 20, Y = array(18)), ...)
+fit_100_trials <- model$sample(data = list(n = 1, n_trials = 100, Y = array(90)), ...)
+```
+
+**All three fits use the same compiled model** — this arrangement is a huge time saver!
+
+
+### Default Behavior (Without Explicit Caching)
+
+**By default, re-knitting a Quarto document will recompile the model** because:
+
+- Each code chunk runs in a fresh R session (or at least a new environment).
+- The `model` object from `cmdstan_model()` is not automatically persisted between knits.
+
+```r
+## Pseudocode Snippet
+
+# This gets re-run every time you knit
+model <- cmdstan_model("model.stan")  # ← Recompiles each time!
+
+fit <- model$sample(data = data_list, chains = 4, ...)
+```
+
+### How to Cache the Compiled Model
+
+#### **Option 1:** Use Quarto Code Block Options (Recommended)
+
+**Pseudocode snippet**
+
+```r
+#| cache: true
+
+library(cmdstanr)
+model <- cmdstan_model("model.stan")
+```
+
+With `cache: true`:
+
+- ✅ First knit: compiles the model and caches it.
+- ✅ Subsequent knits: uses the cached compiled model (no recompilation).
+- ⚠️ Cache invalidates if you modify the Stan file or the R code.
+
+
+
+#### **Option 2:** Use `refresh = 0` (Fastest)
+
+**Pseudocode snippet**
+
+```r
+model <- cmdstan_model("model.stan", refresh = 0)
+```
+
+- If the model is already compiled, `refresh = 0` skips recompilation.
+- ✅ Faster than recompiling.
+
+---
+
+#### **Recommended Workflow** for Quarto
+
+I show the pseudocode for three consecutive step:
+
+**Pseudocode Step 1**
+
+```r
+#| cache: true
+#| label: compile-model
+
+library(cmdstanr)
+model <- cmdstan_model("model.stan")
+```
+
+**Pseudocode Step 2**
+
+```r
+#| label: fit-model-1
+
+fit1 <- model$sample(data = data_list_1, chains = 4, ...)
+```
+
+**Pseudocode Step 3**
+
+```r
+#| label: fit-model-2
+
+fit2 <- model$sample(data = data_list_2, chains = 4, ...)
+```
+
+**More fitting steps**
+
+…
+
+
+**Benefits:**
+
+- ✅ Model compiles once and is cached.
+- ✅ Subsequent knits use the cached version.
+- ✅ If you modify the Stan file, the cache invalidates automatically.
+- ✅ Clean and reproducible.
+
+
+#### **Summary**
+
+| Scenario | Behavior |
+|----------|----------|
+| **Default (no caching)** | ❌ Recompiles every knit |
+| **With `cache: true`** | ✅ Compiles once, cached on subsequent knits |
+| **With `refresh = 0`** | ✅ Skips recompilation if already compiled |
+
+
+**Best practice for Quarto:** 
+
+Use `#| cache: true` on the code chunk that compiles the model. This gives you automatic caching with minimal setup!
+
+
+### Saving the compiled model to disk?
+
+#### Compiled binaries are OS-specific
+
+At first I thought that it would be a great idea to save the compiled model to the disk. This would also save much time. Sure, it is slightly more complex than just add `#| cache: true` because
+
+- you have to delete the file for recompilation and 
+- you have to write the code for saving and loading.
+
+Despite these small disadvantages --- so I thought --- file saving shines form the perspective of reproducibility: Everybody gets the same compiled model in each session. 
+
+But what I didn't thought: **Compiled binaries are OS-specific** — Windows, Mac, Linux binaries differ.
+
+#### Other disadvantages with GitHub
+
+Using version control there are other disadvantages. Since I want others to reproduce and use my work from `r glossary("GitHub")`, `cache: true` is the better choice because:
+
+Since you want others to reproduce your work from GitHub, **`cache: true` is the better choice** because:
+
+✅ **Compiled binaries are NOT committed to GitHub**
+
+- Compiled models are OS-specific (Windows, Mac, Linux binaries differ).
+- Committing them creates bloat and breaks cross-platform reproducibility.
+
+✅ **Quarto cache is automatically ignored**
+
+- Quarto's cache directory (`.quarto/`) is typically in `.gitignore`.
+- Others won't download OS-specific compiled files.
+
+✅ **Others can reproduce on their OS**
+
+- When someone clones my repo and knits the document, it will:
+  1. Compile the Stan model for their OS.
+  2. Cache it locally on their machine.
+  3. Reuse the cache on subsequent knits.
+
+✅ **Simple and transparent**
+
+- No manual file management needed.
+- The `.stan` file is all that's needed in the repo.
+
+
+
+#### Summary
+
+**Problems:**
+
+- ❌ Committing the compiled binary, it's OS-specific. 
+- ❌ If one doesn't commit it, others must recompile anyway (defeats the purpose).
+- ❌ Adds unnecessary complexity.
+
+
+
+## CmdStanR Code to Simulate the Posterior
+
+
+To compare the two approaches I will present (but not evaluate) the RStan code snippet:
+
+### Code snippet RStan
+
+:::::{.my-experiment}
+:::{.my-experiment-header}
+:::::: {#def-905-rstan-beta-binomial-code}
+: Code snippet for the RStan version of the Beta-Binomial model of chapter 6
+::::::
+:::
+::::{.my-experiment-container}
+
+```{r}
+#| label: rstan-posterior-simulation
+#| tbl-cap: "RStan posterior simulation of the Beta-Binomial example"
+#| code-fold: show
+
+# Prepare data
+data_list <- list(
+  n = 1,            # number of observations
+  n_trials = 10,    # number of trials
+  Y = array(9)      # observed successes (9 out of 10 trials)
+)
+
+# Simulate the posterior
+fit_rstan <- rstan::stan(
+  file = "include/stan/905-exp-cmdstanr-beta-binomial.stan", 
+  data = data_list, 
+  chains = 4, 
+  iter = 5000*2, 
+  seed = 84735,
+  verbose = FALSE # output only 1000 iterations
+)
+
+# Summarize posterior
+print(fit_rstan)
+
+# Extract posterior samples
+posterior_samples_rstan <- rstan::extract(fit_rstan)
+pi_samples_rstan <- posterior_samples_rstan$pi
+```
+
+::::
+:::::
+
+
+
+### Code snippet CmdStanR
+
+The following code chunk translates the RStan simulation into CmdStanR coding. 
+
+:::::{.my-experiment}
+:::{.my-experiment-header}
+:::::: {#def-905-cmdstanr-beta-binomial-code}
+: Code snippet for the CmdStanR version of the Beta-Binomial model of chapter 6
+::::::
+:::
+::::{.my-experiment-container}
+
+```{r}
+#| label: cmdstanr-posterior-simulation
+#| tbl-cap: "CmdStanR posterior simulation of the Beta-Binomial example"
+#| code-fold: show
+#| cache: true
+
+# Prepare data
+data_list <- list(
+  n = 1,            # number of observations
+  n_trials = 10,    # number of trials
+  Y = array(9)      # observed successes (9 out of 10 trials)
+)
+
+# 1. Compile the Stan model
+model <- 
+  cmdstanr::cmdstan_model("include/stan/905-exp-cmdstanr-beta-binomial.stan")
+
+
+# 2. Fit the model
+fit_cmdstanr <- model$sample(
+  data = data_list,
+  chains = 4,
+  iter_warmup = 5000,
+  iter_sampling = 5000,
+  seed = 84735,
+  refresh = 0 # output only running time for each chain
+)
+
+# Summarize posterior
+fit_cmdstanr$summary()
+
+# Extract posterior samples
+posterior_samples_cmdstanr <- fit_cmdstanr$draws()
+pi_samples_cmdstanr <- posterior_samples_cmdstanr[, , "pi"]
+```
+
+::::
+:::::
+
+
+Let me explain the different code lines applying the introductory  ["Getting started with CmdStanR" vignette](https://mc-stan.org/cmdstanr/articles/cmdstanr.html).
+
+**1. Compile the Stan model**
+
+The `cmdstanr::cmdstan_model()` function creates a new CmdStanModel object from a file containing a Stan program. Under the hood, CmdStan is called to translate a Stan program to C++ and create a compiled executable. 
+
+The object `model` is an [R6](https://r6.r-lib.org/) reference object (see: [Chapter R6 of Advanced R](https://adv-r.hadley.nz/r6.html)) of class [CmdStanModel](https://mc-stan.org/cmdstanr/reference/CmdStanModel.html) and behaves similarly to R’s reference class objects and those in object oriented programming languages. Methods are accessed using the `$` operator. This design choice allows for CmdStanR and [CmdStanPy](https://github.com/stan-dev/cmdstanpy) to provide a similar user experience and share many implementation details.
+
+Examples for the application of the `$` operator are:
+
+- `model$print()`: prints the Stan program (the model definition in the `.stan` file).
+- `model$exe_file()`: prints the path to the compiled executable.
+
+**2. Fit the model**
+
+The `$sample()` method for CmdStanModel objects runs Stan’s default MCMC algorithm. The `$sample()` method creates R6 [CmdStanMCMC](https://mc-stan.org/cmdstanr/reference/CmdStanMCMC.html) objects, which have many associated methods. 
+
+Examples for the application of the `$summary()` method are:
+
+- `fit$summary()` calls `posterior::summarise_draws()` from the {**posterior**} package. The first argument specifies the variables to summarize and any arguments after that are passed on to posterior::summarise_draws() to specify which summaries to compute, whether to use multiple cores, etc.
+- `fit$draws()` extracts the posterior draws in formats provided by the posterior package.
+
+:::::{.my-resource}
+:::{.my-resource-header}
+:::::: {#lem-905-posterior-draws-and-plots}
+: Posterior draws and plots
+::::::
+:::
+::::{.my-resource-container}
+
+- The vignette [Working with Posteriors](https://mc-stan.org/cmdstanr/articles/posterior.html) has more details on posterior draws, including how to reproduce the structured output RStan users are accustomed to getting from `rstan::extract()`.
+
+- Plotting posterior distributions is as easy as passing the object returned by the `$draws()` method directly to plotting functions in our [{**bayesplot**} package](https://mc-stan.org/bayesplot/).
+::::
+:::::
+
+
+
+### Key Differences: RStan vs. CmdStanR
+
+
+These two approaches accomplish the same goal — simulating from the posterior — but differ in some important practical ways:
+
+| Aspect | RStan | CmdStanR |
+|--------|-------|----------|
+| **Compilation** | Automatic, happens within R | Explicit, separate step (`cmdstan_model()`) |
+| **Speed** | Slower (compiles each time) | Faster (compiled model reusable) |
+| **Memory** | Loads entire chains into R memory | More efficient memory handling |
+| **Iteration specification** | `iter` = total iterations (includes warmup) | `iter_warmup` + `iter_sampling` (explicit separation) |
+| **Posterior extraction** | `rstan::extract()` returns list | `$draws()` returns 3D array (chains × iterations × parameters) |
+| **Output format** | List-based | Array-based (tidyverse-friendly) |
+
+### Practical Workflow Implications
+
+1. **CmdStanR is generally preferred** for modern Bayesian workflows. It's faster, more transparent about iterations, and the array output integrates better with tidyverse operations.
+2. **The iteration counts differ slightly**: RStan's `iter = 10000` means 5000 warmup + 5000 sampling per chain. CmdStanR's specification is explicit, which reduces confusion.
+3. **Posterior extraction**: CmdStanR's `$draws()` returns a structure that's easier to wrangle with tidyverse tools (you can convert it to a tibble more naturally).
+
+
+## Glossary Entries {.unnumbered}
+
+```{r}
+#| label: glossary-table
+#| echo: false
+
+glossary_table()
+```
+
+------------------------------------------------------------------------
+
+## Session Info {.unnumbered}
+
+::::: my-r-code
+::: my-r-code-header
+Session Info
+:::
+
+::: my-r-code-container
+```{r}
+#| label: session-info
+
+sessioninfo::session_info()
+```
+:::
+:::::

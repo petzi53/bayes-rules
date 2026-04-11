@@ -64,16 +64,11 @@ will take over and be more influential in the posterior model. In fact,
 the `r glossary("Beta-Binomial-Model", "Beta-Binomial")` belongs to a
 larger class of prior-data combinations called **conjugate families**
 that enjoy both computational ease and interpretable posteriors. Recall
-a general definition similar to that from @def-003-conjugate-prior.
+a general definition similar to that from @imp-003-conjugate-prior.
 
-:::::: my-experiment
-:::: my-experiment-header
-::: {#def-005-conjugate-prior}
-: Conjugate prior
-:::
-::::
+::: {.callout-important #imp-005-conjugate-prior}
+###### Conjugate prior
 
-::: my-experiment-container
 Let the prior model for parameter $\theta$ have pdf f ($\theta$) and the
 model of data Y conditioned on $\theta$ have likelihood function
 $L(\theta \mid y)$. If the resulting posterior model with pdf f
@@ -81,7 +76,7 @@ $(\theta \mid y) \propto f (\theta)L(\theta \mid y)$ is of the same
 model family as the prior, then we say this is a
 `r glossary("conjugate prior")`.
 :::
-::::::
+
 
 To emphasize the utility of conjugate priors, it can be helpful to
 consider a *non*-conjugate prior. Let parameter $\pi$ be a proportion
@@ -1337,7 +1332,7 @@ Don’t forget the whole point of this exercise! Specifying a model for the data
 ###### Rearranging likelihood function
 
 
-The content of this note was the result of the `r glossary("LLM")` `r glossary("Qwen-14b"). I have it intentionally not edited, because I wanted to show the difference to the book result.
+The content of this note was the result of the `r glossary("LLM")` `r glossary("Qwen-14b")`. I have it intentionally not edited, because I wanted to show the difference to the book result.
 
 ::: {#big-text style="font-size: 125%"}
 **Step 0: Starting point**
@@ -1632,8 +1627,8 @@ Let $\mu \in (−\infty, \infty)$ be an unknown mean parameter and $(Y_1, Y_2, .
 
 $$
 \begin{align*}
-Y_i \mid &\mu \overset{\text{ind}}{\sim} N (\mu, \sigma^2) \\
-&\mu ∼ N (\theta, \tau^2) 
+Y_i \mid &\mu \overset{\text{ind}}{\sim} \mathcal{N} (\mu, \sigma^2) \\
+&\mu \sim \mathcal{N} (\theta, \tau^2)
 \end{align*}
 $$ {#eq-005-normal-normal-model}
 
@@ -1643,11 +1638,127 @@ $$
 \begin{align*}
 \mu \mid \vec{y} \sim N \left(\theta \frac{\sigma^2}{n \tau^2 + \sigma^2} + \overline{y} \frac{n\tau^2}{n \tau^2 + \sigma^2}, \frac{\tau^2 \sigma^2}{n \tau^2 + \sigma^2} \right)
 \end{align*}
-$$ {#eq-005-normal-normal-bayesian-model}
+$$ {#eq-005-normal-normal-posterior-model}
 ::::
 :::::
 
-Whooo, that is a mouthful! We provide an optional proof of this result in @sec-005-proving-normal-normal-conjugacy. Even without that proof, we can observe the balance that the Normal posterior in @eq-005-normal-normal-bayesian-model strikes between the prior and the data. 
+Whooo, that is a mouthful! We provide an optional proof of this result in @sec-005-proving-normal-normal-conjugacy. 
+
+::: {.callout-note #nte-005-norma-normal-posterior-model}
+
+###### Reformulation of @eq-005-normal-normal-posterior-model
+With the help of `r glossary("Claude Haiku")` I noticed during working on @exr-006-normal-normal-approximation a different formula for the Normal-Normal posterior model. What follow is the derivation from the formula above and the explication why the converted formula is of importance.
+
+***
+
+::: {#big-text style="font-size: 110%"}
+**Reformulation of the mean part of the formula** 
+:::
+
+$$
+\theta \frac{\sigma^2}{n \tau^2 + \sigma^2} + \overline{y} \frac{n\tau^2}{n \tau^2 + \sigma^2} = \frac{1}{\dfrac{n}{\sigma^2} + \dfrac{1}{\tau}} \cdot \left(\frac{\mu}{\sigma^2} + \frac{n \cdot \overline{y}}{\tau^2}\right)
+$$
+
+
+**Explain why $\large \theta \frac{\sigma^2}{n \tau^2 + \sigma^2} + \overline{y} \frac{n\tau^2}{n \tau^2 + \sigma^2}$ can be expressed as $\large \frac{1}{\frac{n}{\sigma^2} + \frac{1}{\tau}} \cdot \left(\frac{\mu}{\sigma^2} + \frac{n \cdot \overline{y}}{\tau^2}\right)$**
+
+Starting with the left-hand side:
+
+$$\mu \frac{\sigma^2}{n \tau^2 + \sigma^2} + \overline{y} \frac{n\tau^2}{n \tau^2 + \sigma^2}$$
+
+Factor out the common denominator:
+
+$$\frac{\mu \sigma^2 + \overline{y} n\tau^2}{n \tau^2 + \sigma^2}$$
+
+Now, divide both numerator and denominator by $\sigma^2 \tau^2$:
+
+$$\Large \frac{\frac{\mu \sigma^2 + \overline{y} n\tau^2}{\sigma^2 \tau^2}}{\frac{n \tau^2 + \sigma^2}{\sigma^2 \tau^2}}$$
+
+Split the numerator into two fractions:
+
+$$\Large \frac{\frac{\mu \sigma^2}{\sigma^2 \tau^2} + \frac{\overline{y} n\tau^2}{\sigma^2 \tau^2}}{\frac{n \tau^2 + \sigma^2}{\sigma^2 \tau^2}}$$
+
+Simplify each term in the numerator:
+
+$$\Large \frac{\frac{\mu}{\tau^2} + \frac{n\overline{y}}{\sigma^2}}{\frac{n \tau^2 + \sigma^2}{\sigma^2 \tau^2}}$$
+
+Invert the complex fraction (divide by a fraction = multiply by its reciprocal):
+
+$$\left(\frac{\mu}{\tau^2} + \frac{n\overline{y}}{\sigma^2}\right) \cdot \frac{\sigma^2 \tau^2}{n \tau^2 + \sigma^2}$$
+
+Rewrite as:
+
+$$\frac{1}{\dfrac{n \tau^2 + \sigma^2}{\sigma^2 \tau^2}} \cdot \left(\frac{\mu}{\tau^2} + \frac{n\overline{y}}{\sigma^2}\right)$$
+
+Finally, split the denominator:
+
+$$
+\frac{1}{\dfrac{n}{\sigma^2} + \dfrac{1}{\tau^2}} \cdot \left(\frac{\mu}{\tau^2} + \frac{n\overline{y}}{\sigma^2}\right)
+$$ {#eq-005-normal-normal-posterior-mean}
+
+This is the right-hand side! ✓
+
+The second form is the **precision-weighted average** representation of the posterior mean, where:
+
+- The prior mean $\mu$ is weighted by data precision ($n/\sigma^2$)
+- The sample mean $\overline{y}$ is weighted by prior precision ($1/\tau^2$)
+
+**Key insight**: The key step is **dividing by $\sigma^2 \tau^2$**, which transforms the weighted average form into the precision-weighted form, revealing how the posterior mean combines prior and data information through their precisions.
+
+
+
+***
+
+::: {#big-text style="font-size: 110%"}
+**Reformulation of the variance part of the formula** 
+:::
+
+
+$$\frac{\tau^2 \sigma^2}{n \tau^2 + \sigma^2} = \large \frac{1}{\frac{n}{\sigma^2} + \frac{1}{\tau^2}}$$
+
+**Explain why $\large \frac{\tau^2 \sigma^2}{n \tau^2 + \sigma^2}$ can be expressed as $\large \frac{1}{\frac{n}{\sigma^2} + \frac{1}{\tau^2}}$**
+
+Starting with the left-hand side:
+
+$$\frac{\tau^2 \sigma^2}{n \tau^2 + \sigma^2}$$
+
+Divide both numerator and denominator by $\tau^2 \sigma^2$:
+
+$$ \dfrac{\dfrac{\tau^2 \sigma^2}{\tau^2 \sigma^2}}{\dfrac{n \tau^2 + \sigma^2}{\tau^2 \sigma^2}}$$
+
+Simplify the numerator:
+
+$$\frac{1}{\dfrac{n \tau^2 + \sigma^2}{\tau^2 \sigma^2}}$$
+
+Split the denominator into two fractions:
+
+$$\frac{1}{\dfrac{n \tau^2}{\tau^2 \sigma^2} + \dfrac{\sigma^2}{\tau^2 \sigma^2}}$$
+
+Simplify each fraction in the denominator:
+
+$$
+\frac{1}{\dfrac{n}{\sigma^2} + \dfrac{1}{\tau^2}}
+$$ {#eq-005-normal-normal-posterior-variance}
+
+This is exactly the right-hand side! ✓
+
+
+**Why @eq-005-normal-normal-posterior-variance as the different posterior variance form for the Normal-Normal model in Bayesian statistics matters**
+
+This form highlights a key insight: **the posterior variance is the reciprocal of the sum of precisions**.
+
+- **Prior precision**: $\large \frac{1}{\tau^2}$
+- **Data precision**: $\large \frac{n}{\sigma^2}$
+- **Posterior precision**: $\large \frac{n}{\sigma^2} + \frac{1}{\tau^2}$
+- **Posterior variance**: $\large \frac{1}{\text{posterior precision}} = \frac{\tau^2 \sigma^2}{n \tau^2 + \sigma^2}$
+
+The key insight is that **dividing both numerator and denominator by $\tau^2 \sigma^2$** transforms the expression into a form where the denominator becomes a sum of precisions, revealing the underlying structure of how prior and data information combine.
+
+:::
+
+
+
+Even without that proof, we can observe the balance that the Normal posterior in @eq-005-normal-normal-posterior-model strikes between the prior and the data. 
 
 1. First, the posterior mean is a **weighted average** of the prior mean $E(\mu) = \theta$ and the sample mean $\overline{y}$. 
 2. Second, the posterior variance is informed by the prior variability $\tau$ and variability in the data $\sigma$. Both are impacted by sample size $n$. 
@@ -1775,7 +1886,7 @@ bayesrules::plot_normal_likelihood(y = concussion_subjects$volume, sigma = 0.5)
 
 #### Posterior
 
-We now have all necessary pieces to plug into @eq-005-normal-normal-bayesian-model, and hence to specify the posterior model of $\mu$:  
+We now have all necessary pieces to plug into @eq-005-normal-normal-posterior-model, and hence to specify the posterior model of $\mu$:  
 
 - our Normal prior model of $\mu$ had mean $theta = 6.5$ and standard deviation $\tau = 0.4$; 
 - our $n = 25$ sample subjects had a sample mean volume $\overline{y} = 5.735$;

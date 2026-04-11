@@ -70,7 +70,7 @@ Y \mu \mu &\sim \mathcal{N}(\mu, 0.75^2) \\
 \end{align*}
 $$ {#eq-007-normal-normal-example}
 
-Suppose we observe an outcome $Y = 6.25$. Then by our Normal-Normal work in @sec-chap-005 @eq-005-normal-normal-bayesian-model, the posterior model of $\mu$ is Normal with mean $4$ and standard deviation $0.6$:
+Suppose we observe an outcome $Y = 6.25$. Then by our Normal-Normal work in @sec-chap-005 @eq-005-normal-normal-posterior-model, the posterior model of $\mu$ is Normal with mean $4$ and standard deviation $0.6$:
 
 $$
 \begin{align*}
@@ -193,6 +193,12 @@ $$\frac{1}{0.5625} = \frac{1}{\frac{9}{16}} = \frac{16}{9}$$
 ***
 
 **Alternative approach:** You could also recognize that $0.75^2 = (3/4)^2 = 9/16$, so immediately $\dfrac{1}{0.75^2} = \dfrac{16}{9}$ without converting the decimal at all!
+
+::: {.callout-note #nte-007-stopped-here}
+##### I stopped my notes for this chapter here
+
+This chapter helped me to get a better understanding of how `r glossary("Markov chain")` algorithms work. But because it is not essential to grasp the following chapters of "Bayes rules!" I skipped writing notes for this chapter.
+:::
 
 
 

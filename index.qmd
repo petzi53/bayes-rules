@@ -1,6 +1,5 @@
 # Preface {.unnumbered}
 
-
 ```{r}
 #| label: setup
 #| results: hold
@@ -11,161 +10,225 @@ base::source(file = "R/helper.R")
 ggplot2::theme_set(ggplot2::theme_bw())
 ```
 
-
-This Quarto book collects my personal notes, trials and exercises during reading of
-"Bayes Rules! An Introduction to Applied Bayesian Modeling" by Alicia A.
-Johnson, Miles Q. Ott and Mine Dogucu [@johnson2022].
+This Quarto book collects my personal notes, trials and exercises during
+reading of "Bayes Rules! An Introduction to Applied Bayesian Modeling"
+by Alicia A. Johnson, Miles Q. Ott and Mine Dogucu [@johnson2022].
 
 ::: {.callout-note style="color: blue;"}
 #### This is work in progress
 
-Finished about 31%. I am currently working in parallel on the exercises of the sixth chapter and outlining chapter 7.
+Finished about 36%. I have currently started working on the seventh chapter.
 :::
 
+::: {#wrn-000-personal-learning-material .callout-warning}
+###### This is my personal learning material
 
-
-::: {.callout-warning #wrn-000-personal-learning-material}
-###### This is my personal learning material 
-
-This text is neither an accurate replication nor an authoritative textbook.
+This text is neither an accurate replication nor an authoritative
+textbook.
 
 I am writing this book as a text for others to read because that forces
 me to become explicit and explain all my learning outcomes more
-carefully. But keep in mind that this text is not written by an
-expert but by a learner.
+carefully. But keep in mind that this text is not written by an expert
+but by a learner.
 
 Text passages with content I am already familiar I have skipped. Section
 of the original text where I needed more in-depth knowledge I have
 elaborated and added my own comments resulted from my personal research.
 
-Again: Be warned! In spite of replicating most of the content this Quarto book
-may contain many mistakes. All the misapprehensions and errors are of
-course my own responsibility.
+Again: Be warned! In spite of replicating most of the content this
+Quarto book may contain many mistakes. All the misapprehensions and
+errors are of course my own responsibility.
 :::
 
 ## Content and Goals of this Book {.unnumbered}
 
 ### Motivation
 
-In the 1970s, during my sociology studies, I was trained in what I now know as frequentist statistics. Although I always felt somewhat uneasy about it, I only learned about Bayesian statistics—a different approach in probability theory—a few years ago. Despite having read several books on the subject, I must confess that I still don't have a firm grasp of it. I hope that by working intensively through "Bayes' Rules!" I will gain a better understanding of this approach.
+In the 1970s, during my sociology studies, I was trained in what I now
+know as frequentist statistics. Although I always felt somewhat uneasy
+about it, I only learned about Bayesian statistics—a different approach
+in probability theory—a few years ago. Despite having read several books
+on the subject, I must confess that I still don't have a firm grasp of
+it. I hope that by working intensively through "Bayes' Rules!" I will
+gain a better understanding of this approach.
 
 A remark in the preface supports my hope in this regard:
 
-> Bayes Rules! shows that the Bayesian approach is, in fact, accessible to students and self-learners with basic statistics knowledge, even if they are not adept at calculus derivations or coding up fancy algorithms from scratch. (XV)
+> Bayes Rules! shows that the Bayesian approach is, in fact, accessible
+> to students and self-learners with basic statistics knowledge, even if
+> they are not adept at calculus derivations or coding up fancy
+> algorithms from scratch. (XV)
 
-I ​have already read "Bayes' Rules!" once. It was a somewhat superficial read-through, but I realized that my difficulties began as early as the second chapter. Hence, this more elaborate, renewed attempt. I plan not only to follow all the steps in detail but also to complete and document the exercises.
+I ​have already read "Bayes' Rules!" once. It was a somewhat superficial
+read-through, but I realized that my difficulties began as early as the
+second chapter. Hence, this more elaborate, renewed attempt. I plan not
+only to follow all the steps in detail but also to complete and document
+the exercises.
 
 ### Installation
 
-There are several steps to get set up. Normally I wouldn't need all of them, because I have already worked on bayesian models. Even if I have on my system (macOS) most of the necessary packages installed, I need to install them again as I am using {**renv**}, a package to create **r**eproducible **env**ironments. I will write the complete list for readers of my notes down and select check boxes with entries I didn't need to install. 
+There are several steps to get set up. Normally I wouldn't need all of
+them, because I have already worked on bayesian models. Even if I have
+on my system (macOS) most of the necessary packages installed, I need to
+install them again as I am using {**renv**}, a package to create
+**r**eproducible **env**ironments. I will write the complete list for
+readers of my notes down and select check boxes with entries I didn't
+need to install.
 
 #### Download Programs
 
-:::::{.my-resource}
-:::{.my-resource-header}
-:::::: {#lem-000-install-programs}
+:::::: my-resource
+:::: my-resource-header
+::: {#lem-000-install-programs}
 : Download R and RStudio / Positron
-::::::
 :::
-::::{.my-resource-container}
-
-The first step is to download the most recent versions of the following software:
-
-- [ ] R (<https://www.r-project.org/>)
-- [ ] RStudio (<https://rstudio.com/products/rstudio/download/>) or Positron (<https://positron.posit.co/download.html>)
-    
 ::::
-:::::
 
+::: my-resource-container
+The first step is to download the most recent versions of the following
+software:
 
-
-Every chapter of this books has a [session information](https://sessioninfo.r-lib.org/) where you can find details of my installation for the current chapter. There you will find the used packages with their version number but also information about my system configuration (such as the operating system, R version etc.).
-
-There is one exception with this preface chapter: It shows all installed packages used for this book and not only the package needed for the preface. 
-
-#### Install {**rstan**}
-
-
-On of the most important packages for Bayesian Data Analysis is {**rstan**}. It is the R interface to [Stan](https://mc-stan.org/), a program that "enables sophisticated statistical modeling using Bayesian inference, allowing for more accurate and interpretable results in complex data scenarios."
-
-The installation process is pretty complex and I wonder that "Bayes rules!" didn't comment in detail the general procedure and all the things that can go wrong. In chapter 6, where {**rstan**} is used the first time is just says:
-
-> But first, load some packages that we’ll be utilizing throughout the remainder of this chapter (and book). Among these, rstan is quite unique, thus be sure to revisit the Preface for directions on installing this package. (p.128)
-
-But in the preface there is just one sentence to direct the user to the original [https://github.com/stan-dev/rstan/wiki/RStan-Getting-Started](https://github.com/stan-dev/rstan/wiki/RStan-Getting-Started). 
-
-::: {.callout-warning #wrn-000-rstan-version}
-
-I noticed today (2025-12-27) that the latest update of the web page was on June 3, 2024 referencing the Latest Development Version: 2.35.x (unreleased). This was later than the publication date of "Bayes Rules!" (2021-12-01) but still the text is already outdated as the several newer used version, the latest 2.36.0.9000 from Dec. 24, 2024. Furthermore believed that the recommendation of [RStan Getting Started Website](https://github.com/stan-dev/rstan/wiki/RStan-Getting-Started) could be problematic for two reasons:
-
-- It references [R-universe.dev](https://r-universe.dev/), a platform developed by [rOpenSci](https://ropensci.org/) to improve the publication and discovery of research software in R. On <https://stan-dev.r-universe.dev/builds> you will find not only the latest version of {**rstan**}, but also the current builds of other packages related with {**rstan**}. If you follow the suggestion of the book to get {**rstan**} via `r-universe.dev` but downloaded the other packages via CRAN, I am not sure if all the CRAN versions are compatible.
-- I believe that the latest build of {**rstan**} three days ago from 2025-12-24 (today, as I am writing this is December, 27 2025) is a source file that needs to compiled. Building from source requires more effort and technical expertise. It necessitates installing development tools such as compilers and build utilities. You can check if you are prepared to compile source file, by writing in the console `pkgbuild::check_build_tools()`. The answer should be "Your system is ready to build packages!". But even if all the tools are already installed, you would need to manage dependencies manually, and you are still not immune against potential compilation errors.
-
+-   [ ] R (<https://www.r-project.org/>)
+-   [ ] RStudio (<https://rstudio.com/products/rstudio/download/>) or
+    Positron (<https://positron.posit.co/download.html>)
 :::
-
-My suggestion is to try the latest compiled CRAN version 2.32.7 because I assume that the differences are either minor or cutting edge and therefore not necessary important for beginners of the Bayesian approach. Additionally is the book older as the [latest CRAN version](https://cran.r-project.org/web/packages/rstan/index.html) of {**rstan**} from 2025-03-10. (Unfortunately there is no information which R and package versions the book uses. The GitHub link from the online book is broken and session information is also missing.)
-
-
-:::::{.my-resource}
-:::{.my-resource-header}
-:::::: {#lem-000-download-rstan}
-: Install {**rstan**}
 ::::::
+
+Every chapter of this books has a [session
+information](https://sessioninfo.r-lib.org/) where you can find details
+of my installation for the current chapter. There you will find the used
+packages with their version number but also information about my system
+configuration (such as the operating system, R version etc.).
+
+There is one exception with this preface chapter: It shows all installed
+packages used for this book and not only the package needed for the
+preface.
+
+#### Install RStan
+
+On of the most important packages for Bayesian Data Analysis is
+{**rstan**}. It is the R interface to [Stan](https://mc-stan.org/), a
+program that "enables sophisticated statistical modeling using Bayesian
+inference, allowing for more accurate and interpretable results in
+complex data scenarios."
+
+The installation process is pretty complex and I wonder that "Bayes
+rules!" didn't comment in detail the general procedure and all the
+things that can go wrong. In chapter 6, where {**rstan**} is used the
+first time is just says:
+
+> But first, load some packages that we’ll be utilizing throughout the
+> remainder of this chapter (and book). Among these, rstan is quite
+> unique, thus be sure to revisit the Preface for directions on
+> installing this package. (p.128)
+
+But in the preface there is just one sentence to direct the user to the
+original <https://github.com/stan-dev/rstan/wiki/RStan-Getting-Started>.
+
+::: {#wrn-000-rstan-version .callout-warning}
+I noticed today (2025-12-27) that the latest update of the [RStan
+"Getting started" web
+page](that%20the%20latest%20update%20of%20the%20web%20page) was on June
+3, 2024 referencing the Latest Development Version: 2.35.x (unreleased).
+This was later than the publication date of "Bayes Rules!" (2021-12-01)
+but still the text is already outdated as the several newer used
+version, the latest 2.36.0.9000 from Dec. 24, 2024. Furthermore believed
+that the recommendation of [RStan Getting Started
+Website](https://github.com/stan-dev/rstan/wiki/RStan-Getting-Started)
+could be problematic for two reasons:
+
+-   It references [R-universe.dev](https://r-universe.dev/), a platform
+    developed by [rOpenSci](https://ropensci.org/) to improve the
+    publication and discovery of research software in R. On
+    <https://stan-dev.r-universe.dev/builds> you will find not only the
+    latest version of {**rstan**}, but also the current builds of other
+    packages related with {**rstan**}. If you follow the suggestion of
+    the book to get {**rstan**} via `r-universe.dev` but downloaded the
+    other packages via CRAN, I am not sure if all the CRAN versions are
+    compatible.
+-   I believe that the latest build of {**rstan**} three days ago from
+    2025-12-24 (today, as I am writing this is December, 27 2025) is a
+    source file that needs to compiled. Building from source requires
+    more effort and technical expertise. It necessitates installing
+    development tools such as compilers and build utilities. You can
+    check if you are prepared to compile source file, by writing in the
+    console `pkgbuild::check_build_tools()`. The answer should be "Your
+    system is ready to build packages!". But even if all the tools are
+    already installed, you would need to manage dependencies manually,
+    and you are still not immune against potential compilation errors.
 :::
-::::{.my-resource-container}
 
-- [ ] Install the compiled {**rstan**} package from CRAN (2.32.7):
+My suggestion is to try the latest compiled CRAN version 2.32.7 because
+I assume that the differences are either minor or cutting edge and
+therefore not necessary important for beginners of the Bayesian
+approach. Additionally is the book older as the [latest CRAN
+version](https://cran.r-project.org/web/packages/rstan/index.html) of
+{**rstan**} from 2025-03-10. (Unfortunately there is no information
+which R and package versions the book uses. The GitHub link from the
+online book is broken and session information is also missing.)
 
-<center>**Run this code chunk manually if the file(s) still needs to be downloaded.**</center>
+:::::: my-resource
+:::: my-resource-header
+::: {#lem-000-download-rstan}
+: Install {**rstan**}
+:::
+::::
+
+::: my-resource-container
+-   [ ] Install the compiled {**rstan**} package from CRAN (2.32.7):
+
+<center>**Run this code chunk manually if the file(s) still needs to be
+downloaded.**</center>
 
 ```{r}
 #| label: download-rstan
 #| eval: false
+#| code-fold: show
 
 # run the next line if you already have rstan installed
 remove.packages(c("StanHeaders", "rstan"))
 
 install.packages("rstan")
 ```
+:::
+::::::
 
+If you get into troubles with installing reach out for help in an
+appropriate community forum. In the case of {**rstan**} you could use:
 
-
-::::
-:::::
-
-
-If you get into troubles with installing reach out for help in an appropriate community forum. In the case of {**rstan**} you could use:
-
-- the official Stan Forum at <https://discourse.mc-stan.org> or 
-- the RStan GitHub Issues page at <https://github.com/stan-dev/rstan/issues>
+-   the official Stan Forum at <https://discourse.mc-stan.org> or
+-   the RStan GitHub Issues page at
+    <https://github.com/stan-dev/rstan/issues>
 
 or more general communities:
 
-- Posit community at <https://forum.posit.co/>,
-- StackOverflow at <https://stackoverflow.com/>,
-- r/rstats subreddit on Reddit at <https://www.reddit.com/r/rstats/>
+-   Posit community at <https://forum.posit.co/>,
+-   StackOverflow at <https://stackoverflow.com/>,
+-   r/rstats subreddit on Reddit at <https://www.reddit.com/r/rstats/>
 
-Anyway there is no time constraint as you can follow the book until the sixth chapter where {**rstan**} is used for the first time.
+Anyway there is no time constraint as you can follow the book until the
+sixth chapter where {**rstan**} is used for the first time.
 
 #### Install several other packages
 
-You can install a set of data wrangling and Bayesian packages now or later when a `library()` directive wants to load the package.
+You can install a set of data wrangling and Bayesian packages now or
+later when a `library()` directive wants to load the package.
 
-
-
-:::::{.my-r-code}
-:::{.my-r-code-header}
-:::::: {#cnj-000-install-packages}
+:::::: my-r-code
+:::: my-r-code-header
+::: {#cnj-000-install-packages}
 : Install R Packages
-::::::
 :::
-::::{.my-r-code-container}
+::::
 
-<center>**Run this code chunk manually if the file(s) still needs to be downloaded.**</center>
+::: my-r-code-container
+<center>**Run this code chunk manually if the file(s) still needs to be
+downloaded.**</center>
 
 ```{r}
 #| label: install-packages
 #| eval: false
+#| code-fold: show
 
 # run the next line if you already have rstan installed
 
@@ -190,27 +253,83 @@ install.packages(c("bayesrules", "tidyverse", "janitor", "rstanarm",
 
 
 ## check if the installation is ok
-example(stan_model, package = "rstan", run.dontrun = TRUE)   
+utils::example(stan_model, package = "rstan", run.dontrun = TRUE)   
 ```
+:::
+::::::
+
+#### Install CmdStanR
+
+In "Approximating the Posterior" (@sec-chap-006) I immersed deeper into
+the `r glossary("Stan platform")` and I learned that (whatever the
+version) using the {**rstan**} package is not the newest and recommended
+approach. You can read about my motivation and advantages to use
+**CmdStanR** with the {**cmdstanr**} package in the annex chapter "First
+Contact with Stan" (@sec-chap-905).
+
+> CmdStanR (Command Stan R) is a lightweight interface to Stan for R
+> users that provides an alternative to the traditional RStan interface.
+> (From the ["Getting started with
+> CmdStanR"-Website](https://mc-stan.org/cmdstanr/articles/cmdstanr.html)
+> [@gabry].)
+
+There is a well documented installation procedure in the "Getting
+started" vignette mentioned above with five steps.
+
+:::::{.my-procedure}
+:::{.my-procedure-header}
+:::::: {#prp-000-cmmdstanr-installation}
+: CmdStanR installation
+::::::
+:::
+::::{.my-procedure-container}
+
+```{r}
+#| label: install-cmdstanr
+#| code-fold: show
+#| eval: false
+
+## 1. Install the R package in a fresh R session 
+utils::install.packages("cmdstanr", repos = c('https://stan-dev.r-universe.dev', getOption("repos")))
+                        
+## 2. Load the {**cmdstanr**} packages
+## or use the 'cmdstanr::' notation for the next lines
+base::library(cmdstanr)
+
+## 3. Check if suitable C++ toolchain for CmdStan is already installed
+cmdstanr::check_cmdstan_toolchain()
+## should return: 
+## "The C++ toolchain required for CmdStan is setup properly!"
+
+## 4. Install CmdStan
+cmdstanr::install_cmdstan()
+
+## 5. Check the installation
+cmdstanr::cmdstan_path() # and/or
+cmdstanr::cmdstan_version()
+
+```
+
+In fact there are several ways to install CmdStan. I have used the easiest way for me. If you encounter any problems or want to use another way to install CmdStan read the webpage on [CmdStan installation](https://mc-stan.org/docs/cmdstan-guide/installation.html).
+
 
 ::::
 :::::
 
 
-
 XXX TO BE CONTINUED
-
 
 ### Resources
 
 XXX LINKS TO THE RESOURCES MENTIONED IN THE PREFACE
 
-- Add DSLC resources
-- Add https://ajohns24.github.io/454_Fall_21/index.html (and compare the solutions)
+-   Add DSLC resources
+-   Add https://ajohns24.github.io/454_Fall_21/index.html (and compare
+    the solutions)
 
 Maybe also of interest:
 
-- https://mathcenter.oxford.emory.edu/site/math117/probSetBayesTheorem/
+-   https://mathcenter.oxford.emory.edu/site/math117/probSetBayesTheorem/
 
 ## Text passages
 
@@ -230,15 +349,37 @@ reflection about the book and my experiences with it.
 
 ### Repetitions as an educational device {#sec-000-repetitions}
 
-My notes about the Bayes Rules! book are full of repetitions. For me as learner these repetitions are not redundancies per se, but serve as recapitulations to strengthen my understanding. In this sense these repetitions are educational vehicles.
+My notes about the Bayes Rules! book are full of repetitions. For me as
+learner these repetitions are not redundancies per se, but serve as
+recapitulations to strengthen my understanding. In this sense these
+repetitions are educational vehicles.
 
-Sometimes the repetitions are not mine. For instance the introductory part of chapter @sec-chap-002 is an intuitive approximation developed by the authors to get an holistic intuitive understanding which is developed more in details in the following sections.
+Sometimes the repetitions are not mine. For instance the introductory
+part of chapter @sec-chap-002 is an intuitive approximation developed by
+the authors to get an holistic intuitive understanding which is
+developed more in details in the following sections.
 
-Most of *my* capitulations are provided in "Note" callouts. To understand better the different concepts and their relation to each other, I have added these callouts. These notes reflect my understanding at the time of this writing. It could therefore be the case that they contain some errors.
+Most of *my* capitulations are provided in "Note" callouts. To
+understand better the different concepts and their relation to each
+other, I have added these callouts. These notes reflect my understanding
+at the time of this writing. It could therefore be the case that they
+contain some errors.
 
-Additionally I have provided code listing where book figures or tables do not provide the underlying R code. (Unfortunately there is no (GitHub) access to the source code of the book.) My code does not always generate exactly the book output, but gives a general direction how to get the book results. For the generations of these code chunks I have used several times `r glossary("LLMs")`, especially [Anthropic’s](https://www.anthropic.com/) `r glossary("Claude Sonnet 4.5")` applied with the [Positron Assistant](https://positron.posit.co/assistant.html).
+Additionally I have provided code listing where book figures or tables
+do not provide the underlying R code. (Unfortunately there is no
+(GitHub) access to the source code of the book.) My code does not always
+generate exactly the book output, but gives a general direction how to
+get the book results. For the generations of these code chunks I have
+used several times `r glossary("LLMs")`, especially
+[Anthropic’s](https://www.anthropic.com/)
+`r glossary("Claude Sonnet 4.5")` applied with the [Positron
+Assistant](https://positron.posit.co/assistant.html).
 
-Because I have added many "Note" callouts, code chunks with tables and figures, my numbering is not identical with the book. Besides figures, tables, formulae my chapter section numbers conforms with the books numbering until level 3. To get a more detailed structure I might have added sub-titles of a deeper level.
+Because I have added many "Note" callouts, code chunks with tables and
+figures, my numbering is not identical with the book. Besides figures,
+tables, formulae my chapter section numbers conforms with the books
+numbering until level 3. To get a more detailed structure I might have
+added sub-titles of a deeper level.
 
 ### Glossary
 
@@ -425,16 +566,12 @@ singular/plural or other grammar changes).
 
 ::: my-resource-container
 XXX: \[ADD HERE USED ADDITIONAL SOURCES\]
-
-
 :::
 ::::::
 
 ## Private Functions
 
 XXX: \[DESCRIBE PRIVATE FUNCTION USED IN THIS BOOK\]
-
-
 
 ## Glossary Entries of this Chapter
 
