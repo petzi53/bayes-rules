@@ -1,24 +1,23 @@
 
 <!-- README.md is generated from README.Rmd. Please edit the README.Rmd file -->
 
-# QUARTO TEMPLATE
+# Personal Notes during reading “Bayes Rules!”
 
 <!-- badges: start -->
 
 <!-- badges: end -->
 
-**This is my template for Quarto books about personal notes by reading R
-books.**
+This Quarto book collects my personal notes, trials, and exercises
+during reading “Bayes Rules!”
 
-What follows is a template text, that has to be updated for every book.
+(The full title of the book is: Johnson, A. A., Ott, M. Q., & Dogucu, M.
+(2022). Bayes Rules!: An Introduction to Applied Bayesian Modeling (1st
+ed.). Taylor & Francis Ltd. <https://www.bayesrulesbook.com/>)
 
-This Quarto book collects my personal notes, trials and exercises of
-[BOOKNAME](URL) by \[AUTHOR\].
-
-WATCH OUT: This is my personal learning material and is therefore
-neither an accurate replication nor an authoritative textbook.
+**WATCH OUT: This is my personal learning material and is therefore
+neither an accurate replication nor an authoritative textbook.**
 
 I wrote this book as a text for others to read because that forces me to
-become explicit and explain all my learning outcomes more carefully.
-Please keep in mind that this text is not written by an expert but by a
-learner.
+I need to become explicit and explain all my learning outcomes more
+carefully. Please keep in mind that this text is not written by an
+expert but by a learner.
